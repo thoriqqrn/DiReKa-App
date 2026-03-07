@@ -1,0 +1,438 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../../core/app_colors.dart';
+import '../../core/app_constants.dart';
+import '../../models/disease_type.dart';
+import '../../providers/auth_provider.dart';
+import '../../widgets/custom_button.dart';
+import '../../widgets/custom_text_field.dart';
+import '../../widgets/loading_overlay.dart';
+
+class GoogleCompleteProfileScreen extends StatefulWidget {
+  const GoogleCompleteProfileScreen({super.key});
+
+  @override
+  State<GoogleCompleteProfileScreen> createState() =>
+      _GoogleCompleteProfileScreenState();
+}
+
+class _GoogleCompleteProfileScreenState
+    extends State<GoogleCompleteProfileScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _weightCtrl = TextEditingController();
+  final _heightCtrl = TextEditingController();
+
+  DateTime? _dateOfBirth;
+  DiseaseType? _diseaseType;
+
+  double? get _bmi {
+    final w = double.tryParse(_weightCtrl.text);
+    final h = double.tryParse(_heightCtrl.text);
+    if (w == null || h == null || h == 0) return null;
+    final hM = h / 100;
+    return w / (hM * hM);
+  }
+
+  String get _ageString {
+    if (_dateOfBirth == null) return '-';
+    final now = DateTime.now();
+    int years = now.year - _dateOfBirth!.year;
+    int months = now.month - _dateOfBirth!.month;
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+    return '$years tahun $months bulan';
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _weightCtrl.addListener(() => setState(() {}));
+    _heightCtrl.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _weightCtrl.dispose();
+    _heightCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    final user = auth.firebaseUser;
+
+    return LoadingOverlay(
+      isLoading: auth.isLoading,
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          title: const Text('Lengkapi Profil'),
+          backgroundColor: AppColors.background,
+          elevation: 0,
+          automaticallyImplyLeading: false,
+        ),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Hampir Selesai! 🎉',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Lengkapi data kesehatan Anda untuk memulai.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+
+                  // Error message
+                  if (auth.errorMessage != null) ...[
+                    _ErrorBanner(message: auth.errorMessage!),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Info akun Google (readonly)
+                  const _SectionLabel(label: 'Akun Google'),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Row(
+                      children: [
+                        if (user?.photoURL != null)
+                          CircleAvatar(
+                            backgroundImage: NetworkImage(user!.photoURL!),
+                            radius: 22,
+                          )
+                        else
+                          const CircleAvatar(
+                            radius: 22,
+                            child: Icon(Icons.person),
+                          ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                user?.displayName ?? '-',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 15,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              Text(
+                                user?.email ?? '-',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Kondisi Kesehatan
+                  const _SectionLabel(label: 'Kondisi Kesehatan'),
+                  const SizedBox(height: 10),
+                  _DiseaseDropdown(
+                    value: _diseaseType,
+                    onChanged: (v) => setState(() => _diseaseType = v),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Data Fisik
+                  const _SectionLabel(label: 'Data Fisik'),
+                  const SizedBox(height: 10),
+
+                  // Tanggal Lahir
+                  GestureDetector(
+                    onTap: _pickDate,
+                    child: AbsorbPointer(
+                      child: TextFormField(
+                        key: ValueKey(_dateOfBirth),
+                        initialValue: _dateOfBirth != null
+                            ? DateFormat(
+                                'dd MMMM yyyy',
+                                'id',
+                              ).format(_dateOfBirth!)
+                            : '',
+                        decoration: InputDecoration(
+                          labelText: 'Tanggal Lahir',
+                          hintText: 'Pilih tanggal lahir',
+                          prefixIcon: const Icon(Icons.calendar_today_outlined),
+                          suffixIcon: _dateOfBirth != null
+                              ? Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Text(
+                                    _ageString,
+                                    style: const TextStyle(
+                                      color: AppColors.primary,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                )
+                              : null,
+                        ),
+                        validator: (_) => _dateOfBirth == null
+                            ? 'Tanggal lahir wajib dipilih'
+                            : null,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Berat & Tinggi
+                  Row(
+                    children: [
+                      Expanded(
+                        child: CustomTextField(
+                          label: 'Berat Badan (kg)',
+                          controller: _weightCtrl,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          prefixIcon: const Icon(Icons.monitor_weight_outlined),
+                          validator: (v) {
+                            final w = double.tryParse(v ?? '');
+                            if (w == null) return 'Wajib diisi';
+                            if (w <= 0 || w > 300) return 'Tidak valid';
+                            return null;
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: CustomTextField(
+                          label: 'Tinggi Badan (cm)',
+                          controller: _heightCtrl,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          prefixIcon: const Icon(Icons.height),
+                          validator: (v) {
+                            final h = double.tryParse(v ?? '');
+                            if (h == null) return 'Wajib diisi';
+                            if (h <= 0 || h > 300) return 'Tidak valid';
+                            return null;
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  if (_bmi != null) ...[
+                    const SizedBox(height: 12),
+                    _BmiInfo(bmi: _bmi!),
+                  ],
+
+                  const SizedBox(height: 36),
+
+                  CustomButton(
+                    label: 'Mulai Sekarang',
+                    onPressed: _onSubmit,
+                    isLoading: auth.isLoading,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime(1990, 1, 1),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      helpText: 'Pilih Tanggal Lahir',
+      cancelText: 'Batal',
+      confirmText: 'Pilih',
+    );
+    if (picked != null) setState(() => _dateOfBirth = picked);
+  }
+
+  Future<void> _onSubmit() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_diseaseType == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pilih kondisi kesehatan terlebih dahulu'),
+        ),
+      );
+      return;
+    }
+
+    final success = await context.read<AuthProvider>().completeGoogleProfile(
+      diseaseType: _diseaseType!,
+      dateOfBirth: _dateOfBirth!,
+      weight: double.parse(_weightCtrl.text),
+      height: double.parse(_heightCtrl.text),
+    );
+
+    if (success && mounted) {
+      Navigator.pushReplacementNamed(context, AppConstants.routeMain);
+    }
+  }
+}
+
+// --- Helper Widgets ---
+
+class _SectionLabel extends StatelessWidget {
+  final String label;
+  const _SectionLabel({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      style: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textSecondary,
+        letterSpacing: 0.5,
+      ),
+    );
+  }
+}
+
+class _DiseaseDropdown extends StatelessWidget {
+  final DiseaseType? value;
+  final void Function(DiseaseType?) onChanged;
+  const _DiseaseDropdown({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<DiseaseType>(
+      value: value,
+      decoration: InputDecoration(
+        labelText: 'Kondisi Penyakit',
+        prefixIcon: const Icon(Icons.medical_services_outlined),
+        filled: true,
+        fillColor: AppColors.surface,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+        ),
+      ),
+      items: DiseaseType.values
+          .map((d) => DropdownMenuItem(value: d, child: Text(d.label)))
+          .toList(),
+      onChanged: onChanged,
+      validator: (v) => v == null ? 'Pilih kondisi penyakit' : null,
+    );
+  }
+}
+
+class _BmiInfo extends StatelessWidget {
+  final double bmi;
+  const _BmiInfo({required this.bmi});
+
+  String get _category {
+    if (bmi < 18.5) return 'Kurus';
+    if (bmi < 25.0) return 'Normal';
+    if (bmi < 30.0) return 'Gemuk';
+    return 'Obesitas';
+  }
+
+  Color get _color {
+    if (bmi < 18.5) return Colors.blue;
+    if (bmi < 25.0) return AppColors.success;
+    if (bmi < 30.0) return AppColors.warning;
+    return AppColors.error;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: _color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: _color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.calculate_outlined, color: _color, size: 20),
+          const SizedBox(width: 10),
+          Text(
+            'IMT: ${bmi.toStringAsFixed(1)}',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: _color,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text('($_category)', style: TextStyle(color: _color, fontSize: 13)),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorBanner extends StatelessWidget {
+  final String message;
+  const _ErrorBanner({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.error.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline, color: AppColors.error, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(color: AppColors.error, fontSize: 13),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
