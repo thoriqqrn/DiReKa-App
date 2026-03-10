@@ -45,13 +45,15 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (!mounted) return;
 
-    if (diseaseProvider.selectedDisease == null) {
+    if (authProvider.isAuthenticated) {
+      // User sudah login: langsung ke main, disease diambil dari Firestore
+      Navigator.pushReplacementNamed(context, AppConstants.routeMain);
+    } else if (diseaseProvider.selectedDisease == null) {
+      // Guest dan belum pilih penyakit: ke halaman pilih penyakit
       Navigator.pushReplacementNamed(
           context, AppConstants.routeDiseaseSelection);
-    } else if (authProvider.isAuthenticated) {
-      Navigator.pushReplacementNamed(context, AppConstants.routeMain);
     } else {
-      // Penyakit sudah dipilih, langsung ke main sebagai guest
+      // Guest dengan penyakit sudah dipilih: langsung ke main
       Navigator.pushReplacementNamed(context, AppConstants.routeMain);
     }
   }

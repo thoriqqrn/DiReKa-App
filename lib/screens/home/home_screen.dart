@@ -12,7 +12,11 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    final disease = context.watch<DiseaseProvider>().selectedDisease;
+    // Saat authenticated: ambil disease dari UserModel (Firestore) bukan SharedPreferences
+    // Saat guest: ambil dari DiseaseProvider (SharedPreferences)
+    final disease = auth.isAuthenticated
+        ? auth.currentUser?.diseaseType
+        : context.watch<DiseaseProvider>().selectedDisease;
 
     return Scaffold(
       backgroundColor: AppColors.background,

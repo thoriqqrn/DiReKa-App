@@ -58,8 +58,7 @@ class DiRekaApp extends StatelessWidget {
           AppConstants.routeGoogleCompleteProfile: (_) =>
               const GoogleCompleteProfileScreen(),
           AppConstants.routeAdmin: (_) => const AdminScreen(),
-          AppConstants.routeAdminSettings: (_) =>
-              const AdminSettingsScreen(),
+          AppConstants.routeAdminSettings: (_) => const AdminSettingsScreen(),
         },
       ),
     );

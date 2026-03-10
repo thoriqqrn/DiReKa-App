@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/app_colors.dart';
+import '../../models/activity_level.dart';
 import '../../models/disease_type.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/custom_button.dart';
@@ -21,9 +22,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _weightCtrl = TextEditingController();
   final _heightCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
+  final _urinOutputCtrl = TextEditingController();
 
   DateTime? _dateOfBirth;
   DiseaseType? _diseaseType;
+  String _gender = 'laki-laki';
+  ActivityLevel? _activityLevel;
   bool _initialized = false;
 
   double? get _bmi {
@@ -56,8 +60,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _emailCtrl.text = user.email;
         _weightCtrl.text = user.weight.toString();
         _heightCtrl.text = user.height.toString();
+        _urinOutputCtrl.text =
+            user.urinOutput > 0 ? user.urinOutput.toStringAsFixed(0) : '';
         _dateOfBirth = user.dateOfBirth;
         _diseaseType = user.diseaseType;
+        _gender = user.gender;
+        _activityLevel = user.activityLevel;
       }
       _initialized = true;
       _weightCtrl.addListener(() => setState(() {}));
@@ -71,6 +79,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _weightCtrl.dispose();
     _heightCtrl.dispose();
     _emailCtrl.dispose();
+    _urinOutputCtrl.dispose();
     super.dispose();
   }
 
@@ -105,6 +114,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     prefixIcon: const Icon(Icons.person_outline),
                     validator: (v) =>
                         v == null || v.isEmpty ? 'Nama wajib diisi' : null,
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Gender
+                  _GenderSelector(
+                    value: _gender,
+                    onChanged: (v) => setState(() => _gender = v),
                   ),
                   const SizedBox(height: 14),
 
@@ -198,9 +214,51 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     const SizedBox(height: 12),
                     _BmiInfo(bmi: _bmi!),
                   ],
-                  const SizedBox(height: 14),
 
-                  // Penyakit (read-only untuk user terdaftar)
+                  // Field urin output — hanya untuk pasien ginjal
+                  if (_diseaseType == DiseaseType.chronicKidneyDisease) ...[
+                    const SizedBox(height: 20),
+                    _SectionLabel(label: 'Data Klinis Ginjal'),
+                    const SizedBox(height: 10),
+                    CustomTextField(
+                      label: 'Output Urin 24 Jam (ml)',
+                      controller: _urinOutputCtrl,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      prefixIcon: const Icon(Icons.water_outlined),
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return null;
+                        final val = double.tryParse(v);
+                        if (val == null || val < 0 || val > 5000)
+                          return 'Nilai tidak valid';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 6),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 4),
+                      child: Text(
+                        'Jumlah urin 24 jam terakhir. Mempengaruhi target cairan harian. Kosongkan jika belum diketahui.',
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textHint,
+                            height: 1.5),
+                      ),
+                    ),
+                  ],
+
+                  // Field aktivitas — hanya untuk pasien DM
+                  if (_diseaseType == DiseaseType.type2DiabetesMellitus) ...[
+                    const SizedBox(height: 20),
+                    _SectionLabel(label: 'Data Klinis Diabetes'),
+                    const SizedBox(height: 10),
+                    _ActivityLevelSelector(
+                      value: _activityLevel,
+                      onChanged: (v) => setState(() => _activityLevel = v),
+                    ),
+                  ],
+
+                  const SizedBox(height: 20),
                   _SectionLabel(label: 'Kondisi Kesehatan'),
                   const SizedBox(height: 10),
                   Container(
@@ -294,6 +352,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       dateOfBirth: _dateOfBirth,
       weight: double.parse(_weightCtrl.text),
       height: double.parse(_heightCtrl.text),
+      gender: _gender,
+      urinOutput: double.tryParse(_urinOutputCtrl.text) ?? currentUser.urinOutput,
+      activityLevel: _diseaseType == DiseaseType.type2DiabetesMellitus
+          ? (_activityLevel ?? ActivityLevel.ringan)
+          : null,
+      clearActivityLevel:
+          _diseaseType != DiseaseType.type2DiabetesMellitus,
     );
 
     auth.clearError();
@@ -333,15 +398,15 @@ class _BmiInfo extends StatelessWidget {
   const _BmiInfo({required this.bmi});
 
   String get _category {
-    if (bmi < 18.5) return 'Kurus';
-    if (bmi < 25.0) return 'Normal';
-    if (bmi < 30.0) return 'Gemuk';
+    if (bmi < 18.5) return 'Berat Badan Kurang';
+    if (bmi < 23.0) return 'Normal';
+    if (bmi < 30.0) return 'Berat Badan Berlebih';
     return 'Obesitas';
   }
 
   Color get _color {
     if (bmi < 18.5) return Colors.blue;
-    if (bmi < 25.0) return AppColors.success;
+    if (bmi < 23.0) return AppColors.success;
     if (bmi < 30.0) return AppColors.warning;
     return AppColors.error;
   }
@@ -400,6 +465,179 @@ class _ErrorBanner extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─── Gender Selector ──────────────────────────────────────────────────────────────
+
+class _GenderSelector extends StatelessWidget {
+  final String value;
+  final void Function(String) onChanged;
+  const _GenderSelector({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _GenderOption(
+            label: 'Laki-laki',
+            icon: Icons.male,
+            value: 'laki-laki',
+            selected: value == 'laki-laki',
+            onTap: () => onChanged('laki-laki'),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _GenderOption(
+            label: 'Perempuan',
+            icon: Icons.female,
+            value: 'perempuan',
+            selected: value == 'perempuan',
+            onTap: () => onChanged('perempuan'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _GenderOption extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final String value;
+  final bool selected;
+  final VoidCallback onTap;
+  const _GenderOption({
+    required this.label,
+    required this.icon,
+    required this.value,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding:
+            const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.primary.withValues(alpha: 0.08)
+              : AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? AppColors.primary : AppColors.border,
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon,
+                size: 20,
+                color: selected
+                    ? AppColors.primary
+                    : AppColors.textSecondary),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight:
+                    selected ? FontWeight.w600 : FontWeight.normal,
+                color: selected
+                    ? AppColors.primary
+                    : AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Activity Level Selector ─────────────────────────────────────────────────
+
+class _ActivityLevelSelector extends StatelessWidget {
+  final ActivityLevel? value;
+  final void Function(ActivityLevel) onChanged;
+  const _ActivityLevelSelector(
+      {required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: ActivityLevel.values.map((level) {
+        final sel = value == level;
+        return GestureDetector(
+          onTap: () => onChanged(level),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: sel
+                  ? AppColors.diabetesColor.withValues(alpha: 0.08)
+                  : AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color:
+                    sel ? AppColors.diabetesColor : AppColors.border,
+                width: sel ? 1.5 : 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: sel
+                          ? AppColors.diabetesColor
+                          : AppColors.border,
+                      width: sel ? 6 : 2,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        level.label,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: sel
+                              ? AppColors.diabetesColor
+                              : AppColors.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        level.description,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 }

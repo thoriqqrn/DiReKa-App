@@ -42,10 +42,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ],
       ),
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
@@ -83,7 +80,12 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Widget _buildTitle() {
-    const titles = ['Beranda', 'Pelacak Makanan', 'Pelacak Kesehatan', 'Edukasi'];
+    const titles = [
+      'Beranda',
+      'Pelacak Makanan',
+      'Pelacak Kesehatan',
+      'Edukasi',
+    ];
     return Text(titles[_currentIndex]);
   }
 

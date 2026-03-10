@@ -1,0 +1,149 @@
+[
+  {
+    "id": "001",
+    "nama": "Nasi Putih",
+    "kategori": "Serealia",
+    "emoji": "🍚",
+    "satuanNama": "Centong",
+    "takaranSaji": [
+      { "ukuran": "kecil",  "label": "Centong Kecil",  "gram": 75  },
+      { "ukuran": "sedang", "label": "Centong Sedang", "gram": 100 },
+      { "ukuran": "besar",  "label": "Centong Besar",  "gram": 150 }
+    ],
+    "energi": 130,
+    "protein": 2.4,
+    "lemak": 0.3,
+    "karbohidrat": 28.6,
+    "natrium": 1,
+    "kalium": 38,
+    "fosfor": 27,
+    "air": 67.7,
+    "serat": 0.3
+  },
+  {
+    "id": "002",
+    "nama": "Putih Telur Ayam",
+    "kategori": "Telur",
+    "emoji": "🥚",
+    "satuanNama": "Butir",
+    "takaranSaji": [
+      { "ukuran": "kecil",  "label": "Butir Kecil",  "gram": 30 },
+      { "ukuran": "sedang", "label": "Butir Sedang", "gram": 45 },
+      { "ukuran": "besar",  "label": "Butir Besar",  "gram": 60 }
+    ],
+    "energi": 50,
+    "protein": 10.8,
+    "lemak": 0.0,
+    "karbohidrat": 0.8,
+    "natrium": 146,
+    "kalium": 145,
+    "fosfor": 12,
+    "air": 87.8,
+    "serat": 0.0
+  },
+  {
+    "id": "003",
+    "nama": "Daging Sapi (Has Dalam)",
+    "kategori": "Daging",
+    "emoji": "🥩",
+    "satuanNama": "Potong",
+    "takaranSaji": [
+      { "ukuran": "kecil",  "label": "Potong Kecil",  "gram": 50  },
+      { "ukuran": "sedang", "label": "Potong Sedang", "gram": 75  },
+      { "ukuran": "besar",  "label": "Potong Besar",  "gram": 100 }
+    ],
+    "energi": 273,
+    "protein": 17.5,
+    "lemak": 22.0,
+    "karbohidrat": 0.0,
+    "natrium": 93,
+    "kalium": 344,
+    "fosfor": 170,
+    "air": 59.5,
+    "serat": 0.0
+  },
+  {
+    "id": "004",
+    "nama": "Ikan Gabus (Segar)",
+    "kategori": "Ikan",
+    "emoji": "🐟",
+    "satuanNama": "Potong",
+    "takaranSaji": [
+      { "ukuran": "kecil",  "label": "Potong Kecil",  "gram": 40 },
+      { "ukuran": "sedang", "label": "Potong Sedang", "gram": 60 },
+      { "ukuran": "besar",  "label": "Potong Besar",  "gram": 80 }
+    ],
+    "energi": 80,
+    "protein": 16.2,
+    "lemak": 0.5,
+    "karbohidrat": 0.0,
+    "natrium": 65,
+    "kalium": 254,
+    "fosfor": 170,
+    "air": 79.6,
+    "serat": 0.0
+  },
+  {
+    "id": "005",
+    "nama": "Tahu Putih",
+    "kategori": "Kacang-kacangan",
+    "emoji": "🧊",
+    "satuanNama": "Potong",
+    "takaranSaji": [
+      { "ukuran": "kecil",  "label": "Potong Kecil",  "gram": 50  },
+      { "ukuran": "sedang", "label": "Potong Sedang", "gram": 75  },
+      { "ukuran": "besar",  "label": "Potong Besar",  "gram": 110 }
+    ],
+    "energi": 80,
+    "protein": 10.9,
+    "lemak": 4.7,
+    "karbohidrat": 0.8,
+    "natrium": 2,
+    "kalium": 51,
+    "fosfor": 183,
+    "air": 82.2,
+    "serat": 0.1
+  },
+  {
+    "id": "006",
+    "nama": "Bayam (Rebus)",
+    "kategori": "Sayuran",
+    "emoji": "🥬",
+    "satuanNama": "Sendok",
+    "takaranSaji": [
+      { "ukuran": "kecil",  "label": "Sdm Kecil",  "gram": 15 },
+      { "ukuran": "sedang", "label": "Sdm Sedang", "gram": 30 },
+      { "ukuran": "besar",  "label": "Sdm Besar",  "gram": 50 }
+    ],
+    "energi": 16,
+    "protein": 0.9,
+    "lemak": 0.4,
+    "karbohidrat": 2.9,
+    "natrium": 2,
+    "kalium": 456,
+    "fosfor": 67,
+    "air": 94.5,
+    "serat": 0.5
+  },
+  {
+    "id": "007",
+    "nama": "Pepaya",
+    "kategori": "Buah",
+    "emoji": "🍈",
+    "satuanNama": "Potong",
+    "takaranSaji": [
+      { "ukuran": "kecil",  "label": "Potong Kecil",  "gram": 75  },
+      { "ukuran": "sedang", "label": "Potong Sedang", "gram": 150 },
+      { "ukuran": "besar",  "label": "Potong Besar",  "gram": 200 }
+    ],
+    "energi": 46,
+    "protein": 0.5,
+    "lemak": 0.1,
+    "karbohidrat": 12.2,
+    "natrium": 4,
+    "kalium": 221,
+    "fosfor": 12,
+    "air": 86.7,
+    "serat": 1.8
+  }
+]

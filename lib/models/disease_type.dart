@@ -1,8 +1,4 @@
-enum DiseaseType {
-  chronicKidneyDisease,
-  type2DiabetesMellitus,
-  heartFailure,
-}
+enum DiseaseType { chronicKidneyDisease, type2DiabetesMellitus, heartFailure }
 
 extension DiseaseTypeExtension on DiseaseType {
   String get label {

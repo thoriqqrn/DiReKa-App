@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/app_colors.dart';
 import '../../core/app_constants.dart';
+import '../../models/activity_level.dart';
 import '../../models/disease_type.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/disease_provider.dart';
@@ -25,9 +26,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPassCtrl = TextEditingController();
   final _weightCtrl = TextEditingController();
   final _heightCtrl = TextEditingController();
+  final _urinOutputCtrl = TextEditingController();
 
   DateTime? _dateOfBirth;
   DiseaseType? _diseaseType;
+  String _gender = 'laki-laki';
+  ActivityLevel? _activityLevel;
 
   double? get _bmi {
     final w = double.tryParse(_weightCtrl.text);
@@ -65,6 +69,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _confirmPassCtrl.dispose();
     _weightCtrl.dispose();
     _heightCtrl.dispose();
+    _urinOutputCtrl.dispose();
     super.dispose();
   }
 
@@ -133,7 +138,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 14),
 
-                  // Tanggal Lahir
+                  // Gender
+                  _GenderSelector(
+                    value: _gender,
+                    onChanged: (v) => setState(() => _gender = v),
+                  ),
+                  const SizedBox(height: 14),
                   GestureDetector(
                     onTap: _pickDate,
                     child: AbsorbPointer(
@@ -203,10 +213,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ],
                   ),
 
-                  // Tampilkan BMI jika sudah ada
+                  // Tampilkan IMT jika sudah ada
                   if (_bmi != null) ...[
                     const SizedBox(height: 12),
                     _BmiInfo(bmi: _bmi!),
+                  ],
+
+                  // Field urin output — hanya untuk pasien ginjal
+                  if (_diseaseType == DiseaseType.chronicKidneyDisease) ...[
+                    const SizedBox(height: 14),
+                    _UrinOutputField(controller: _urinOutputCtrl),
+                  ],
+
+                  // Field aktivitas — hanya untuk pasien DM
+                  if (_diseaseType == DiseaseType.type2DiabetesMellitus) ...[
+                    const SizedBox(height: 20),
+                    _SectionLabel(label: 'Data Klinis Diabetes'),
+                    const SizedBox(height: 10),
+                    _ActivityLevelSelector(
+                      value: _activityLevel,
+                      onChanged: (v) => setState(() => _activityLevel = v),
+                    ),
                   ],
 
                   const SizedBox(height: 20),
@@ -316,6 +343,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       weight: double.parse(_weightCtrl.text),
       height: double.parse(_heightCtrl.text),
       diseaseType: _diseaseType!,
+      gender: _gender,
+      urinOutput: double.tryParse(_urinOutputCtrl.text) ?? 300.0,
+      activityLevel: _diseaseType == DiseaseType.type2DiabetesMellitus
+          ? (_activityLevel ?? ActivityLevel.ringan)
+          : null,
     );
 
     if (success && mounted) {
@@ -382,20 +414,56 @@ class _DiseaseDropdown extends StatelessWidget {
   }
 }
 
+class _UrinOutputField extends StatelessWidget {
+  final TextEditingController controller;
+  const _UrinOutputField({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionLabel(label: 'Data Klinis Ginjal'),
+        const SizedBox(height: 10),
+        CustomTextField(
+          label: 'Output Urin 24 Jam (ml)',
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          prefixIcon: const Icon(Icons.water_outlined),
+          validator: (v) {
+            if (v == null || v.isEmpty) return null; // opsional
+            final val = double.tryParse(v);
+            if (val == null || val < 0 || val > 5000) return 'Nilai tidak valid';
+            return null;
+          },
+        ),
+        const SizedBox(height: 6),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 4),
+          child: Text(
+            'Jumlah urin yang dikeluarkan dalam 24 jam terakhir. Digunakan untuk menghitung kebutuhan cairan harian. Kosongkan jika belum diketahui (default 300 ml).',
+            style: TextStyle(fontSize: 11, color: AppColors.textHint, height: 1.5),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _BmiInfo extends StatelessWidget {
   final double bmi;
   const _BmiInfo({required this.bmi});
 
   String get _category {
-    if (bmi < 18.5) return 'Kurus';
-    if (bmi < 25.0) return 'Normal';
-    if (bmi < 30.0) return 'Gemuk';
+    if (bmi < 18.5) return 'Berat Badan Kurang';
+    if (bmi < 23.0) return 'Normal';
+    if (bmi < 30.0) return 'Berat Badan Berlebih';
     return 'Obesitas';
   }
 
   Color get _color {
     if (bmi < 18.5) return Colors.blue;
-    if (bmi < 25.0) return AppColors.success;
+    if (bmi < 23.0) return AppColors.success;
     if (bmi < 30.0) return AppColors.warning;
     return AppColors.error;
   }
@@ -458,6 +526,179 @@ class _ErrorBanner extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─── Gender Selector ──────────────────────────────────────────────────────────────
+
+class _GenderSelector extends StatelessWidget {
+  final String value;
+  final void Function(String) onChanged;
+  const _GenderSelector({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _GenderOption(
+            label: 'Laki-laki',
+            icon: Icons.male,
+            value: 'laki-laki',
+            selected: value == 'laki-laki',
+            onTap: () => onChanged('laki-laki'),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _GenderOption(
+            label: 'Perempuan',
+            icon: Icons.female,
+            value: 'perempuan',
+            selected: value == 'perempuan',
+            onTap: () => onChanged('perempuan'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _GenderOption extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final String value;
+  final bool selected;
+  final VoidCallback onTap;
+  const _GenderOption({
+    required this.label,
+    required this.icon,
+    required this.value,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding:
+            const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.primary.withValues(alpha: 0.08)
+              : AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? AppColors.primary : AppColors.border,
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon,
+                size: 20,
+                color: selected
+                    ? AppColors.primary
+                    : AppColors.textSecondary),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: selected
+                    ? FontWeight.w600
+                    : FontWeight.normal,
+                color: selected
+                    ? AppColors.primary
+                    : AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Activity Level Selector ─────────────────────────────────────────────────
+
+class _ActivityLevelSelector extends StatelessWidget {
+  final ActivityLevel? value;
+  final void Function(ActivityLevel) onChanged;
+  const _ActivityLevelSelector(
+      {required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: ActivityLevel.values.map((level) {
+        final sel = value == level;
+        return GestureDetector(
+          onTap: () => onChanged(level),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: sel
+                  ? AppColors.diabetesColor.withValues(alpha: 0.08)
+                  : AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: sel ? AppColors.diabetesColor : AppColors.border,
+                width: sel ? 1.5 : 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: sel
+                          ? AppColors.diabetesColor
+                          : AppColors.border,
+                      width: sel ? 6 : 2,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        level.label,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: sel
+                              ? AppColors.diabetesColor
+                              : AppColors.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        level.description,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/app_colors.dart';
 import '../../core/app_constants.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/disease_provider.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/loading_overlay.dart';
@@ -203,7 +204,16 @@ class _LoginScreenState extends State<LoginScreen> {
           password: password,
         );
     if (success && mounted) {
-      Navigator.pushReplacementNamed(context, AppConstants.routeMain);
+      // Sync DiseaseProvider dengan disease dari akun yang baru login,
+      // supaya SharedPreferences tidak menyimpan disease dari akun lain.
+      final userDisease =
+          context.read<AuthProvider>().currentUser?.diseaseType;
+      if (userDisease != null) {
+        await context.read<DiseaseProvider>().setDisease(userDisease);
+      }
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, AppConstants.routeMain);
+      }
     }
   }
 
@@ -218,7 +228,15 @@ class _LoginScreenState extends State<LoginScreen> {
           AppConstants.routeGoogleCompleteProfile,
         );
       } else {
-        Navigator.pushReplacementNamed(context, AppConstants.routeMain);
+        // Sync DiseaseProvider untuk Google login yang sudah punya profil
+        final userDisease =
+            context.read<AuthProvider>().currentUser?.diseaseType;
+        if (userDisease != null) {
+          await context.read<DiseaseProvider>().setDisease(userDisease);
+        }
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, AppConstants.routeMain);
+        }
       }
     }
   }

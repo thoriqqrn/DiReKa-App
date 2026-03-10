@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import '../models/activity_level.dart';
 import '../models/disease_type.dart';
 import '../models/user_model.dart';
 import 'user_service.dart';
@@ -33,24 +34,28 @@ class AuthService {
     required double weight,
     required double height,
     required DiseaseType diseaseType,
+    String gender = 'laki-laki',
+    double urinOutput = 300.0,
+    ActivityLevel? activityLevel,
   }) async {
     final credential = await _auth.createUserWithEmailAndPassword(
       email: email.trim(),
       password: password,
     );
 
-    // Update display name
     await credential.user?.updateDisplayName(name);
 
-    // Simpan data user ke Firestore
     final userModel = UserModel(
       uid: credential.user!.uid,
       name: name,
       email: email.trim(),
+      gender: gender,
       diseaseType: diseaseType,
       dateOfBirth: dateOfBirth,
       weight: weight,
       height: height,
+      urinOutput: urinOutput,
+      activityLevel: activityLevel,
       createdAt: DateTime.now(),
     );
     await _userService.saveUser(userModel);

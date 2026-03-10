@@ -31,15 +31,11 @@ class CustomButton extends StatelessWidget {
             ),
           )
         : icon != null
-            ? Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  icon!,
-                  const SizedBox(width: 10),
-                  Text(label),
-                ],
-              )
-            : Text(label);
+        ? Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [icon!, const SizedBox(width: 10), Text(label)],
+          )
+        : Text(label);
 
     if (isOutlined) {
       return OutlinedButton(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
+import '../models/activity_level.dart';
 import '../models/user_model.dart';
 import '../models/disease_type.dart';
 
@@ -21,6 +22,7 @@ class AuthProvider extends ChangeNotifier {
   AuthStatus get status => _status;
   User? get firebaseUser => _firebaseUser;
   UserModel? get userModel => _userModel;
+  UserModel? get currentUser => _userModel; // alias untuk kemudahan akses
   String? get errorMessage => _errorMessage;
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _status == AuthStatus.authenticated;
@@ -52,8 +54,16 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
     _clearError();
     try {
-      await _authService.loginWithEmail(email: email, password: password);
-      _setLoading(false);
+      final credential = await _authService.loginWithEmail(
+          email: email, password: password);
+      // Pastikan userModel ter-load sebelum navigasi — authStateChanges
+      // listener berjalan async dan mungkin belum selesai saat login() return.
+      final uid = credential.user?.uid;
+      if (uid != null) {
+        await _loadUserModel(uid);
+      }
+      _isLoading = false;
+      notifyListeners();
       return true;
     } on FirebaseAuthException catch (e) {
       _setError(_mapFirebaseError(e.code));
@@ -70,6 +80,9 @@ class AuthProvider extends ChangeNotifier {
     required double weight,
     required double height,
     required DiseaseType diseaseType,
+    String gender = 'laki-laki',
+    double urinOutput = 300.0,
+    ActivityLevel? activityLevel,
   }) async {
     _setLoading(true);
     _clearError();
@@ -82,8 +95,19 @@ class AuthProvider extends ChangeNotifier {
         weight: weight,
         height: height,
         diseaseType: diseaseType,
+        gender: gender,
+        urinOutput: urinOutput,
+        activityLevel: activityLevel,
       );
-      _setLoading(false);
+      // Fix race condition: authStateChanges listener fires BEFORE saveUser()
+      // completes inside registerWithEmail(), sehingga _userModel = null.
+      // Setelah registerWithEmail() return, saveUser() sudah selesai — reload.
+      final uid = _authService.currentUser?.uid;
+      if (uid != null) {
+        await _loadUserModel(uid);
+      }
+      _isLoading = false;
+      notifyListeners();
       return true;
     } on FirebaseAuthException catch (e) {
       _setError(_mapFirebaseError(e.code));
@@ -120,6 +144,8 @@ class AuthProvider extends ChangeNotifier {
     required DateTime dateOfBirth,
     required double weight,
     required double height,
+    String gender = 'laki-laki',
+    ActivityLevel? activityLevel,
   }) async {
     _setLoading(true);
     _clearError();
@@ -129,10 +155,12 @@ class AuthProvider extends ChangeNotifier {
         uid: user.uid,
         name: user.displayName ?? 'Pengguna',
         email: user.email ?? '',
+        gender: gender,
         diseaseType: diseaseType,
         dateOfBirth: dateOfBirth,
         weight: weight,
         height: height,
+        activityLevel: activityLevel,
         createdAt: DateTime.now(),
       );
       await _userService.saveUser(userModel);
