@@ -8,6 +8,7 @@ import '../../core/app_colors.dart';
 import '../../models/disease_type.dart';
 import '../../models/food_item.dart';
 import '../../models/food_log_entry.dart';
+import '../../models/meal_type.dart';
 import '../../models/nutrition_needs.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/food_database_service.dart';
@@ -29,6 +30,7 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
   List<FoodLogEntry> _entries = [];
   bool _isLoading = true;
   late AuthProvider _authProvider;
+  MealType? _selectedMealType;  // ← NEW: Track selected meal time
 
   @override
   void initState() {
@@ -168,6 +170,7 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
         foodName: entry.foodName,
         grams: newGrams,
         loggedAt: entry.loggedAt,
+        mealType: entry.mealType,  // ← PRESERVE existing meal type
         energi: n['energi']!,
         protein: n['protein']!,
         lemak: n['lemak']!,
@@ -216,6 +219,68 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
   }
 
   void _showAddFoodSheet() {
+    _showMealTimeSelector();
+  }
+
+  void _showMealTimeSelector() {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: const Text(
+                'Pilih Waktu Makan',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+            ...MealType.values.map((meal) => InkWell(
+              onTap: () {
+                Navigator.pop(ctx);
+                setState(() => _selectedMealType = meal);
+                _proceedToFoodSearch();
+              },
+              child: Container(
+                color: Colors.transparent,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                child: Row(
+                  children: [
+                    Text(meal.emoji, style: const TextStyle(fontSize: 28)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            meal.label,
+                            style: const TextStyle(
+                                fontSize: 14, fontWeight: FontWeight.w500),
+                          ),
+                          Text(
+                            meal.timeRange,
+                            style: const TextStyle(
+                                fontSize: 12, color: AppColors.textSecondary),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, color: AppColors.primary),
+                  ],
+                ),
+              ),
+            )).toList(),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _proceedToFoodSearch() {
+    if (_selectedMealType == null) return;
     final auth = context.read<AuthProvider>();
     final uid = auth.currentUser?.uid ?? auth.firebaseUser?.uid ?? '';
     showModalBottomSheet(
@@ -223,8 +288,13 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => _AddFoodSheet(
+        mealType: _selectedMealType!,
         onAdd: (food, grams) async {
-          final entry = FoodLogEntry.create(food: food, grams: grams);
+          final entry = FoodLogEntry.create(
+            food: food,
+            grams: grams,
+            mealType: _selectedMealType!,
+          );
           await FoodLogService.addEntry(uid, _selectedDate, entry);
           if (mounted) _loadEntries();
         },
@@ -266,12 +336,24 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
                         children: [
                           if (isUserModelLoading)
                             const _NutritionLoadingCard()
-                          else if (needs != null)
+                          else if (needs != null) ...[
+                            // 1. Weekly fluid chart for kidney patients
+                            if (auth.currentUser?.diseaseType == DiseaseType.chronicKidneyDisease) ...[
+                              _WeeklyFluidChart(target: needs.cairan),
+                              const SizedBox(height: 16),
+                              // 2. Daily circular gauge for kidney patients
+                              _KidneyFluidGauge(
+                                intake: intake.cairan,
+                                target: needs.cairan,
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+                            // 3. Nutrition summary with nutrient rows
                             _NutritionSummaryCard(
                                 needs: needs,
                                 intake: intake,
-                                diseaseType: auth.currentUser?.diseaseType)
-                          else
+                                diseaseType: auth.currentUser?.diseaseType),
+                          ] else
                             const _NoFormulaCard(),
                           const SizedBox(height: 16),
                           _FoodListSection(
@@ -511,6 +593,7 @@ class _NutritionSummaryCard extends StatelessWidget {
             ),
           ),
           const Divider(height: 1, color: AppColors.divider),
+          
           // ── Nutrient rows ──
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
@@ -533,6 +616,183 @@ class _NutritionSummaryCard extends StatelessWidget {
     if (ratio >= 0.8) return AppColors.warning;
     return AppColors.success;
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WEEKLY FLUID CHART (Bar diagram for past 7 days)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _WeeklyFluidChart extends StatelessWidget {
+  final double target;
+  
+  const _WeeklyFluidChart({required this.target});
+
+  List<_DayFluidData> _getWeeklyData() {
+    // Simulate last 7 days of fluid intake (in real app, fetch from Firestore)
+    // For now, return mock data with different values per day
+    final now = DateTime.now();
+    final data = <_DayFluidData>[];
+    
+    for (int i = 6; i >= 0; i--) {
+      final date = now.subtract(Duration(days: i));
+      final dayOfWeek = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'][date.weekday % 7];
+      
+      // Mock intake values (0-target * 1.3 for variety)
+      double intake = target * (0.4 + (i * 0.15).clamp(0, 1.3));
+      if (i == 0) intake = target * 0.65; // Today's partial intake
+      
+      data.add(_DayFluidData(
+        day: dayOfWeek,
+        intake: intake,
+        date: date,
+      ));
+    }
+    
+    return data;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final weeklyData = _getWeeklyData();
+    final maxValue = (weeklyData.map((d) => d.intake).reduce((a, b) => a > b ? a : b) * 1.1).clamp(target, double.infinity);
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Cairan Mingguan',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: weeklyData.map((day) {
+            final ratio = day.intake / maxValue;
+            final isToday = day.date.year == DateTime.now().year &&
+                day.date.month == DateTime.now().month &&
+                day.date.day == DateTime.now().day;
+            final color = day.intake > target
+                ? AppColors.warning
+                : day.intake >= target * 0.8
+                    ? AppColors.primary
+                    : AppColors.textHint;
+            
+            return Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: Column(
+                  children: [
+                    // Bar with rounded top
+                    Container(
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: AppColors.divider.withValues(alpha: 0.3),
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(6),
+                        ),
+                      ),
+                      alignment: Alignment.bottomCenter,
+                      child: Container(
+                        height: (ratio * 80).clamp(0, 80),
+                        decoration: BoxDecoration(
+                          color: color,
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(6),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '${day.intake.toInt()}',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: isToday ? AppColors.primary : AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      day.day,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: isToday ? AppColors.primary : AppColors.textHint,
+                        fontWeight: isToday ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                    ),
+                    if (isToday)
+                      Container(
+                        margin: const EdgeInsets.only(top: 2),
+                        width: 4,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 8),
+        // Legend
+        Row(
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Text(
+              'Target',
+              style: TextStyle(fontSize: 10, color: AppColors.textSecondary),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: AppColors.warning,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Text(
+              'Berlebih',
+              style: TextStyle(fontSize: 10, color: AppColors.textSecondary),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DAY FLUID DATA MODEL
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _DayFluidData {
+  final String day;
+  final double intake;
+  final DateTime date;
+  
+  _DayFluidData({
+    required this.day,
+    required this.intake,
+    required this.date,
+  });
 }
 
 class _NutrientData {
@@ -618,10 +878,258 @@ class _NutrientRow extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// KIDNEY FLUID INTAKE GAUGE (Circular Progress for Cairan)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _KidneyFluidGauge extends StatelessWidget {
+  final double intake;
+  final double target;
+  
+  const _KidneyFluidGauge({
+    required this.intake,
+    required this.target,
+  });
+
+  double get _ratio => target > 0 ? intake / target : 0;
+  bool get _exceeded => intake > target;
+  double get _remaining => (target - intake).clamp(0, target);
+
+  Color get _gaugeColor {
+    if (_exceeded) return AppColors.error;
+    if (_ratio >= 0.8) return AppColors.warning;
+    if (_ratio >= 0.5) return AppColors.primary;
+    return AppColors.success;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.kidneyColor.withValues(alpha: 0.15),
+            AppColors.kidneyColor.withValues(alpha: 0.08),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.kidneyColor.withValues(alpha: 0.2),
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+      child: Column(
+        children: [
+          // Title
+          Row(
+            children: [
+              Icon(Icons.opacity_outlined,
+                  color: AppColors.kidneyColor, size: 20),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Target Cairan Harian',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          
+          // Circular gauge with progress
+          Center(
+            child: SizedBox(
+              width: 200,
+              height: 200,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Background circle
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.divider.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  // Progress arc (using CustomPaint for curved progress)
+                  CustomPaint(
+                    painter: _CircleProgressPainter(
+                      progress: _ratio.clamp(0.0, 1.0),
+                      color: _gaugeColor,
+                      backgroundColor: AppColors.divider.withValues(alpha: 0.2),
+                      strokeWidth: 12,
+                    ),
+                    size: const Size(200, 200),
+                  ),
+                  // Center content
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '${intake.toStringAsFixed(0)}',
+                        style: TextStyle(
+                          fontSize: 40,
+                          fontWeight: FontWeight.bold,
+                          color: _gaugeColor,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'dari ${target.toStringAsFixed(0)} ml',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          
+          // Status bars
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.divider),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _StatItem(
+                  icon: Icons.check_circle_outline,
+                  label: 'Terserap',
+                  value: '${intake.toStringAsFixed(0)} ml',
+                  color: AppColors.success,
+                ),
+                Container(
+                  width: 1,
+                  height: 40,
+                  color: AppColors.divider,
+                ),
+                _StatItem(
+                  icon: _exceeded 
+                      ? Icons.warning_outlined 
+                      : Icons.hourglass_bottom_outlined,
+                  label: _exceeded ? 'Berlebih' : 'Sisa',
+                  value: '${_remaining.toStringAsFixed(0)} ml',
+                  color: _exceeded ? AppColors.error : AppColors.warning,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Custom painter for circular progress indicator
+class _CircleProgressPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+  final Color backgroundColor;
+  final double strokeWidth;
+
+  _CircleProgressPainter({
+    required this.progress,
+    required this.color,
+    required this.backgroundColor,
+    this.strokeWidth = 8,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width / 2) - (strokeWidth / 2);
+
+    // Background circle
+    final bgPaint = Paint()
+      ..color = backgroundColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+    canvas.drawCircle(center, radius, bgPaint);
+
+    // Progress arc
+    final progressPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    final angle = (progress * 360 * pi / 180);
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -pi / 2, // Start from top
+      angle,
+      false,
+      progressPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_CircleProgressPainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.color != color ||
+        oldDelegate.backgroundColor != backgroundColor;
+  }
+}
+
+class _StatItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  const _StatItem({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon, color: color, size: 20),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // NO FORMULA CARD
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _NoFormulaCard extends StatelessWidget {
+
   const _NoFormulaCard();
 
   @override
@@ -663,8 +1171,20 @@ class _FoodListSection extends StatelessWidget {
   const _FoodListSection(
       {required this.entries, required this.onDelete, required this.onEdit});
 
+  // Helper: Group entries by meal type
+  Map<MealType, List<FoodLogEntry>> _groupByMealType() {
+    final grouped = <MealType, List<FoodLogEntry>>{};
+    for (final meal in MealType.values) {
+      grouped[meal] = entries.where((e) => e.mealType == meal).toList();
+    }
+    return grouped;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final grouped = _groupByMealType();
+    final hasFood = entries.isNotEmpty;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -692,14 +1212,19 @@ class _FoodListSection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        if (entries.isEmpty)
+        if (!hasFood)
           const _EmptyFoodState()
         else
-          ...entries.map((e) => _FoodEntryCard(
-                entry: e,
-                onDelete: () => onDelete(e),
-                onEdit: () => onEdit(e),
-              )),
+          ...MealType.values.map((meal) {
+            final mealEntries = grouped[meal]!;
+            if (mealEntries.isEmpty) return const SizedBox.shrink();
+            return _MealSection(
+              mealType: meal,
+              entries: mealEntries,
+              onDelete: onDelete,
+              onEdit: onEdit,
+            );
+          }),
       ],
     );
   }
@@ -737,7 +1262,116 @@ class _EmptyFoodState extends StatelessWidget {
   }
 }
 
+// New widget: Section for each meal type with all entries and subtotals
+class _MealSection extends StatelessWidget {
+  final MealType mealType;
+  final List<FoodLogEntry> entries;
+  final Future<void> Function(FoodLogEntry) onDelete;
+  final Future<void> Function(FoodLogEntry) onEdit;
+
+  const _MealSection({
+    required this.mealType,
+    required this.entries,
+    required this.onDelete,
+    required this.onEdit,
+  });
+
+  // Calculate subtotals for this meal
+  Map<String, double> _calculateSubtotals() {
+    return {
+      'energi': entries.fold(0.0, (sum, e) => sum + e.energi),
+      'protein': entries.fold(0.0, (sum, e) => sum + e.protein),
+      'natrium': entries.fold(0.0, (sum, e) => sum + e.natrium),
+      'kalium': entries.fold(0.0, (sum, e) => sum + e.kalium),
+      'fosfor': entries.fold(0.0, (sum, e) => sum + e.fosfor),
+      'air': entries.fold(0.0, (sum, e) => sum + e.air),
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final subtotals = _calculateSubtotals();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Meal header with emoji and time range
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            children: [
+              Text(mealType.emoji,
+                  style: const TextStyle(fontSize: 24)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(mealType.label,
+                        style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary)),
+                    Text(mealType.timeRange,
+                        style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textSecondary)),
+                  ],
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text('${entries.length}',
+                    style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
+        ),
+        // Food entries
+        ...entries.map((e) => _FoodEntryCard(
+              entry: e,
+              onDelete: () => onDelete(e),
+              onEdit: () => onEdit(e),
+            )),
+        // Meal subtotals
+        Container(
+          margin: const EdgeInsets.fromLTRB(0, 4, 0, 12),
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.divider),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Subtotal Kalori: ${subtotals['energi']!.toStringAsFixed(0)} kkal',
+                  style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textSecondary)),
+              Text(
+                  'Na: ${subtotals['natrium']!.toStringAsFixed(0)} mg  ·  P: ${subtotals['protein']!.toStringAsFixed(1)} g',
+                  style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textHint)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _FoodEntryCard extends StatelessWidget {
+
   final FoodLogEntry entry;
   final VoidCallback onDelete;
   final VoidCallback onEdit;
@@ -843,8 +1477,12 @@ class _FoodEntryCard extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _AddFoodSheet extends StatefulWidget {
+  final MealType mealType;  // ← NEW
   final Future<void> Function(FoodItem food, double grams) onAdd;
-  const _AddFoodSheet({required this.onAdd});
+  const _AddFoodSheet({
+    required this.mealType,  // ← NEW
+    required this.onAdd,
+  });
 
   @override
   State<_AddFoodSheet> createState() => _AddFoodSheetState();

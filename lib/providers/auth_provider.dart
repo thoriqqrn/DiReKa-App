@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
 import '../models/activity_level.dart';
+import '../models/hemodialysis_data.dart';
 import '../models/user_model.dart';
 import '../models/disease_type.dart';
 
@@ -38,6 +39,8 @@ class AuthProvider extends ChangeNotifier {
       if (user != null) {
         await _loadUserModel(user.uid);
         _status = AuthStatus.authenticated;
+        // Update day streak saat user login
+        await _updateDayStreak();
       } else {
         _userModel = null;
         _status = AuthStatus.unauthenticated;
@@ -48,6 +51,61 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> _loadUserModel(String uid) async {
     _userModel = await _userService.getUser(uid);
+  }
+
+  /// Update day streak: increment jika login hari ini, reset jika kemarin tidak login
+  Future<void> _updateDayStreak() async {
+    if (_userModel == null) return;
+    
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final lastLogin = _userModel!.lastLoginDate;
+    final yesterday = today.subtract(const Duration(days: 1));
+    
+    int newStreak = _userModel!.currentStreak;
+    int newLongest = _userModel!.longestStreak;
+    List<DateTime> updatedLogins = [..._userModel!.loginDates];
+    
+    // Cek apakah sudah login hari ini
+    final hasLoginToday = lastLogin != null &&
+        lastLogin.year == today.year &&
+        lastLogin.month == today.month &&
+        lastLogin.day == today.day;
+    
+    if (!hasLoginToday) {
+      // Belum login hari ini
+      if (lastLogin != null &&
+          lastLogin.year == yesterday.year &&
+          lastLogin.month == yesterday.month &&
+          lastLogin.day == yesterday.day) {
+        // Login kemarin → increment streak
+        newStreak++;
+      } else {
+        // Tidak login kemarin atau pertama kali → reset streak ke 1
+        newStreak = 1;
+      }
+      
+      // Update longest streak jika perlu
+      if (newStreak > newLongest) {
+        newLongest = newStreak;
+      }
+      
+      // Tambah hari ini ke loginDates
+      updatedLogins.add(today);
+      
+      // Update userModel
+      final updated = _userModel!.copyWith(
+        currentStreak: newStreak,
+        longestStreak: newLongest,
+        lastLoginDate: today,
+        loginDates: updatedLogins,
+      );
+      
+      // Simpan ke Firestore
+      await _userService.updateUser(updated);
+      _userModel = updated;
+      notifyListeners();
+    }
   }
 
   Future<bool> login({required String email, required String password}) async {
@@ -83,6 +141,7 @@ class AuthProvider extends ChangeNotifier {
     String gender = 'laki-laki',
     double urinOutput = 300.0,
     ActivityLevel? activityLevel,
+    HemodialysisData? hemodialysisData,
   }) async {
     _setLoading(true);
     _clearError();
@@ -98,6 +157,7 @@ class AuthProvider extends ChangeNotifier {
         gender: gender,
         urinOutput: urinOutput,
         activityLevel: activityLevel,
+        hemodialysisData: hemodialysisData,
       );
       // Fix race condition: authStateChanges listener fires BEFORE saveUser()
       // completes inside registerWithEmail(), sehingga _userModel = null.
@@ -146,6 +206,7 @@ class AuthProvider extends ChangeNotifier {
     required double height,
     String gender = 'laki-laki',
     ActivityLevel? activityLevel,
+    HemodialysisData? hemodialysisData,
   }) async {
     _setLoading(true);
     _clearError();
@@ -161,6 +222,7 @@ class AuthProvider extends ChangeNotifier {
         weight: weight,
         height: height,
         activityLevel: activityLevel,
+        hemodialysisData: hemodialysisData,
         createdAt: DateTime.now(),
       );
       await _userService.saveUser(userModel);

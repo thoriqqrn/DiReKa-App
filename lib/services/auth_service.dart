@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../models/activity_level.dart';
 import '../models/disease_type.dart';
+import '../models/hemodialysis_data.dart';
 import '../models/user_model.dart';
 import 'user_service.dart';
 
@@ -37,6 +38,7 @@ class AuthService {
     String gender = 'laki-laki',
     double urinOutput = 300.0,
     ActivityLevel? activityLevel,
+    HemodialysisData? hemodialysisData,
   }) async {
     final credential = await _auth.createUserWithEmailAndPassword(
       email: email.trim(),
@@ -56,6 +58,7 @@ class AuthService {
       height: height,
       urinOutput: urinOutput,
       activityLevel: activityLevel,
+      hemodialysisData: hemodialysisData,
       createdAt: DateTime.now(),
     );
     await _userService.saveUser(userModel);

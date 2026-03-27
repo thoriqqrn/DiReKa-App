@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/app_colors.dart';
 import '../../core/app_constants.dart';
-import '../../models/disease_type.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/disease_provider.dart';
+import 'widgets/day_streak_card.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -12,11 +11,6 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    // Saat authenticated: ambil disease dari UserModel (Firestore) bukan SharedPreferences
-    // Saat guest: ambil dari DiseaseProvider (SharedPreferences)
-    final disease = auth.isAuthenticated
-        ? auth.currentUser?.diseaseType
-        : context.watch<DiseaseProvider>().selectedDisease;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -30,29 +24,16 @@ class HomeScreen extends StatelessWidget {
               _GreetingCard(auth: auth),
               const SizedBox(height: 20),
 
-              // Disease info
-              if (disease != null) ...[
-                _DiseaseInfoCard(disease: disease),
+              // Day Streak Card (untuk authenticated users)
+              if (auth.isAuthenticated && auth.currentUser != null) ...[
+                DayStreakCard(user: auth.currentUser!),
                 const SizedBox(height: 20),
               ],
 
               // Login prompt (jika guest)
               if (!auth.isAuthenticated) ...[
                 _GuestPromptCard(),
-                const SizedBox(height: 20),
               ],
-
-              // Menu cepat
-              const Text(
-                'Fitur Utama',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 14),
-              _QuickMenuGrid(isAuthenticated: auth.isAuthenticated),
             ],
           ),
         ),
@@ -124,87 +105,6 @@ class _GreetingCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(Icons.favorite, color: Colors.white, size: 30),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DiseaseInfoCard extends StatelessWidget {
-  final DiseaseType disease;
-  const _DiseaseInfoCard({required this.disease});
-
-  Color get _color {
-    switch (disease) {
-      case DiseaseType.chronicKidneyDisease:
-        return AppColors.kidneyColor;
-      case DiseaseType.type2DiabetesMellitus:
-        return AppColors.diabetesColor;
-      case DiseaseType.heartFailure:
-        return AppColors.heartColor;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: _color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Text(
-                disease.iconEmoji,
-                style: const TextStyle(fontSize: 26),
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Kondisi Anda',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  disease.label,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: _color,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  disease.description,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
           ),
         ],
       ),
@@ -294,150 +194,3 @@ class _GuestPromptCard extends StatelessWidget {
   }
 }
 
-class _QuickMenuGrid extends StatelessWidget {
-  final bool isAuthenticated;
-  const _QuickMenuGrid({required this.isAuthenticated});
-
-  @override
-  Widget build(BuildContext context) {
-    final menus = [
-      _MenuData(
-        icon: Icons.restaurant_menu,
-        label: 'Pelacak\nMakanan',
-        color: Colors.orange,
-        locked: !isAuthenticated,
-        onTap: () {
-          if (!isAuthenticated) {
-            Navigator.pushNamed(context, AppConstants.routeLogin);
-          }
-        },
-      ),
-      _MenuData(
-        icon: Icons.monitor_heart,
-        label: 'Pelacak\nKesehatan',
-        color: Colors.red,
-        locked: !isAuthenticated,
-        onTap: () {
-          if (!isAuthenticated) {
-            Navigator.pushNamed(context, AppConstants.routeLogin);
-          }
-        },
-      ),
-      _MenuData(
-        icon: Icons.menu_book,
-        label: 'Edukasi\nKesehatan',
-        color: Colors.teal,
-        locked: false,
-        onTap: () {},
-      ),
-      _MenuData(
-        icon: Icons.person_outline,
-        label: 'Profil\nSaya',
-        color: AppColors.primary,
-        locked: !isAuthenticated,
-        onTap: () {
-          if (isAuthenticated) {
-            Navigator.pushNamed(context, AppConstants.routeSettings);
-          } else {
-            Navigator.pushNamed(context, AppConstants.routeLogin);
-          }
-        },
-      ),
-    ];
-
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
-      childAspectRatio: 1.3,
-      children: menus.map((m) => _MenuCard(data: m)).toList(),
-    );
-  }
-}
-
-class _MenuData {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final bool locked;
-  final VoidCallback onTap;
-
-  _MenuData({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.locked,
-    required this.onTap,
-  });
-}
-
-class _MenuCard extends StatelessWidget {
-  final _MenuData data;
-  const _MenuCard({required this.data});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: data.onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border),
-        ),
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Stack(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: data.color.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(data.icon, color: data.color, size: 24),
-                ),
-                if (data.locked)
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 18,
-                      height: 18,
-                      decoration: BoxDecoration(
-                        color: AppColors.textSecondary,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Icon(
-                        Icons.lock,
-                        color: Colors.white,
-                        size: 11,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              data.label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: data.locked
-                    ? AppColors.textSecondary
-                    : AppColors.textPrimary,
-                height: 1.3,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

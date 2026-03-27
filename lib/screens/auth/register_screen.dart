@@ -5,6 +5,7 @@ import '../../core/app_colors.dart';
 import '../../core/app_constants.dart';
 import '../../models/activity_level.dart';
 import '../../models/disease_type.dart';
+import '../../models/hemodialysis_data.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/disease_provider.dart';
 import '../../widgets/custom_button.dart';
@@ -32,6 +33,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   DiseaseType? _diseaseType;
   String _gender = 'laki-laki';
   ActivityLevel? _activityLevel;
+  
+  // Hemodialisis — untuk pasien penyakit ginjal
+  DateTime? _hdStartDate;
+  DateTime? _hdEndDate;
+  final List<String> _hdDayOptions = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+  final Set<String> _hdSelectedDays = {};
+  final _hdLocationCtrl = TextEditingController();
 
   double? get _bmi {
     final w = double.tryParse(_weightCtrl.text);
@@ -70,6 +78,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _weightCtrl.dispose();
     _heightCtrl.dispose();
     _urinOutputCtrl.dispose();
+    _hdLocationCtrl.dispose();
     super.dispose();
   }
 
@@ -225,6 +234,160 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     _UrinOutputField(controller: _urinOutputCtrl),
                   ],
 
+                  // Hemodialisis section — hanya untuk pasien ginjal
+                  if (_diseaseType == DiseaseType.chronicKidneyDisease) ...[
+                    const SizedBox(height: 20),
+                    _SectionLabel(label: 'Data Hemodialisis'),
+                    const SizedBox(height: 10),
+                    // Tanggal Mulai
+                    InkWell(
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime.now(),
+                          cancelText: 'Batal',
+                          confirmText: 'Pilih',
+                        );
+                        if (picked != null) {
+                          setState(() => _hdStartDate = picked);
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          border: Border.all(color: AppColors.border),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Tanggal Mulai',
+                                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _hdStartDate != null
+                                      ? DateFormat('dd MMM yyyy', 'id_ID').format(_hdStartDate!)
+                                      : 'Pilih tanggal',
+                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                                ),
+                              ],
+                            ),
+                            const Icon(Icons.calendar_today_outlined, color: AppColors.primary),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    // Tanggal Berakhir
+                    InkWell(
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: _hdStartDate ?? DateTime.now(),
+                          firstDate: _hdStartDate ?? DateTime.now(),
+                          lastDate: DateTime.now().add(const Duration(days: 36500)),
+                          cancelText: 'Batal',
+                          confirmText: 'Pilih',
+                        );
+                        if (picked != null) {
+                          setState(() => _hdEndDate = picked);
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          border: Border.all(color: AppColors.border),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Tanggal Berakhir',
+                                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _hdEndDate != null
+                                      ? DateFormat('dd MMM yyyy', 'id_ID').format(_hdEndDate!)
+                                      : 'Pilih tanggal',
+                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                                ),
+                              ],
+                            ),
+                            const Icon(Icons.calendar_today_outlined, color: AppColors.primary),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    // Jadwal dialisis (checkbox grid)
+                    const Text('Jadwal Dialisis (pilih max 3 hari)',
+                        style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                    const SizedBox(height: 8),
+                    GridView.count(
+                      crossAxisCount: 4,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      childAspectRatio: 1,
+                      children: _hdDayOptions.map((day) {
+                        final isSelected = _hdSelectedDays.contains(day);
+                        return InkWell(
+                          onTap: () {
+                            setState(() {
+                              if (isSelected) {
+                                _hdSelectedDays.remove(day);
+                              } else if (_hdSelectedDays.length < 3) {
+                                _hdSelectedDays.add(day);
+                              }
+                            });
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: isSelected ? AppColors.primary : AppColors.surface,
+                              border: Border.all(
+                                color: isSelected ? AppColors.primary : AppColors.border,
+                                width: 2,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Center(
+                              child: Text(
+                                day.substring(0, 3),
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: isSelected ? Colors.white : AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 14),
+                    // Lokasi
+                    CustomTextField(
+                      label: 'Lokasi Dialisis (Rumah Sakit/Klinik)',
+                      controller: _hdLocationCtrl,
+                      prefixIcon: const Icon(Icons.location_on_outlined),
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Lokasi wajib diisi';
+                        return null;
+                      },
+                    ),
+                  ],
+
                   // Field aktivitas — hanya untuk pasien DM
                   if (_diseaseType == DiseaseType.type2DiabetesMellitus) ...[
                     const SizedBox(height: 20),
@@ -330,10 +493,53 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
+    // Validasi hemodialisis jika penyakit ginjal
+    if (_diseaseType == DiseaseType.chronicKidneyDisease) {
+      if (_hdStartDate == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tanggal mulai dialisis wajib diisi')),
+        );
+        return;
+      }
+      if (_hdEndDate == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tanggal berakhir dialisis wajib diisi')),
+        );
+        return;
+      }
+      if (_hdSelectedDays.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pilih jadwal dialisis')),
+        );
+        return;
+      }
+      if (_hdLocationCtrl.text.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Lokasi dialisis wajib diisi')),
+        );
+        return;
+      }
+    }
+
     final authProv = context.read<AuthProvider>();
     final diseaseProv = context.read<DiseaseProvider>();
     authProv.clearError();
     await diseaseProv.setDisease(_diseaseType!);
+
+    // Buat HemodialysisData jika ginjal
+    HemodialysisData? hemodialysisData;
+    if (_diseaseType == DiseaseType.chronicKidneyDisease) {
+      hemodialysisData = HemodialysisData(
+        startDate: _hdStartDate!,
+        endDate: _hdEndDate!,
+        scheduleDays: _hdSelectedDays.toList(),
+        location: _hdLocationCtrl.text.trim(),
+      );
+    }
 
     final success = await authProv.register(
       email: _emailCtrl.text,
@@ -348,6 +554,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       activityLevel: _diseaseType == DiseaseType.type2DiabetesMellitus
           ? (_activityLevel ?? ActivityLevel.ringan)
           : null,
+      hemodialysisData: hemodialysisData,
     );
 
     if (success && mounted) {

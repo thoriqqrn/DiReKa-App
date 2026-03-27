@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'activity_level.dart';
 import 'disease_type.dart';
+import 'hemodialysis_data.dart';
 import 'nutrition_needs.dart';
 
 class UserModel {
@@ -14,7 +15,12 @@ class UserModel {
   final double height;     // cm
   final double urinOutput; // ml/hari — output urin 24 jam (untuk pasien ginjal)
   final ActivityLevel? activityLevel; // hanya untuk DM
+  final HemodialysisData? hemodialysisData; // hanya untuk penyakit ginjal
   final DateTime createdAt;
+  final int currentStreak;
+  final int longestStreak;
+  final DateTime? lastLoginDate;
+  final List<DateTime> loginDates;
 
   UserModel({
     required this.uid,
@@ -27,7 +33,12 @@ class UserModel {
     required this.height,
     this.urinOutput = 300.0,
     this.activityLevel,
+    this.hemodialysisData,
     required this.createdAt,
+    this.currentStreak = 0,
+    this.longestStreak = 0,
+    this.lastLoginDate,
+    this.loginDates = const [],
   });
 
   // ── Kalkulasi Otomatis ────────────────────────────────────────────────────
@@ -101,6 +112,7 @@ class UserModel {
       'height': height,
       'urinOutput': urinOutput,
       'activityLevel': activityLevel?.value,
+      'hemodialysisData': hemodialysisData?.toMap(),
       'bmi': double.parse(bmi.toStringAsFixed(2)),
       'bbi': double.parse(bbi.toStringAsFixed(2)),
       'createdAt': Timestamp.fromDate(createdAt),
@@ -121,7 +133,18 @@ class UserModel {
       activityLevel: map['activityLevel'] != null
           ? ActivityLevelExtension.fromValue(map['activityLevel'] as String)
           : null,
+      hemodialysisData: map['hemodialysisData'] != null
+          ? HemodialysisData.fromMap(map['hemodialysisData'] as Map<String, dynamic>)
+          : null,
       createdAt: (map['createdAt'] as Timestamp).toDate(),
+      currentStreak: (map['currentStreak'] as num?)?.toInt() ?? 0,
+      longestStreak: (map['longestStreak'] as num?)?.toInt() ?? 0,
+      lastLoginDate: map['lastLoginDate'] != null
+          ? (map['lastLoginDate'] as Timestamp).toDate()
+          : null,
+      loginDates: (map['loginDates'] as List<dynamic>?)
+          ?.map((t) => (t as Timestamp).toDate())
+          .toList() ?? [],
     );
   }
 
@@ -137,7 +160,13 @@ class UserModel {
     double? urinOutput,
     ActivityLevel? activityLevel,
     bool clearActivityLevel = false,
+    HemodialysisData? hemodialysisData,
+    bool clearHemodialysisData = false,
     DateTime? createdAt,
+    int? currentStreak,
+    int? longestStreak,
+    DateTime? lastLoginDate,
+    List<DateTime>? loginDates,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -151,7 +180,14 @@ class UserModel {
       urinOutput: urinOutput ?? this.urinOutput,
       activityLevel:
           clearActivityLevel ? null : (activityLevel ?? this.activityLevel),
+      hemodialysisData: clearHemodialysisData
+          ? null
+          : (hemodialysisData ?? this.hemodialysisData),
       createdAt: createdAt ?? this.createdAt,
+      currentStreak: currentStreak ?? this.currentStreak,
+      longestStreak: longestStreak ?? this.longestStreak,
+      lastLoginDate: lastLoginDate ?? this.lastLoginDate,
+      loginDates: loginDates ?? this.loginDates,
     );
   }
 }
