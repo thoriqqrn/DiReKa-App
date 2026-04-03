@@ -662,16 +662,14 @@ class _BmiInfo extends StatelessWidget {
   const _BmiInfo({required this.bmi});
 
   String get _category {
-    if (bmi < 18.5) return 'Berat Badan Kurang';
-    if (bmi < 23.0) return 'Normal';
-    if (bmi < 30.0) return 'Berat Badan Berlebih';
-    return 'Obesitas';
+    if (bmi < 18.5) return 'Kurus';
+    if (bmi < 25.0) return 'Normal';
+    return 'Gemuk';
   }
 
   Color get _color {
     if (bmi < 18.5) return Colors.blue;
-    if (bmi < 23.0) return AppColors.success;
-    if (bmi < 30.0) return AppColors.warning;
+    if (bmi < 25.0) return AppColors.success;
     return AppColors.error;
   }
 

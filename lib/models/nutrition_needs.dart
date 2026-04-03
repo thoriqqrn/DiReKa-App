@@ -84,13 +84,14 @@ class NutritionNeeds {
     // Koreksi aktivitas
     final koreksiAktivitas = koreksiFraksiAktivitas * basal;
 
-    // Koreksi berat badan
+    // Koreksi berat badan (DM: 3 kategori)
     double koreksiBB = 0;
-    if (bmiCategory == 'Berat Badan Berlebih' || bmiCategory == 'Obesitas') {
-      koreksiBB = -0.20 * basal;
-    } else if (bmiCategory == 'Berat Badan Kurang') {
-      koreksiBB = 0.20 * basal;
+    if (bmiCategory == 'Gemuk') {
+      koreksiBB = -0.20 * basal;  // -20% untuk gemuk
+    } else if (bmiCategory == 'Kurus') {
+      koreksiBB = 0.20 * basal;   // +20% untuk kurus
     }
+    // Normal: koreksiBB = 0 (no change)
 
     final energiTotal = basal + koreksiUmur + koreksiAktivitas + koreksiBB;
 

@@ -81,6 +81,15 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
     );
   }
 
+  /// Group entries by meal type for DM table display
+  Map<MealType, List<FoodLogEntry>> _groupEntriesByMeal(List<FoodLogEntry> entries) {
+    final grouped = <MealType, List<FoodLogEntry>>{};
+    for (final entry in entries) {
+      grouped.putIfAbsent(entry.mealType, () => []).add(entry);
+    }
+    return grouped;
+  }
+
   Future<void> _loadEntries() async {
     if (_uid.isEmpty) {
       setState(() => _isLoading = false);
@@ -348,11 +357,18 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
                               ),
                               const SizedBox(height: 16),
                             ],
-                            // 3. Nutrition summary with nutrient rows
-                            _NutritionSummaryCard(
+                            // 3. DM Patients: Show hierarchical meal table
+                            if (auth.currentUser?.diseaseType == DiseaseType.type2DiabetesMellitus)
+                              _DMDailyMealTable(
+                                entriesByMeal: _groupEntriesByMeal(_entries),
                                 needs: needs,
-                                intake: intake,
-                                diseaseType: auth.currentUser?.diseaseType),
+                              )
+                            // 3. Other patients: Show nutrition summary
+                            else
+                              _NutritionSummaryCard(
+                                  needs: needs,
+                                  intake: intake,
+                                  diseaseType: auth.currentUser?.diseaseType),
                           ] else
                             const _NoFormulaCard(),
                           const SizedBox(height: 16),
@@ -2256,4 +2272,651 @@ class _PiePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_PiePainter old) => old.eatFraction != eatFraction;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DM DAILY MEAL TABLE - Hierarchical table with per-meal breakdown
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _DMDailyMealTable extends StatelessWidget {
+  final Map<MealType, List<FoodLogEntry>> entriesByMeal;
+  final NutritionNeeds needs;
+
+  const _DMDailyMealTable({
+    required this.entriesByMeal,
+    required this.needs,
+  });
+
+  // DM meal distribution (20% + 15% + 30% + 10% + 25% = 100%)
+  static const List<MealType> _dmMealOrder = [
+    MealType.sarapan,
+    MealType.selinganPagi,
+    MealType.makanSiang,
+    MealType.selinganSiang,
+    MealType.makanMalam,
+  ];
+
+  Map<String, double> _calculateMealTotals(List<FoodLogEntry> entries) {
+    return {
+      'energi': entries.fold(0.0, (sum, e) => sum + e.energi),
+      'protein': entries.fold(0.0, (sum, e) => sum + e.protein),
+      'lemak': entries.fold(0.0, (sum, e) => sum + e.lemak),
+      'serat': entries.fold(0.0, (sum, e) => sum + e.serat),
+    };
+  }
+
+  Map<String, double> _calculateDailyTotals() {
+    double totalEnergi = 0, totalProtein = 0, totalLemak = 0, totalSerat = 0;
+    for (final meal in entriesByMeal.values) {
+      final totals = _calculateMealTotals(meal);
+      totalEnergi += totals['energi']!;
+      totalProtein += totals['protein']!;
+      totalLemak += totals['lemak']!;
+      totalSerat += totals['serat']!;
+    }
+    return {
+      'energi': totalEnergi,
+      'protein': totalProtein,
+      'lemak': totalLemak,
+      'serat': totalSerat,
+    };
+  }
+
+  Color _getStatusColor(double percentage) {
+    if (percentage >= 0.9 && percentage <= 1.1) {
+      return const Color(0xFF4CAF50); // Green - ideal
+    } else if (percentage >= 0.8 && percentage <= 1.2) {
+      return const Color(0xFFFFC107); // Amber - acceptable
+    } else {
+      return const Color(0xFFF44336); // Red - warning
+    }
+  }
+
+  String _formatPercentage(double percentage) {
+    return '${(percentage * 100).toStringAsFixed(0)}%';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Daily Summary Section (at top) ──
+        _DailyInterpretationTable(
+          entriesByMeal: entriesByMeal,
+          totalNeeds: needs,
+          calculateDailyTotals: _calculateDailyTotals,
+          getStatusColor: _getStatusColor,
+          formatPercentage: _formatPercentage,
+        ),
+
+        const SizedBox(height: 20),
+
+        // ── Per-Meal Sections ──
+        for (final mealType in _dmMealOrder)
+          _MealTableSection(
+            mealType: mealType,
+            entries: entriesByMeal[mealType] ?? [],
+            totalNeeds: needs,
+            getStatusColor: _getStatusColor,
+            formatPercentage: _formatPercentage,
+            calculateMealTotals: _calculateMealTotals,
+          ),
+      ],
+    );
+  }
+}
+
+class _MealTableSection extends StatelessWidget {
+  final MealType mealType;
+  final List<FoodLogEntry> entries;
+  final NutritionNeeds totalNeeds;
+  final Color Function(double) getStatusColor;
+  final String Function(double) formatPercentage;
+  final Map<String, double> Function(List<FoodLogEntry>) calculateMealTotals;
+
+  const _MealTableSection({
+    required this.mealType,
+    required this.entries,
+    required this.totalNeeds,
+    required this.getStatusColor,
+    required this.formatPercentage,
+    required this.calculateMealTotals,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final percentage = mealType.dmCaloriePercentage;
+    if (percentage == 0.0) return const SizedBox.shrink(); // Skip selingan malam
+
+    final targetEnergi = totalNeeds.energi * percentage;
+    final targetProtein = totalNeeds.protein * percentage;
+    final targetLemak = totalNeeds.lemak * percentage;
+    final targetSerat = totalNeeds.serat * percentage;
+
+    final totals = calculateMealTotals(entries);
+    final actualEnergi = totals['energi']!;
+    final actualProtein = totals['protein']!;
+    final actualLemak = totals['lemak']!;
+    final actualSerat = totals['serat']!;
+
+    final energiRatio = targetEnergi > 0 ? actualEnergi / targetEnergi : 0.0;
+    final statusColor = getStatusColor(energiRatio);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300, width: 1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Meal header
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: statusColor.withValues(alpha: 0.1),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+            ),
+            child: Row(
+              children: [
+                Text(
+                  mealType.emoji,
+                  style: const TextStyle(fontSize: 20),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        mealType.label,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      Text(
+                        '${(percentage * 100).toStringAsFixed(0)}% dari kebutuhan',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: statusColor,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    formatPercentage(energiRatio),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Food items table header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+            child: Table(
+              columnWidths: const {
+                0: FlexColumnWidth(2),
+                1: FlexColumnWidth(1),
+                2: FlexColumnWidth(1),
+                3: FlexColumnWidth(1),
+                4: FlexColumnWidth(1),
+                5: FlexColumnWidth(1),
+                6: FlexColumnWidth(1),
+              },
+              children: [
+                TableRow(
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  children: [
+                    _tableHeaderCell('Menu'),
+                    _tableHeaderCell('Energi'),
+                    _tableHeaderCell('Protein'),
+                    _tableHeaderCell('Lemak'),
+                    _tableHeaderCell('Karbo'),
+                    _tableHeaderCell('Serat'),
+                    _tableHeaderCell('Berat(g)'),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // Food items rows
+          if (entries.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Text(
+                'Belum ada makanan',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade500,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Table(
+                columnWidths: const {
+                  0: FlexColumnWidth(2),
+                  1: FlexColumnWidth(1),
+                  2: FlexColumnWidth(1),
+                  3: FlexColumnWidth(1),
+                  4: FlexColumnWidth(1),
+                  5: FlexColumnWidth(1),
+                  6: FlexColumnWidth(1),
+                },
+                children: [
+                  for (final entry in entries)
+                    TableRow(
+                      children: [
+                        _tableDataCell(entry.foodName, isBold: false),
+                        _tableDataCell(entry.energi.toStringAsFixed(0)),
+                        _tableDataCell(entry.protein.toStringAsFixed(1)),
+                        _tableDataCell(entry.lemak.toStringAsFixed(1)),
+                        _tableDataCell(entry.karbohidrat.toStringAsFixed(1)),
+                        _tableDataCell(entry.serat.toStringAsFixed(1)),
+                        _tableDataCell(entry.grams.toStringAsFixed(0)),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+
+          const Divider(height: 1),
+
+          // Total asupan row
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Table(
+              columnWidths: const {
+                0: FlexColumnWidth(2),
+                1: FlexColumnWidth(1),
+                2: FlexColumnWidth(1),
+                3: FlexColumnWidth(1),
+                4: FlexColumnWidth(1),
+                5: FlexColumnWidth(1),
+                6: FlexColumnWidth(1),
+              },
+              children: [
+                TableRow(
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                  ),
+                  children: [
+                    _tableDataCell('Total Asupan', isBold: true),
+                    _tableDataCell(actualEnergi.toStringAsFixed(0), isBold: true),
+                    _tableDataCell(actualProtein.toStringAsFixed(1), isBold: true),
+                    _tableDataCell(actualLemak.toStringAsFixed(1), isBold: true),
+                    _tableDataCell((totals['karbohidrat'] ?? 0).toStringAsFixed(1), isBold: true),
+                    _tableDataCell(actualSerat.toStringAsFixed(1), isBold: true),
+                    _tableDataCell('', isBold: true),
+                  ],
+                ),
+                TableRow(
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.05),
+                  ),
+                  children: [
+                    _tableDataCell(
+                      'Total ${(percentage * 100).toStringAsFixed(0)}% Kebutuhan',
+                      isBold: true,
+                      color: statusColor,
+                    ),
+                    _tableDataCell(targetEnergi.toStringAsFixed(0), isBold: true, color: statusColor),
+                    _tableDataCell(targetProtein.toStringAsFixed(1), isBold: true, color: statusColor),
+                    _tableDataCell(targetLemak.toStringAsFixed(1), isBold: true, color: statusColor),
+                    _tableDataCell((targetEnergi * (totalNeeds.karbohidrat / totalNeeds.energi)).toStringAsFixed(1), isBold: true, color: statusColor),
+                    _tableDataCell(targetSerat.toStringAsFixed(1), isBold: true, color: statusColor),
+                    _tableDataCell('', isBold: true),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _tableHeaderCell(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 11,
+          color: Colors.grey,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+
+  Widget _tableDataCell(
+    String text, {
+    bool isBold = true,
+    Color? color,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontWeight: isBold ? FontWeight.w600 : FontWeight.normal,
+          fontSize: 11,
+          color: color ?? Colors.black87,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+}
+
+class _DailyInterpretationTable extends StatelessWidget {
+  final Map<MealType, List<FoodLogEntry>> entriesByMeal;
+  final NutritionNeeds totalNeeds;
+  final Map<String, double> Function() calculateDailyTotals;
+  final Color Function(double) getStatusColor;
+  final String Function(double) formatPercentage;
+
+  const _DailyInterpretationTable({
+    required this.entriesByMeal,
+    required this.totalNeeds,
+    required this.calculateDailyTotals,
+    required this.getStatusColor,
+    required this.formatPercentage,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const mealOrder = [
+      MealType.sarapan,
+      MealType.selinganPagi,
+      MealType.makanSiang,
+      MealType.selinganSiang,
+      MealType.makanMalam,
+    ];
+
+    final dailyTotals = calculateDailyTotals();
+    final dailyEnergiRatio = totalNeeds.energi > 0
+        ? dailyTotals['energi']! / totalNeeds.energi
+        : 0.0;
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300, width: 1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+            ),
+            child: const Text(
+              'Interpretasi Hasil (%)',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ),
+
+          // Daily summary table
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Table(
+              columnWidths: const {
+                0: FlexColumnWidth(2),
+                1: FlexColumnWidth(1),
+                2: FlexColumnWidth(1),
+                3: FlexColumnWidth(1),
+                4: FlexColumnWidth(1),
+                5: FlexColumnWidth(1),
+              },
+              children: [
+                // Header row
+                TableRow(
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  children: [
+                    _interpHeaderCell('Energi'),
+                    _interpHeaderCell('Protein'),
+                    _interpHeaderCell('Lemak'),
+                    _interpHeaderCell('Karbo'),
+                    _interpHeaderCell('Serat'),
+                    _interpHeaderCell('%'),
+                  ],
+                ),
+
+                // Daily total row
+                _buildDailySummaryRow(dailyEnergiRatio),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Meals interpretation header
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Text(
+              'Ringkasan Per Waktu Makan',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ),
+
+          // Meals interpretation rows
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Table(
+              columnWidths: const {
+                0: FlexColumnWidth(2),
+                1: FlexColumnWidth(1),
+                2: FlexColumnWidth(1),
+                3: FlexColumnWidth(1),
+              },
+              children: [
+                // Header row
+                TableRow(
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  children: [
+                    _interpHeaderCell('Waktu Makan'),
+                    _interpHeaderCell('Target'),
+                    _interpHeaderCell('Aktual'),
+                    _interpHeaderCell('%'),
+                  ],
+                ),
+
+                // Meal rows
+                for (final meal in mealOrder)
+                  if (meal.dmCaloriePercentage > 0)
+                    _buildMealInterpretationRow(
+                      meal,
+                      entriesByMeal[meal] ?? [],
+                    ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  TableRow _buildMealInterpretationRow(
+    MealType meal,
+    List<FoodLogEntry> entries,
+  ) {
+    final percentage = meal.dmCaloriePercentage;
+    final targetEnergi = totalNeeds.energi * percentage;
+    final actualEnergi = entries.fold(0.0, (sum, e) => sum + e.energi);
+    final ratio = targetEnergi > 0 ? actualEnergi / targetEnergi : 0.0;
+    final statusColor = getStatusColor(ratio);
+
+    return TableRow(
+      decoration: BoxDecoration(
+        color: statusColor.withValues(alpha: 0.05),
+      ),
+      children: [
+        _interpDataCell('${meal.emoji} ${meal.label}'),
+        _interpDataCell(targetEnergi.toStringAsFixed(0)),
+        _interpDataCell(actualEnergi.toStringAsFixed(0)),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          child: Container(
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: statusColor,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(
+              formatPercentage(ratio),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  TableRow _buildDailySummaryRow(double dailyRatio) {
+    final statusColor = getStatusColor(dailyRatio);
+    final dailyTotals = calculateDailyTotals();
+
+    return TableRow(
+      decoration: BoxDecoration(
+        color: statusColor.withValues(alpha: 0.1),
+      ),
+      children: [
+        _interpDataCell(
+          dailyTotals['energi']!.toStringAsFixed(0),
+          isBold: true,
+          color: statusColor,
+        ),
+        _interpDataCell(
+          dailyTotals['protein']!.toStringAsFixed(1),
+          isBold: true,
+          color: statusColor,
+        ),
+        _interpDataCell(
+          dailyTotals['lemak']!.toStringAsFixed(1),
+          isBold: true,
+          color: statusColor,
+        ),
+        _interpDataCell(
+          (dailyTotals['energi']! * (totalNeeds.karbohidrat / totalNeeds.energi)).toStringAsFixed(1),
+          isBold: true,
+          color: statusColor,
+        ),
+        _interpDataCell(
+          dailyTotals['serat']!.toStringAsFixed(1),
+          isBold: true,
+          color: statusColor,
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          child: Container(
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: statusColor,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(
+              formatPercentage(dailyRatio),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _interpHeaderCell(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 11,
+          color: Colors.grey,
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+
+  Widget _interpDataCell(
+    String text, {
+    bool isBold = false,
+    Color? color,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
+          fontSize: 11,
+          color: color ?? Colors.black87,
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
 }

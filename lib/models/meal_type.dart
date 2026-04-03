@@ -95,4 +95,23 @@ extension MealTypeExtension on MealType {
         return '21:00 - 22:00';
     }
   }
+
+  /// Get DM calorie distribution percentage (untuk Diabetes Mellitus)
+  /// Total: 100% dengan breakdown per meal type
+  double get dmCaloriePercentage {
+    switch (this) {
+      case MealType.sarapan:
+        return 0.20; // 20%
+      case MealType.selinganPagi:
+        return 0.15; // 15%
+      case MealType.makanSiang:
+        return 0.30; // 30%
+      case MealType.selinganSiang:
+        return 0.10; // 10%
+      case MealType.makanMalam:
+        return 0.25; // 25%
+      case MealType.selinganMalam:
+        return 0.0; // Not included for DM
+    }
+  }
 }

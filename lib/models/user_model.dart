@@ -49,14 +49,15 @@ class UserModel {
     return weight / (heightM * heightM);
   }
 
-  /// Kategori IMT berdasarkan standar Asia (berbeda dari WHO):
-  /// < 18.5 → Kurang | 18.5–22.9 → Normal | 23–29.9 → Berlebih | ≥30 → Obesitas
+  /// Kategori IMT untuk DM (3 kategori):
+  /// < 18.5 → Kurus (+20% energi)
+  /// 18.5–25 → Normal (0%)
+  /// ≥ 25 → Gemuk (-20% energi)
   String get bmiCategory {
     final b = bmi;
-    if (b < 18.5) return 'Berat Badan Kurang';
-    if (b < 23.0) return 'Normal';
-    if (b < 30.0) return 'Berat Badan Berlebih';
-    return 'Obesitas';
+    if (b < 18.5) return 'Kurus';
+    if (b < 25.0) return 'Normal';
+    return 'Gemuk';
   }
 
   /// BBI (Berat Badan Ideal) — Rumus Broca modifikasi:

@@ -396,14 +396,12 @@ class _BmiInfo extends StatelessWidget {
   String get _category {
     if (bmi < 18.5) return 'Kurus';
     if (bmi < 25.0) return 'Normal';
-    if (bmi < 30.0) return 'Gemuk';
-    return 'Obesitas';
+    return 'Gemuk';
   }
 
   Color get _color {
     if (bmi < 18.5) return Colors.blue;
     if (bmi < 25.0) return AppColors.success;
-    if (bmi < 30.0) return AppColors.warning;
     return AppColors.error;
   }
 
