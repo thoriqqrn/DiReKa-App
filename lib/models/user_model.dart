@@ -84,7 +84,18 @@ class UserModel {
         bmiCategory: bmiCategory,
       );
     }
-    return null; // Formula penyakit lain akan ditambahkan
+    if (diseaseType == DiseaseType.heartFailure) {
+      return NutritionNeeds.heartFailure(
+        weight: weight,
+        height: height,
+        gender: gender,
+        age: age['years']!,
+        koreksiFraksiAktivitas:
+            (activityLevel ?? ActivityLevel.ringan).koreksiFraction,
+        hasEdema: hasEdema,
+      );
+    }
+    return null;
   }
 
   Map<String, int> get age {

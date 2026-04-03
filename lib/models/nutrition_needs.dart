@@ -107,6 +107,59 @@ class NutritionNeeds {
       cairan: 0,
     );
   }
+
+  /// Rumus kebutuhan gizi untuk pasien Gagal Jantung (Heart Failure).
+  ///
+  /// Harris Benedict BMR:
+  /// Laki-laki: BMR = 66 + (13.7 × BB) + (5 × TB) - (6.8 × U)
+  /// Perempuan: BMR = 655 + (9.6 × BB) + (1.8 × TB) - (4.7 × U)
+  ///   dengan TB dalam cm, U dalam tahun
+  ///
+  /// Energi total = BMR × Faktor Aktivitas × 1.1
+  ///
+  /// Protein      = 20% × Energi ÷ 4     (g/hari)
+  /// Lemak        = 30% × Energi ÷ 9     (g/hari)
+  /// Karbohidrat  = 50% × Energi ÷ 4     (g/hari)
+  /// Natrium      = < 2400 mg/hari
+  /// Cairan:
+  ///   - Jika ada edema: 0.5 ml × Energi
+  ///   - Jika tidak ada: 1500 ml (range 1500-2000 ml)
+  factory NutritionNeeds.heartFailure({
+    required double weight,        // kg (berat badan aktual)
+    required double height,        // cm
+    required String gender,        // 'laki-laki' | 'perempuan'
+    required int age,              // usia dalam tahun
+    required double koreksiFraksiAktivitas, // dari ActivityLevel.koreksiFraction
+    required bool hasEdema,        // riwayat pembengkakan
+  }) {
+    // Harris Benedict BMR (menggunakan berat badan aktual, bukan ideal)
+    final bmr = gender == 'perempuan'
+        ? 655 + (9.6 * weight) + (1.8 * height) - (4.7 * age)
+        : 66 + (13.7 * weight) + (5 * height) - (6.8 * age);
+
+    // Energi total = BMR × Faktor Aktivitas × 1.1
+    final energiTotal = bmr * koreksiFraksiAktivitas * 1.1;
+
+    // Macronutrient dari persentase energi
+    final protein = (0.20 * energiTotal) / 4;  // 20% energi ÷ 4 kkal/g
+    final lemak = (0.30 * energiTotal) / 9;    // 30% energi ÷ 9 kkal/g
+    final karbohidrat = (0.50 * energiTotal) / 4; // 50% energi ÷ 4 kkal/g
+
+    // Cairan berdasarkan edema
+    final cairan = hasEdema ? 0.5 * energiTotal : 1500.0;
+
+    return NutritionNeeds(
+      energi: energiTotal,
+      protein: protein,
+      lemak: lemak,
+      karbohidrat: karbohidrat,
+      natrium: 2400, // limit untuk HF
+      kalium: 0,     // tidak dipantau untuk HF
+      fosfor: 0,     // tidak dipantau untuk HF
+      cairan: cairan,
+      serat: 0,      // tidak dipantau untuk HF
+    );
+  }
 }
 
 /// Total asupan nutrisi aktual dari makanan yang dikonsumsi hari ini.
