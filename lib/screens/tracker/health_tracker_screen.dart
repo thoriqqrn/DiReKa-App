@@ -1,69 +1,182 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/app_colors.dart';
+import '../../models/disease_type.dart';
+import '../../providers/auth_provider.dart';
+import '../../services/nutrition_history_service.dart';
+import '../../widgets/nutrition_line_chart.dart';
 
-class HealthTrackerScreen extends StatelessWidget {
+class HealthTrackerScreen extends StatefulWidget {
   const HealthTrackerScreen({super.key});
+
+  @override
+  State<HealthTrackerScreen> createState() => _HealthTrackerScreenState();
+}
+
+class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
+  late Future<List<DailyNutrition>> _weeklyDataFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadWeeklyData();
+  }
+
+  void _loadWeeklyData() {
+    final auth = context.read<AuthProvider>();
+    final user = auth.currentUser;
+    final uid = user?.uid ?? '';
+    final needs = user?.nutritionNeeds;
+
+    if (uid.isNotEmpty && needs != null) {
+      _weeklyDataFuture = NutritionHistoryService.getWeeklyNutrition(
+        uid: uid,
+        endDate: DateTime.now(),
+        targets: needs,
+      );
+    } else {
+      _weeklyDataFuture = Future.value([]);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(36),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: Colors.red.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(28),
+      appBar: AppBar(
+        title: const Text('Pelacak Kesehatan'),
+        elevation: 0,
+        backgroundColor: AppColors.primary,
+      ),
+      body: Consumer<AuthProvider>(
+        builder: (context, auth, _) {
+          final user = auth.currentUser;
+
+          // Cek jika belum login atau belum ada nutrition needs
+          if (user == null || user.nutritionNeeds == null) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32),
+                child: Text(
+                  'Data kesehatan Anda belum lengkap. Silakan update profil terlebih dahulu.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.textSecondary),
                 ),
-                child: const Icon(Icons.monitor_heart,
-                    color: Colors.red, size: 52),
               ),
-              const SizedBox(height: 24),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.red.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(20),
+            );
+          }
+
+          // Hanya tampilkan untuk HF patients
+          if (user.diseaseType != DiseaseType.heartFailure) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32),
+                child: Text(
+                  'Grafik kesehatan hanya tersedia untuk pasien Gagal Jantung.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.textSecondary),
                 ),
-                child: const Text(
-                  'Segera Hadir',
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+              ),
+            );
+          }
+
+          return FutureBuilder<List<DailyNutrition>>(
+            future: _weeklyDataFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Text(
+                      'Belum ada data nutrisi. Mulai catat makanan Anda!',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: AppColors.textSecondary),
+                    ),
                   ),
+                );
+              }
+
+              final weeklyData = snapshot.data!;
+
+              return SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 16),
+                    // Energi Chart
+                    NutritionLineChart(
+                      title: 'Energi',
+                      unit: 'kkal',
+                      weeklyData: weeklyData,
+                      lineColor: Colors.black87,
+                      getActual: (data) => data.energi,
+                      getTarget: (data) => data.targetEnergi,
+                      minY: 0,
+                      maxY: (weeklyData.fold<double>(
+                              0,
+                              (max, data) =>
+                                  data.energi > max ? data.energi : max) *
+                            1.2)
+                          .toDouble(),
+                    ),
+                    // Lemak Chart
+                    NutritionLineChart(
+                      title: 'Lemak',
+                      unit: 'g',
+                      weeklyData: weeklyData,
+                      lineColor: Colors.amber,
+                      getActual: (data) => data.lemak,
+                      getTarget: (data) => data.targetLemak,
+                      minY: 0,
+                      maxY: (weeklyData.fold<double>(
+                              0,
+                              (max, data) =>
+                                  data.lemak > max ? data.lemak : max) *
+                            1.2)
+                          .toDouble(),
+                    ),
+                    // Natrium Chart
+                    NutritionLineChart(
+                      title: 'Natrium',
+                      unit: 'mg',
+                      weeklyData: weeklyData,
+                      lineColor: Colors.orange,
+                      getActual: (data) => data.natrium,
+                      getTarget: (data) => data.targetNatrium,
+                      minY: 0,
+                      maxY: (weeklyData.fold<double>(
+                              0,
+                              (max, data) =>
+                                  data.natrium > max ? data.natrium : max) *
+                            1.2)
+                          .toDouble(),
+                    ),
+                    // Cairan Chart
+                    NutritionLineChart(
+                      title: 'Cairan',
+                      unit: 'ml',
+                      weeklyData: weeklyData,
+                      lineColor: Colors.blue,
+                      getActual: (data) => data.cairan,
+                      getTarget: (data) => data.targetCairan,
+                      minY: 0,
+                      maxY: (weeklyData.fold<double>(
+                              0,
+                              (max, data) =>
+                                  data.cairan > max ? data.cairan : max) *
+                            1.2)
+                          .toDouble(),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Pelacak Kesehatan',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'Rekam tekanan darah, gula darah, berat badan, dan data kesehatan lainnya.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
-                  height: 1.6,
-                ),
-              ),
-            ],
-          ),
-        ),
+              );
+            },
+          );
+        },
       ),
     );
   }
