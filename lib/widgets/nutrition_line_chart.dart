@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../services/nutrition_history_service.dart';
+import '../../core/app_colors.dart';
 
-/// Reusable line chart widget untuk nutrition tracking.
+/// Reusable line chart widget untuk nutrition tracking HF patients.
 /// Menampilkan actual consumption vs target dengan 2 garis.
 class NutritionLineChart extends StatelessWidget {
   final String title;
@@ -30,7 +31,7 @@ class NutritionLineChart extends StatelessWidget {
   Widget build(BuildContext context) {
     if (weeklyData.isEmpty) {
       return const SizedBox(
-        height: 300,
+        height: 260,
         child: Center(child: CircularProgressIndicator()),
       );
     }
@@ -45,144 +46,225 @@ class NutritionLineChart extends StatelessWidget {
       targetSpots.add(FlSpot(i.toDouble(), getTarget(data)));
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Title + Legend
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title + Legend (header section)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
-              ),
-              Row(
-                children: [
-                  // Actual color
-                  Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
+                Row(
+                  children: [
+                    // Actual legend
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: lineColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Text(
+                      'Aktual',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Target legend
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Text(
+                      'Target',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // Chart
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 4, 16, 12),
+            child: SizedBox(
+              height: 240,
+              child: LineChart(
+                LineChartData(
+                  gridData: FlGridData(
+                    show: true,
+                    drawHorizontalLine: true,
+                    drawVerticalLine: false,
+                    horizontalInterval: (maxY - minY) / 4,
+                    getDrawingHorizontalLine: (value) {
+                      return FlLine(
+                        color: Colors.grey.withValues(alpha: 0.08),
+                        strokeWidth: 0.8,
+                        dashArray: [5, 5],
+                      );
+                    },
+                  ),
+                  titlesData: FlTitlesData(
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 24,
+                        getTitlesWidget: (value, meta) {
+                          final days = ['1', '2', '3', '4', '5', '6', '7'];
+                          if (value.toInt() < days.length) {
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                days[value.toInt()],
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            );
+                          }
+                          return const SizedBox();
+                        },
+                      ),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 32,
+                        getTitlesWidget: (value, meta) {
+                          return Text(
+                            value.toInt().toString(),
+                            style: const TextStyle(
+                              fontSize: 9,
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                  ),
+                  borderData: FlBorderData(
+                    show: true,
+                    border: Border(
+                      left: BorderSide(
+                        color: Colors.grey.withValues(alpha: 0.2),
+                        width: 0.8,
+                      ),
+                      bottom: BorderSide(
+                        color: Colors.grey.withValues(alpha: 0.2),
+                        width: 0.8,
+                      ),
+                    ),
+                  ),
+                  minX: 0,
+                  maxX: 6,
+                  minY: minY,
+                  maxY: maxY,
+                  lineBarsData: [
+                    // Actual line (solid, thicker)
+                    LineChartBarData(
+                      spots: actualSpots,
+                      isCurved: true,
+                      curveSmoothness: 0.3,
                       color: lineColor,
-                      shape: BoxShape.circle,
+                      barWidth: 2.5,
+                      dotData: FlDotData(
+                        show: true,
+                        getDotPainter: (spot, percent, barData, index) {
+                          return FlDotCirclePainter(
+                            radius: 4,
+                            color: lineColor,
+                            strokeWidth: 2,
+                            strokeColor: Colors.white,
+                          );
+                        },
+                      ),
+                      belowBarData: BarAreaData(
+                        show: true,
+                        color: lineColor.withValues(alpha: 0.08),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 4),
-                  const Text(
-                    'Aktual',
-                    style: TextStyle(fontSize: 12, color: Colors.black54),
-                  ),
-                  const SizedBox(width: 12),
-                  // Target color
-                  Container(
-                    width: 12,
-                    height: 12,
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
+                    // Target line (dashed, red, thinner)
+                    LineChartBarData(
+                      spots: targetSpots,
+                      isCurved: false,
+                      color: Colors.red.shade400,
+                      barWidth: 1.8,
+                      dotData: FlDotData(
+                        show: true,
+                        getDotPainter: (spot, percent, barData, index) {
+                          return FlDotCirclePainter(
+                            radius: 3.5,
+                            color: Colors.red.shade400,
+                            strokeWidth: 0,
+                          );
+                        },
+                      ),
+                      dashArray: [4, 3],
+                      belowBarData: BarAreaData(show: false),
                     ),
-                  ),
-                  const SizedBox(width: 4),
-                  const Text(
-                    'Target',
-                    style: TextStyle(fontSize: 12, color: Colors.black54),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        // Chart
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: SizedBox(
-            height: 300,
-            child: LineChart(
-              LineChartData(
-                gridData: const FlGridData(show: true),
-                titlesData: FlTitlesData(
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        final days = ['1', '2', '3', '4', '5', '6', '7'];
-                        if (value.toInt() < days.length) {
-                          return Text(days[value.toInt()],
-                              style: const TextStyle(fontSize: 11));
-                        }
-                        return const Text('');
-                      },
-                    ),
-                  ),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        return Text(
-                          value.toInt().toString(),
-                          style: const TextStyle(fontSize: 11),
-                        );
-                      },
-                      reservedSize: 32,
-                    ),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
+                  ],
                 ),
-                borderData: FlBorderData(show: true),
-                minX: 0,
-                maxX: 6,
-                minY: minY,
-                maxY: maxY,
-                lineBarsData: [
-                  // Actual line
-                  LineChartBarData(
-                    spots: actualSpots,
-                    isCurved: true,
-                    color: lineColor,
-                    barWidth: 2.5,
-                    dotData: const FlDotData(show: true),
-                    belowBarData: BarAreaData(show: false),
-                  ),
-                  // Target line (dashed, red)
-                  LineChartBarData(
-                    spots: targetSpots,
-                    isCurved: false,
-                    color: Colors.red,
-                    barWidth: 2,
-                    dotData: const FlDotData(show: true),
-                    dashArray: [5, 5],
-                    belowBarData: BarAreaData(show: false),
-                  ),
-                ],
               ),
             ),
           ),
-        ),
-        // Unit info
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Text(
-            'Satuan: $unit',
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.black54,
-              fontStyle: FontStyle.italic,
+          // Unit info (bottom)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+            child: Text(
+              'Satuan: $unit',
+              style: const TextStyle(
+                fontSize: 11,
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 16),
-      ],
+        ],
+      ),
     );
   }
 }

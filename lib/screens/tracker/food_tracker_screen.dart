@@ -13,6 +13,8 @@ import '../../models/nutrition_needs.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/food_database_service.dart';
 import '../../services/food_log_service.dart';
+import '../../services/nutrition_history_service.dart';
+import '../../widgets/nutrition_line_chart.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SCREEN UTAMA
@@ -30,7 +32,8 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
   List<FoodLogEntry> _entries = [];
   bool _isLoading = true;
   late AuthProvider _authProvider;
-  MealType? _selectedMealType;  // ← NEW: Track selected meal time
+  MealType? _selectedMealType;  // ← Track selected meal time
+  List<DailyNutrition>? _weeklyData;  // ← Weekly data for HF charts
 
   @override
   void initState() {
@@ -39,6 +42,7 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
     // Listener: reload entries setiap kali userModel selesai load dari Firestore
     _authProvider.addListener(_onAuthChanged);
     _loadEntries();
+    _loadWeeklyData();  // ← Load weekly data on init
   }
 
   void _onAuthChanged() {
@@ -46,6 +50,35 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
     final uid = _authProvider.currentUser?.uid ?? _authProvider.firebaseUser?.uid ?? '';
     if (uid.isNotEmpty && _entries.isEmpty && !_isLoading) {
       _loadEntries();
+      _loadWeeklyData();  // ← Reload weekly data when auth changes
+    }
+  }
+
+  /// Load weekly nutrition data for HF patients' charts
+  Future<void> _loadWeeklyData() async {
+    try {
+      final uid = _uid;
+      final needs = _authProvider.currentUser?.nutritionNeeds;
+      
+      if (uid.isEmpty || needs == null) {
+        setState(() => _weeklyData = []);
+        return;
+      }
+
+      final data = await NutritionHistoryService.getWeeklyNutrition(
+        uid: uid,
+        endDate: DateTime.now(),
+        targets: needs,
+      );
+      
+      if (mounted) {
+        setState(() => _weeklyData = data);
+      }
+    } catch (e) {
+      // Silently fail, weekly data is optional
+      if (mounted) {
+        setState(() => _weeklyData = []);
+      }
     }
   }
 
@@ -311,6 +344,92 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
     );
   }
 
+  /// Build HF weekly charts section
+  Widget _HFWeeklyChartsSection({required List<DailyNutrition> weeklyData}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 12),
+          child: Text(
+            'Grafik Nutrisi Mingguan',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ),
+        // Energi Chart
+        _buildHFNutritionChart(
+          title: 'Energi',
+          unit: 'kkal',
+          weeklyData: weeklyData,
+          lineColor: Colors.black87,
+          getActual: (data) => data.energi,
+          getTarget: (data) => data.targetEnergi,
+        ),
+        const SizedBox(height: 12),
+        // Lemak Chart
+        _buildHFNutritionChart(
+          title: 'Lemak',
+          unit: 'g',
+          weeklyData: weeklyData,
+          lineColor: Colors.amber.shade700,
+          getActual: (data) => data.lemak,
+          getTarget: (data) => data.targetLemak,
+        ),
+        const SizedBox(height: 12),
+        // Natrium Chart
+        _buildHFNutritionChart(
+          title: 'Natrium',
+          unit: 'mg',
+          weeklyData: weeklyData,
+          lineColor: Colors.orange,
+          getActual: (data) => data.natrium,
+          getTarget: (data) => data.targetNatrium,
+        ),
+        const SizedBox(height: 12),
+        // Cairan Chart
+        _buildHFNutritionChart(
+          title: 'Cairan',
+          unit: 'ml',
+          weeklyData: weeklyData,
+          lineColor: Colors.blue.shade600,
+          getActual: (data) => data.cairan,
+          getTarget: (data) => data.targetCairan,
+        ),
+      ],
+    );
+  }
+
+  /// Build individual HF nutrition chart with improved styling
+  Widget _buildHFNutritionChart({
+    required String title,
+    required String unit,
+    required List<DailyNutrition> weeklyData,
+    required Color lineColor,
+    required double Function(DailyNutrition) getActual,
+    required double Function(DailyNutrition) getTarget,
+  }) {
+    return NutritionLineChart(
+      title: title,
+      unit: unit,
+      weeklyData: weeklyData,
+      lineColor: lineColor,
+      getActual: getActual,
+      getTarget: getTarget,
+      minY: 0,
+      maxY: (weeklyData.fold<double>(
+              0,
+              (max, data) =>
+                  getActual(data) > max ? getActual(data) : max) *
+            1.2)
+          .toDouble(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
@@ -355,6 +474,11 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
                                 intake: intake.cairan,
                                 target: needs.cairan,
                               ),
+                              const SizedBox(height: 16),
+                            ],
+                            // 2. HF Patients: Show weekly nutrition charts
+                            if (auth.currentUser?.diseaseType == DiseaseType.heartFailure && _weeklyData != null && _weeklyData!.isNotEmpty) ...[
+                              _HFWeeklyChartsSection(weeklyData: _weeklyData!),
                               const SizedBox(height: 16),
                             ],
                             // 3. DM Patients: Show hierarchical meal table
