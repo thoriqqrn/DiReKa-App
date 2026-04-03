@@ -28,6 +28,7 @@ class _GoogleCompleteProfileScreenState
   DiseaseType? _diseaseType;
   String _gender = 'laki-laki';
   ActivityLevel? _activityLevel;
+  bool _hasEdema = false; // riwayat pembengkakan — untuk pasien gagal jantung
 
   double? get _bmi {
     final w = double.tryParse(_weightCtrl.text);
@@ -255,6 +256,52 @@ class _GoogleCompleteProfileScreenState
                     _BmiInfo(bmi: _bmi!),
                   ],
 
+                  // Pertanyaan pembengkakan — hanya untuk pasien gagal jantung
+                  if (_diseaseType == DiseaseType.heartFailure) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.orange.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Apakah ada riwayat pembengkakan?',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  _hasEdema ? 'Ya, ada' : 'Tidak ada',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: _hasEdema ? Colors.orange : Colors.green,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: _hasEdema,
+                            onChanged: (val) => setState(() => _hasEdema = val),
+                            activeColor: Colors.orange,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
                   const SizedBox(height: 24),
 
                   // Jenis Kelamin
@@ -325,6 +372,7 @@ class _GoogleCompleteProfileScreenState
       activityLevel: _diseaseType == DiseaseType.type2DiabetesMellitus
           ? (_activityLevel ?? ActivityLevel.ringan)
           : null,
+      hasEdema: _hasEdema,
     );
 
     if (success && mounted) {

@@ -142,6 +142,7 @@ class AuthProvider extends ChangeNotifier {
     double urinOutput = 300.0,
     ActivityLevel? activityLevel,
     HemodialysisData? hemodialysisData,
+    bool hasEdema = false,
   }) async {
     _setLoading(true);
     _clearError();
@@ -158,6 +159,7 @@ class AuthProvider extends ChangeNotifier {
         urinOutput: urinOutput,
         activityLevel: activityLevel,
         hemodialysisData: hemodialysisData,
+        hasEdema: hasEdema,
       );
       // Fix race condition: authStateChanges listener fires BEFORE saveUser()
       // completes inside registerWithEmail(), sehingga _userModel = null.
@@ -207,6 +209,7 @@ class AuthProvider extends ChangeNotifier {
     String gender = 'laki-laki',
     ActivityLevel? activityLevel,
     HemodialysisData? hemodialysisData,
+    bool hasEdema = false,
   }) async {
     _setLoading(true);
     _clearError();
@@ -223,6 +226,7 @@ class AuthProvider extends ChangeNotifier {
         height: height,
         activityLevel: activityLevel,
         hemodialysisData: hemodialysisData,
+        hasEdema: hasEdema,
         createdAt: DateTime.now(),
       );
       await _userService.saveUser(userModel);

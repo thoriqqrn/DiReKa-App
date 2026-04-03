@@ -39,6 +39,7 @@ class AuthService {
     double urinOutput = 300.0,
     ActivityLevel? activityLevel,
     HemodialysisData? hemodialysisData,
+    bool hasEdema = false,
   }) async {
     final credential = await _auth.createUserWithEmailAndPassword(
       email: email.trim(),
@@ -59,6 +60,7 @@ class AuthService {
       urinOutput: urinOutput,
       activityLevel: activityLevel,
       hemodialysisData: hemodialysisData,
+      hasEdema: hasEdema,
       createdAt: DateTime.now(),
     );
     await _userService.saveUser(userModel);

@@ -16,6 +16,7 @@ class UserModel {
   final double urinOutput; // ml/hari — output urin 24 jam (untuk pasien ginjal)
   final ActivityLevel? activityLevel; // hanya untuk DM
   final HemodialysisData? hemodialysisData; // hanya untuk penyakit ginjal
+  final bool hasEdema; // riwayat pembengkakan — untuk pasien gagal jantung
   final DateTime createdAt;
   final int currentStreak;
   final int longestStreak;
@@ -34,6 +35,7 @@ class UserModel {
     this.urinOutput = 300.0,
     this.activityLevel,
     this.hemodialysisData,
+    this.hasEdema = false,
     required this.createdAt,
     this.currentStreak = 0,
     this.longestStreak = 0,
@@ -114,6 +116,7 @@ class UserModel {
       'urinOutput': urinOutput,
       'activityLevel': activityLevel?.value,
       'hemodialysisData': hemodialysisData?.toMap(),
+      'hasEdema': hasEdema,
       'bmi': double.parse(bmi.toStringAsFixed(2)),
       'bbi': double.parse(bbi.toStringAsFixed(2)),
       'createdAt': Timestamp.fromDate(createdAt),
@@ -137,6 +140,7 @@ class UserModel {
       hemodialysisData: map['hemodialysisData'] != null
           ? HemodialysisData.fromMap(map['hemodialysisData'] as Map<String, dynamic>)
           : null,
+      hasEdema: (map['hasEdema'] as bool?) ?? false,
       createdAt: (map['createdAt'] as Timestamp).toDate(),
       currentStreak: (map['currentStreak'] as num?)?.toInt() ?? 0,
       longestStreak: (map['longestStreak'] as num?)?.toInt() ?? 0,
@@ -163,6 +167,7 @@ class UserModel {
     bool clearActivityLevel = false,
     HemodialysisData? hemodialysisData,
     bool clearHemodialysisData = false,
+    bool? hasEdema,
     DateTime? createdAt,
     int? currentStreak,
     int? longestStreak,
@@ -184,6 +189,7 @@ class UserModel {
       hemodialysisData: clearHemodialysisData
           ? null
           : (hemodialysisData ?? this.hemodialysisData),
+      hasEdema: hasEdema ?? this.hasEdema,
       createdAt: createdAt ?? this.createdAt,
       currentStreak: currentStreak ?? this.currentStreak,
       longestStreak: longestStreak ?? this.longestStreak,

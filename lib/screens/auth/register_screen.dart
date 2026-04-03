@@ -33,6 +33,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   DiseaseType? _diseaseType;
   String _gender = 'laki-laki';
   ActivityLevel? _activityLevel;
+  bool _hasEdema = false; // riwayat pembengkakan — untuk pasien gagal jantung
   
   // Hemodialisis — untuk pasien penyakit ginjal
   DateTime? _hdStartDate;
@@ -226,6 +227,52 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   if (_bmi != null) ...[
                     const SizedBox(height: 12),
                     _BmiInfo(bmi: _bmi!),
+                  ],
+
+                  // Pertanyaan pembengkakan — hanya untuk pasien gagal jantung
+                  if (_diseaseType == DiseaseType.heartFailure) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.orange.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Apakah ada riwayat pembengkakan?',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  _hasEdema ? 'Ya, ada' : 'Tidak ada',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: _hasEdema ? Colors.orange : Colors.green,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: _hasEdema,
+                            onChanged: (val) => setState(() => _hasEdema = val),
+                            activeColor: Colors.orange,
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
 
                   // Field urin output — hanya untuk pasien ginjal
@@ -555,6 +602,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ? (_activityLevel ?? ActivityLevel.ringan)
           : null,
       hemodialysisData: hemodialysisData,
+      hasEdema: _hasEdema,
     );
 
     if (success && mounted) {
