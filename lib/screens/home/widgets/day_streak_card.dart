@@ -16,16 +16,16 @@ class DayStreakCard extends StatelessWidget {
     final now = DateTime.now();
     final currentMonth = now.month;
     final currentYear = now.year;
-    
+
     // Filter loginDates untuk bulan ini
     final thisMonthLogins = user.loginDates.where((d) {
       return d.year == currentYear && d.month == currentMonth;
     }).toSet();
-    
+
     // Generate semua hari dalam bulan ini
     final daysInMonth = _getDaysInMonth(currentYear, currentMonth);
     final firstDayOfWeek = DateTime(currentYear, currentMonth, 1).weekday;
-    
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -53,7 +53,10 @@ class DayStreakCard extends StatelessWidget {
             children: [
               // Current Streak
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
@@ -93,7 +96,10 @@ class DayStreakCard extends StatelessWidget {
               ),
               // Longest Streak
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(10),
@@ -118,7 +124,7 @@ class DayStreakCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // Motivation text
           Text(
             user.currentStreak > 0
@@ -132,13 +138,16 @@ class DayStreakCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // Calendar header
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                DateFormat('MMMM y', 'id_ID').format(DateTime(currentYear, currentMonth)),
+                DateFormat(
+                  'MMMM y',
+                  'id_ID',
+                ).format(DateTime(currentYear, currentMonth)),
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -165,7 +174,7 @@ class DayStreakCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          
+
           // Mini calendar
           _MiniCalendar(
             daysInMonth: daysInMonth,
@@ -173,7 +182,7 @@ class DayStreakCard extends StatelessWidget {
             loginDays: thisMonthLogins,
           ),
           const SizedBox(height: 12),
-          
+
           // Daily reward badges
           _RewardBadges(currentMonth: currentMonth, loginDays: thisMonthLogins),
         ],
@@ -203,7 +212,7 @@ class _MiniCalendar extends StatelessWidget {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final cells = <Widget>[];
-    
+
     // Day labels
     for (var label in dayLabels) {
       cells.add(
@@ -220,34 +229,38 @@ class _MiniCalendar extends StatelessWidget {
         ),
       );
     }
-    
+
     // Empty cells sebelum hari pertama
     for (var i = 0; i < firstDayOfWeek - 1; i++) {
       cells.add(const SizedBox.shrink());
     }
-    
+
     // Hari-hari dalam bulan
     for (var day = 1; day <= daysInMonth; day++) {
-      final date = DateTime(loginDays.isNotEmpty ? loginDays.first.year : now.year,
-          loginDays.isNotEmpty ? loginDays.first.month : now.month, day);
+      final date = DateTime(
+        loginDays.isNotEmpty ? loginDays.first.year : now.year,
+        loginDays.isNotEmpty ? loginDays.first.month : now.month,
+        day,
+      );
       final hasLogin = loginDays.any((d) => d.day == day);
-      final isToday = date.year == today.year && 
-                      date.month == today.month && 
-                      date.day == today.day;
-      
+      final isToday =
+          date.year == today.year &&
+          date.month == today.month &&
+          date.day == today.day;
+
       cells.add(
         Container(
           decoration: BoxDecoration(
-            color: hasLogin 
-                ? Colors.red.shade400 
+            color: hasLogin
+                ? Colors.red.shade400
                 : Colors.white.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: isToday && hasLogin
                   ? Colors.white
-                  : hasLogin 
-                      ? Colors.red.shade600
-                      : Colors.white.withValues(alpha: 0.2),
+                  : hasLogin
+                  ? Colors.red.shade600
+                  : Colors.white.withValues(alpha: 0.2),
               width: isToday && hasLogin ? 2.5 : 1,
             ),
             boxShadow: hasLogin
@@ -273,7 +286,7 @@ class _MiniCalendar extends StatelessWidget {
         ),
       );
     }
-    
+
     return GridView.count(
       crossAxisCount: 7,
       shrinkWrap: true,
@@ -294,16 +307,13 @@ class _RewardBadges extends StatelessWidget {
   final int currentMonth;
   final Set<DateTime> loginDays;
 
-  const _RewardBadges({
-    required this.currentMonth,
-    required this.loginDays,
-  });
+  const _RewardBadges({required this.currentMonth, required this.loginDays});
 
   @override
   Widget build(BuildContext context) {
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const bonuses = ['+2', '+2', '+2', '+2', '+2', '+2', '+2'];
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -328,7 +338,9 @@ class _RewardBadges extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,

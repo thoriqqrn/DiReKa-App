@@ -34,11 +34,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String _gender = 'laki-laki';
   ActivityLevel? _activityLevel;
   bool _hasEdema = false; // riwayat pembengkakan — untuk pasien gagal jantung
-  
+
   // Hemodialisis — untuk pasien penyakit ginjal
   DateTime? _hdStartDate;
   DateTime? _hdEndDate;
-  final List<String> _hdDayOptions = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+  final List<String> _hdDayOptions = [
+    'Senin',
+    'Selasa',
+    'Rabu',
+    'Kamis',
+    'Jumat',
+    'Sabtu',
+    'Minggu',
+  ];
   final Set<String> _hdSelectedDays = {};
   final _hdLocationCtrl = TextEditingController();
 
@@ -159,7 +167,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: AbsorbPointer(
                       child: TextFormField(
                         initialValue: _dateOfBirth != null
-                            ? DateFormat('dd MMMM yyyy', 'id').format(_dateOfBirth!)
+                            ? DateFormat(
+                                'dd MMMM yyyy',
+                                'id',
+                              ).format(_dateOfBirth!)
                             : '',
                         decoration: InputDecoration(
                           labelText: 'Tanggal Lahir',
@@ -179,8 +190,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 )
                               : null,
                         ),
-                        validator: (_) =>
-                            _dateOfBirth == null ? 'Tanggal lahir wajib dipilih' : null,
+                        validator: (_) => _dateOfBirth == null
+                            ? 'Tanggal lahir wajib dipilih'
+                            : null,
                       ),
                     ),
                   ),
@@ -194,7 +206,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           label: 'Berat Badan (kg)',
                           controller: _weightCtrl,
                           keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
+                            decimal: true,
+                          ),
                           prefixIcon: const Icon(Icons.monitor_weight_outlined),
                           validator: (v) {
                             final w = double.tryParse(v ?? '');
@@ -210,7 +223,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           label: 'Tinggi Badan (cm)',
                           controller: _heightCtrl,
                           keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
+                            decimal: true,
+                          ),
                           prefixIcon: const Icon(Icons.height),
                           validator: (v) {
                             final h = double.tryParse(v ?? '');
@@ -258,7 +272,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   _hasEdema ? 'Ya, ada' : 'Tidak ada',
                                   style: TextStyle(
                                     fontSize: 13,
-                                    color: _hasEdema ? Colors.orange : Colors.green,
+                                    color: _hasEdema
+                                        ? Colors.orange
+                                        : Colors.green,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -302,7 +318,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         }
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.surface,
                           border: Border.all(color: AppColors.border),
@@ -314,18 +333,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Tanggal Mulai',
-                                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                const Text(
+                                  'Tanggal Mulai',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
                                 const SizedBox(height: 4),
                                 Text(
                                   _hdStartDate != null
-                                      ? DateFormat('dd MMM yyyy', 'id_ID').format(_hdStartDate!)
+                                      ? DateFormat(
+                                          'dd MMM yyyy',
+                                          'id_ID',
+                                        ).format(_hdStartDate!)
                                       : 'Pilih tanggal',
-                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ],
                             ),
-                            const Icon(Icons.calendar_today_outlined, color: AppColors.primary),
+                            const Icon(
+                              Icons.calendar_today_outlined,
+                              color: AppColors.primary,
+                            ),
                           ],
                         ),
                       ),
@@ -338,7 +371,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           context: context,
                           initialDate: _hdStartDate ?? DateTime.now(),
                           firstDate: _hdStartDate ?? DateTime.now(),
-                          lastDate: DateTime.now().add(const Duration(days: 36500)),
+                          lastDate: DateTime.now().add(
+                            const Duration(days: 36500),
+                          ),
                           cancelText: 'Batal',
                           confirmText: 'Pilih',
                         );
@@ -347,7 +382,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         }
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.surface,
                           border: Border.all(color: AppColors.border),
@@ -359,26 +397,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Tanggal Berakhir',
-                                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                const Text(
+                                  'Tanggal Berakhir',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
                                 const SizedBox(height: 4),
                                 Text(
                                   _hdEndDate != null
-                                      ? DateFormat('dd MMM yyyy', 'id_ID').format(_hdEndDate!)
+                                      ? DateFormat(
+                                          'dd MMM yyyy',
+                                          'id_ID',
+                                        ).format(_hdEndDate!)
                                       : 'Pilih tanggal',
-                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ],
                             ),
-                            const Icon(Icons.calendar_today_outlined, color: AppColors.primary),
+                            const Icon(
+                              Icons.calendar_today_outlined,
+                              color: AppColors.primary,
+                            ),
                           ],
                         ),
                       ),
                     ),
                     const SizedBox(height: 14),
                     // Jadwal dialisis (checkbox grid)
-                    const Text('Jadwal Dialisis (pilih max 3 hari)',
-                        style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                    const Text(
+                      'Jadwal Dialisis (pilih max 3 hari)',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     GridView.count(
                       crossAxisCount: 4,
@@ -400,9 +457,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           child: Container(
                             margin: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
-                              color: isSelected ? AppColors.primary : AppColors.surface,
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : AppColors.surface,
                               border: Border.all(
-                                color: isSelected ? AppColors.primary : AppColors.border,
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : AppColors.border,
                                 width: 2,
                               ),
                               borderRadius: BorderRadius.circular(8),
@@ -414,7 +475,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: isSelected ? Colors.white : AppColors.textPrimary,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : AppColors.textPrimary,
                                 ),
                               ),
                             ),
@@ -467,7 +530,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     obscureText: true,
                     prefixIcon: const Icon(Icons.lock_outline),
                     validator: (v) {
-                      if (v == null || v.isEmpty) return 'Kata sandi wajib diisi';
+                      if (v == null || v.isEmpty)
+                        return 'Kata sandi wajib diisi';
                       if (v.length < 6) return 'Minimal 6 karakter';
                       return null;
                     },
@@ -503,7 +567,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       TextButton(
                         onPressed: () => Navigator.pushReplacementNamed(
-                            context, AppConstants.routeLogin),
+                          context,
+                          AppConstants.routeLogin,
+                        ),
                         child: const Text('Masuk'),
                       ),
                     ],
@@ -535,7 +601,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (_diseaseType == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pilih kondisi kesehatan terlebih dahulu')),
+        const SnackBar(
+          content: Text('Pilih kondisi kesehatan terlebih dahulu'),
+        ),
       );
       return;
     }
@@ -552,15 +620,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (_hdEndDate == null) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tanggal berakhir dialisis wajib diisi')),
+          const SnackBar(
+            content: Text('Tanggal berakhir dialisis wajib diisi'),
+          ),
         );
         return;
       }
       if (_hdSelectedDays.isEmpty) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Pilih jadwal dialisis')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Pilih jadwal dialisis')));
         return;
       }
       if (_hdLocationCtrl.text.isEmpty) {
@@ -653,15 +723,11 @@ class _DiseaseDropdown extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
       ),
       items: DiseaseType.values
-          .map((d) => DropdownMenuItem(
-                value: d,
-                child: Text(d.label),
-              ))
+          .map((d) => DropdownMenuItem(value: d, child: Text(d.label)))
           .toList(),
       onChanged: onChanged,
       validator: (v) => v == null ? 'Pilih kondisi penyakit' : null,
@@ -688,7 +754,8 @@ class _UrinOutputField extends StatelessWidget {
           validator: (v) {
             if (v == null || v.isEmpty) return null; // opsional
             final val = double.tryParse(v);
-            if (val == null || val < 0 || val > 5000) return 'Nilai tidak valid';
+            if (val == null || val < 0 || val > 5000)
+              return 'Nilai tidak valid';
             return null;
           },
         ),
@@ -697,7 +764,11 @@ class _UrinOutputField extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 4),
           child: Text(
             'Jumlah urin yang dikeluarkan dalam 24 jam terakhir. Digunakan untuk menghitung kebutuhan cairan harian. Kosongkan jika belum diketahui (default 300 ml).',
-            style: TextStyle(fontSize: 11, color: AppColors.textHint, height: 1.5),
+            style: TextStyle(
+              fontSize: 11,
+              color: AppColors.textHint,
+              height: 1.5,
+            ),
           ),
         ),
       ],
@@ -743,10 +814,7 @@ class _BmiInfo extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Text(
-            '($_category)',
-            style: TextStyle(color: _color, fontSize: 13),
-          ),
+          Text('($_category)', style: TextStyle(color: _color, fontSize: 13)),
         ],
       ),
     );
@@ -773,8 +841,7 @@ class _ErrorBanner extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style:
-                  const TextStyle(color: AppColors.error, fontSize: 13),
+              style: const TextStyle(color: AppColors.error, fontSize: 13),
             ),
           ),
         ],
@@ -837,8 +904,7 @@ class _GenderOption extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
           color: selected
               ? AppColors.primary.withValues(alpha: 0.08)
@@ -852,22 +918,18 @@ class _GenderOption extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon,
-                size: 20,
-                color: selected
-                    ? AppColors.primary
-                    : AppColors.textSecondary),
+            Icon(
+              icon,
+              size: 20,
+              color: selected ? AppColors.primary : AppColors.textSecondary,
+            ),
             const SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
                 fontSize: 14,
-                fontWeight: selected
-                    ? FontWeight.w600
-                    : FontWeight.normal,
-                color: selected
-                    ? AppColors.primary
-                    : AppColors.textSecondary,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                color: selected ? AppColors.primary : AppColors.textSecondary,
               ),
             ),
           ],
@@ -882,8 +944,7 @@ class _GenderOption extends StatelessWidget {
 class _ActivityLevelSelector extends StatelessWidget {
   final ActivityLevel? value;
   final void Function(ActivityLevel) onChanged;
-  const _ActivityLevelSelector(
-      {required this.value, required this.onChanged});
+  const _ActivityLevelSelector({required this.value, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -895,8 +956,7 @@ class _ActivityLevelSelector extends StatelessWidget {
           onTap: () => onChanged(level),
           child: Container(
             margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.symmetric(
-                horizontal: 14, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: sel
                   ? AppColors.diabetesColor.withValues(alpha: 0.08)
@@ -915,9 +975,7 @@ class _ActivityLevelSelector extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: sel
-                          ? AppColors.diabetesColor
-                          : AppColors.border,
+                      color: sel ? AppColors.diabetesColor : AppColors.border,
                       width: sel ? 6 : 2,
                     ),
                   ),

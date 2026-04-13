@@ -8,11 +8,11 @@ class UserModel {
   final String uid;
   final String name;
   final String email;
-  final String gender;         // 'laki-laki' | 'perempuan'
+  final String gender; // 'laki-laki' | 'perempuan'
   final DiseaseType diseaseType;
   final DateTime dateOfBirth;
-  final double weight;     // kg
-  final double height;     // cm
+  final double weight; // kg
+  final double height; // cm
   final double urinOutput; // ml/hari — output urin 24 jam (untuk pasien ginjal)
   final ActivityLevel? activityLevel; // hanya untuk DM
   final HemodialysisData? hemodialysisData; // hanya untuk penyakit ginjal
@@ -149,7 +149,9 @@ class UserModel {
           ? ActivityLevelExtension.fromValue(map['activityLevel'] as String)
           : null,
       hemodialysisData: map['hemodialysisData'] != null
-          ? HemodialysisData.fromMap(map['hemodialysisData'] as Map<String, dynamic>)
+          ? HemodialysisData.fromMap(
+              map['hemodialysisData'] as Map<String, dynamic>,
+            )
           : null,
       hasEdema: (map['hasEdema'] as bool?) ?? false,
       createdAt: (map['createdAt'] as Timestamp).toDate(),
@@ -158,9 +160,11 @@ class UserModel {
       lastLoginDate: map['lastLoginDate'] != null
           ? (map['lastLoginDate'] as Timestamp).toDate()
           : null,
-      loginDates: (map['loginDates'] as List<dynamic>?)
-          ?.map((t) => (t as Timestamp).toDate())
-          .toList() ?? [],
+      loginDates:
+          (map['loginDates'] as List<dynamic>?)
+              ?.map((t) => (t as Timestamp).toDate())
+              .toList() ??
+          [],
     );
   }
 
@@ -195,8 +199,9 @@ class UserModel {
       weight: weight ?? this.weight,
       height: height ?? this.height,
       urinOutput: urinOutput ?? this.urinOutput,
-      activityLevel:
-          clearActivityLevel ? null : (activityLevel ?? this.activityLevel),
+      activityLevel: clearActivityLevel
+          ? null
+          : (activityLevel ?? this.activityLevel),
       hemodialysisData: clearHemodialysisData
           ? null
           : (hemodialysisData ?? this.hemodialysisData),

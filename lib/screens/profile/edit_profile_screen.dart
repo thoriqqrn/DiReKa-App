@@ -29,11 +29,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   DiseaseType? _diseaseType;
   String _gender = 'laki-laki';
   ActivityLevel? _activityLevel;
-  
+
   // Hemodialisis — untuk pasien penyakit ginjal
   DateTime? _hdStartDate;
   DateTime? _hdEndDate;
-  final List<String> _hdDayOptions = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+  final List<String> _hdDayOptions = [
+    'Senin',
+    'Selasa',
+    'Rabu',
+    'Kamis',
+    'Jumat',
+    'Sabtu',
+    'Minggu',
+  ];
   final Set<String> _hdSelectedDays = {};
   final _hdLocationCtrl = TextEditingController();
   bool _initialized = false;
@@ -68,13 +76,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _emailCtrl.text = user.email;
         _weightCtrl.text = user.weight.toString();
         _heightCtrl.text = user.height.toString();
-        _urinOutputCtrl.text =
-            user.urinOutput > 0 ? user.urinOutput.toStringAsFixed(0) : '';
+        _urinOutputCtrl.text = user.urinOutput > 0
+            ? user.urinOutput.toStringAsFixed(0)
+            : '';
         _dateOfBirth = user.dateOfBirth;
         _diseaseType = user.diseaseType;
         _gender = user.gender;
         _activityLevel = user.activityLevel;
-        
+
         // Load hemodialysis data jika ada
         if (user.hemodialysisData != null) {
           final hd = user.hemodialysisData!;
@@ -241,8 +250,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     CustomTextField(
                       label: 'Output Urin 24 Jam (ml)',
                       controller: _urinOutputCtrl,
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       prefixIcon: const Icon(Icons.water_outlined),
                       validator: (v) {
                         if (v == null || v.isEmpty) return null;
@@ -258,9 +268,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       child: Text(
                         'Jumlah urin 24 jam terakhir. Mempengaruhi target cairan harian. Kosongkan jika belum diketahui.',
                         style: TextStyle(
-                            fontSize: 11,
-                            color: AppColors.textHint,
-                            height: 1.5),
+                          fontSize: 11,
+                          color: AppColors.textHint,
+                          height: 1.5,
+                        ),
                       ),
                     ),
                   ],
@@ -286,7 +297,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         }
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.surface,
                           border: Border.all(color: AppColors.border),
@@ -298,18 +312,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Tanggal Mulai',
-                                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                const Text(
+                                  'Tanggal Mulai',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
                                 const SizedBox(height: 4),
                                 Text(
                                   _hdStartDate != null
-                                      ? DateFormat('dd MMM yyyy', 'id_ID').format(_hdStartDate!)
+                                      ? DateFormat(
+                                          'dd MMM yyyy',
+                                          'id_ID',
+                                        ).format(_hdStartDate!)
                                       : 'Pilih tanggal',
-                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ],
                             ),
-                            const Icon(Icons.calendar_today_outlined, color: AppColors.primary),
+                            const Icon(
+                              Icons.calendar_today_outlined,
+                              color: AppColors.primary,
+                            ),
                           ],
                         ),
                       ),
@@ -320,9 +348,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       onTap: () async {
                         final picked = await showDatePicker(
                           context: context,
-                          initialDate: _hdEndDate ?? (_hdStartDate ?? DateTime.now()),
+                          initialDate:
+                              _hdEndDate ?? (_hdStartDate ?? DateTime.now()),
                           firstDate: _hdStartDate ?? DateTime.now(),
-                          lastDate: DateTime.now().add(const Duration(days: 36500)),
+                          lastDate: DateTime.now().add(
+                            const Duration(days: 36500),
+                          ),
                           cancelText: 'Batal',
                           confirmText: 'Pilih',
                         );
@@ -331,7 +362,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         }
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.surface,
                           border: Border.all(color: AppColors.border),
@@ -343,26 +377,45 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Tanggal Berakhir',
-                                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                const Text(
+                                  'Tanggal Berakhir',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
                                 const SizedBox(height: 4),
                                 Text(
                                   _hdEndDate != null
-                                      ? DateFormat('dd MMM yyyy', 'id_ID').format(_hdEndDate!)
+                                      ? DateFormat(
+                                          'dd MMM yyyy',
+                                          'id_ID',
+                                        ).format(_hdEndDate!)
                                       : 'Pilih tanggal',
-                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ],
                             ),
-                            const Icon(Icons.calendar_today_outlined, color: AppColors.primary),
+                            const Icon(
+                              Icons.calendar_today_outlined,
+                              color: AppColors.primary,
+                            ),
                           ],
                         ),
                       ),
                     ),
                     const SizedBox(height: 14),
                     // Jadwal dialisis
-                    const Text('Jadwal Dialisis (pilih max 3 hari)',
-                        style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                    const Text(
+                      'Jadwal Dialisis (pilih max 3 hari)',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     GridView.count(
                       crossAxisCount: 4,
@@ -384,9 +437,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           child: Container(
                             margin: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
-                              color: isSelected ? AppColors.primary : AppColors.surface,
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : AppColors.surface,
                               border: Border.all(
-                                color: isSelected ? AppColors.primary : AppColors.border,
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : AppColors.border,
                                 width: 2,
                               ),
                               borderRadius: BorderRadius.circular(8),
@@ -398,7 +455,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: isSelected ? Colors.white : AppColors.textPrimary,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : AppColors.textPrimary,
                                 ),
                               ),
                             ),
@@ -536,12 +595,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       weight: double.parse(_weightCtrl.text),
       height: double.parse(_heightCtrl.text),
       gender: _gender,
-      urinOutput: double.tryParse(_urinOutputCtrl.text) ?? currentUser.urinOutput,
+      urinOutput:
+          double.tryParse(_urinOutputCtrl.text) ?? currentUser.urinOutput,
       activityLevel: _diseaseType == DiseaseType.type2DiabetesMellitus
           ? (_activityLevel ?? ActivityLevel.ringan)
           : null,
-      clearActivityLevel:
-          _diseaseType != DiseaseType.type2DiabetesMellitus,
+      clearActivityLevel: _diseaseType != DiseaseType.type2DiabetesMellitus,
       hemodialysisData: hemodialysisData,
       clearHemodialysisData: _diseaseType != DiseaseType.chronicKidneyDisease,
     );
@@ -708,8 +767,7 @@ class _GenderOption extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
           color: selected
               ? AppColors.primary.withValues(alpha: 0.08)
@@ -723,21 +781,18 @@ class _GenderOption extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon,
-                size: 20,
-                color: selected
-                    ? AppColors.primary
-                    : AppColors.textSecondary),
+            Icon(
+              icon,
+              size: 20,
+              color: selected ? AppColors.primary : AppColors.textSecondary,
+            ),
             const SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
                 fontSize: 14,
-                fontWeight:
-                    selected ? FontWeight.w600 : FontWeight.normal,
-                color: selected
-                    ? AppColors.primary
-                    : AppColors.textSecondary,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                color: selected ? AppColors.primary : AppColors.textSecondary,
               ),
             ),
           ],
@@ -752,8 +807,7 @@ class _GenderOption extends StatelessWidget {
 class _ActivityLevelSelector extends StatelessWidget {
   final ActivityLevel? value;
   final void Function(ActivityLevel) onChanged;
-  const _ActivityLevelSelector(
-      {required this.value, required this.onChanged});
+  const _ActivityLevelSelector({required this.value, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -765,16 +819,14 @@ class _ActivityLevelSelector extends StatelessWidget {
           onTap: () => onChanged(level),
           child: Container(
             margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.symmetric(
-                horizontal: 14, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: sel
                   ? AppColors.diabetesColor.withValues(alpha: 0.08)
                   : AppColors.surface,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color:
-                    sel ? AppColors.diabetesColor : AppColors.border,
+                color: sel ? AppColors.diabetesColor : AppColors.border,
                 width: sel ? 1.5 : 1,
               ),
             ),
@@ -786,9 +838,7 @@ class _ActivityLevelSelector extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: sel
-                          ? AppColors.diabetesColor
-                          : AppColors.border,
+                      color: sel ? AppColors.diabetesColor : AppColors.border,
                       width: sel ? 6 : 2,
                     ),
                   ),

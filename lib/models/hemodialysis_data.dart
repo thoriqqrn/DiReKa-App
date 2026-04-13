@@ -3,10 +3,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 /// Data hemodialisis untuk pasien penyakit ginjal kronis.
 /// Menyimpan informasi kapan dimulai, kapan berakhir, jadwal, dan lokasi.
 class HemodialysisData {
-  final DateTime startDate;        // Tanggal mulai dialisa
-  final DateTime endDate;          // Tanggal selesai dialisa (wajib)
+  final DateTime startDate; // Tanggal mulai dialisa
+  final DateTime endDate; // Tanggal selesai dialisa (wajib)
   final List<String> scheduleDays; // ['Senin', 'Kamis', 'Sabtu'] (1-3 hari)
-  final String location;           // Nama rumah sakit/klinik
+  final String location; // Nama rumah sakit/klinik
 
   HemodialysisData({
     required this.startDate,

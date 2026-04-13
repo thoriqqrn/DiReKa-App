@@ -285,7 +285,9 @@ class _GoogleCompleteProfileScreenState
                                   _hasEdema ? 'Ya, ada' : 'Tidak ada',
                                   style: TextStyle(
                                     fontSize: 13,
-                                    color: _hasEdema ? Colors.orange : Colors.green,
+                                    color: _hasEdema
+                                        ? Colors.orange
+                                        : Colors.green,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -544,18 +546,18 @@ class _GenderOption extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon,
-                size: 20,
-                color: selected ? AppColors.primary : AppColors.textSecondary),
+            Icon(
+              icon,
+              size: 20,
+              color: selected ? AppColors.primary : AppColors.textSecondary,
+            ),
             const SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
                 fontSize: 14,
-                fontWeight:
-                    selected ? FontWeight.w600 : FontWeight.normal,
-                color:
-                    selected ? AppColors.primary : AppColors.textSecondary,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                color: selected ? AppColors.primary : AppColors.textSecondary,
               ),
             ),
           ],
@@ -568,8 +570,7 @@ class _GenderOption extends StatelessWidget {
 class _ActivityLevelSelector extends StatelessWidget {
   final ActivityLevel? value;
   final void Function(ActivityLevel) onChanged;
-  const _ActivityLevelSelector(
-      {required this.value, required this.onChanged});
+  const _ActivityLevelSelector({required this.value, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -581,8 +582,7 @@ class _ActivityLevelSelector extends StatelessWidget {
           onTap: () => onChanged(level),
           child: Container(
             margin: const EdgeInsets.only(bottom: 8),
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: sel
                   ? AppColors.diabetesColor.withValues(alpha: 0.08)
@@ -601,9 +601,7 @@ class _ActivityLevelSelector extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: sel
-                          ? AppColors.diabetesColor
-                          : AppColors.border,
+                      color: sel ? AppColors.diabetesColor : AppColors.border,
                       width: sel ? 6 : 2,
                     ),
                   ),

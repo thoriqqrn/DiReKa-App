@@ -32,8 +32,8 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
   List<FoodLogEntry> _entries = [];
   bool _isLoading = true;
   late AuthProvider _authProvider;
-  MealType? _selectedMealType;  // ← Track selected meal time
-  List<DailyNutrition>? _weeklyData;  // ← Weekly data for HF charts
+  MealType? _selectedMealType; // ← Track selected meal time
+  List<DailyNutrition>? _weeklyData; // ← Weekly data for HF charts
 
   @override
   void initState() {
@@ -42,15 +42,16 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
     // Listener: reload entries setiap kali userModel selesai load dari Firestore
     _authProvider.addListener(_onAuthChanged);
     _loadEntries();
-    _loadWeeklyData();  // ← Load weekly data on init
+    _loadWeeklyData(); // ← Load weekly data on init
   }
 
   void _onAuthChanged() {
     // Jika sebelumnya uid kosong (userModel belum load), reload entries sekarang
-    final uid = _authProvider.currentUser?.uid ?? _authProvider.firebaseUser?.uid ?? '';
+    final uid =
+        _authProvider.currentUser?.uid ?? _authProvider.firebaseUser?.uid ?? '';
     if (uid.isNotEmpty && _entries.isEmpty && !_isLoading) {
       _loadEntries();
-      _loadWeeklyData();  // ← Reload weekly data when auth changes
+      _loadWeeklyData(); // ← Reload weekly data when auth changes
     }
   }
 
@@ -59,7 +60,7 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
     try {
       final uid = _uid;
       final needs = _authProvider.currentUser?.nutritionNeeds;
-      
+
       if (uid.isEmpty || needs == null) {
         setState(() => _weeklyData = []);
         return;
@@ -70,7 +71,7 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
         endDate: DateTime.now(),
         targets: needs,
       );
-      
+
       if (mounted) {
         setState(() => _weeklyData = data);
       }
@@ -96,7 +97,15 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
 
   /// Jumlahkan semua nutrisi dari entri hari ini
   NutritionIntake get _totalIntake {
-    double e = 0, p = 0, l = 0, k = 0, na = 0, ka = 0, fo = 0, air = 0, serat = 0;
+    double e = 0,
+        p = 0,
+        l = 0,
+        k = 0,
+        na = 0,
+        ka = 0,
+        fo = 0,
+        air = 0,
+        serat = 0;
     for (final entry in _entries) {
       e += entry.energi;
       p += entry.protein;
@@ -109,13 +118,22 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
       serat += entry.serat;
     }
     return NutritionIntake(
-      energi: e, protein: p, lemak: l, karbohidrat: k,
-      natrium: na, kalium: ka, fosfor: fo, cairan: air, serat: serat,
+      energi: e,
+      protein: p,
+      lemak: l,
+      karbohidrat: k,
+      natrium: na,
+      kalium: ka,
+      fosfor: fo,
+      cairan: air,
+      serat: serat,
     );
   }
 
   /// Group entries by meal type for DM table display
-  Map<MealType, List<FoodLogEntry>> _groupEntriesByMeal(List<FoodLogEntry> entries) {
+  Map<MealType, List<FoodLogEntry>> _groupEntriesByMeal(
+    List<FoodLogEntry> entries,
+  ) {
     final grouped = <MealType, List<FoodLogEntry>>{};
     for (final entry in entries) {
       grouped.putIfAbsent(entry.mealType, () => []).add(entry);
@@ -160,12 +178,15 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
         content: Text('Hapus "${entry.foodName}" dari log hari ini?'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Batal')),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Hapus',
-                style: TextStyle(color: AppColors.error)),
+            child: const Text(
+              'Hapus',
+              style: TextStyle(color: AppColors.error),
+            ),
           ),
         ],
       ),
@@ -192,8 +213,9 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
         energi: entry.grams > 0 ? entry.energi / entry.grams * 100 : 0,
         protein: entry.grams > 0 ? entry.protein / entry.grams * 100 : 0,
         lemak: entry.grams > 0 ? entry.lemak / entry.grams * 100 : 0,
-        karbohidrat:
-            entry.grams > 0 ? entry.karbohidrat / entry.grams * 100 : 0,
+        karbohidrat: entry.grams > 0
+            ? entry.karbohidrat / entry.grams * 100
+            : 0,
         natrium: entry.grams > 0 ? entry.natrium / entry.grams * 100 : 0,
         kalium: entry.grams > 0 ? entry.kalium / entry.grams * 100 : 0,
         fosfor: entry.grams > 0 ? entry.fosfor / entry.grams * 100 : 0,
@@ -212,7 +234,7 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
         foodName: entry.foodName,
         grams: newGrams,
         loggedAt: entry.loggedAt,
-        mealType: entry.mealType,  // ← PRESERVE existing meal type
+        mealType: entry.mealType, // ← PRESERVE existing meal type
         energi: n['energi']!,
         protein: n['protein']!,
         lemak: n['lemak']!,
@@ -232,10 +254,13 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
       await showDialog(
         context: context,
         builder: (ctx) => Dialog(
-          insetPadding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 20,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           child: _TakaranSajiContent(
             food: food,
             onSave: (newGrams) async {
@@ -279,41 +304,58 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
-            ...MealType.values.map((meal) => InkWell(
-              onTap: () {
-                Navigator.pop(ctx);
-                setState(() => _selectedMealType = meal);
-                _proceedToFoodSearch();
-              },
-              child: Container(
-                color: Colors.transparent,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                child: Row(
-                  children: [
-                    Text(meal.emoji, style: const TextStyle(fontSize: 28)),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+            ...MealType.values
+                .map(
+                  (meal) => InkWell(
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      setState(() => _selectedMealType = meal);
+                      _proceedToFoodSearch();
+                    },
+                    child: Container(
+                      color: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                      child: Row(
                         children: [
                           Text(
-                            meal.label,
-                            style: const TextStyle(
-                                fontSize: 14, fontWeight: FontWeight.w500),
+                            meal.emoji,
+                            style: const TextStyle(fontSize: 28),
                           ),
-                          Text(
-                            meal.timeRange,
-                            style: const TextStyle(
-                                fontSize: 12, color: AppColors.textSecondary),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  meal.label,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                Text(
+                                  meal.timeRange,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.chevron_right,
+                            color: AppColors.primary,
                           ),
                         ],
                       ),
                     ),
-                    const Icon(Icons.chevron_right, color: AppColors.primary),
-                  ],
-                ),
-              ),
-            )).toList(),
+                  ),
+                )
+                .toList(),
             const SizedBox(height: 12),
           ],
         ),
@@ -421,12 +463,14 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
       getActual: getActual,
       getTarget: getTarget,
       minY: 0,
-      maxY: (weeklyData.fold<double>(
-              0,
-              (max, data) =>
-                  getActual(data) > max ? getActual(data) : max) *
-            1.2)
-          .toDouble(),
+      maxY:
+          (weeklyData.fold<double>(
+                    0,
+                    (max, data) =>
+                        getActual(data) > max ? getActual(data) : max,
+                  ) *
+                  1.2)
+              .toDouble(),
     );
   }
 
@@ -466,7 +510,8 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
                             const _NutritionLoadingCard()
                           else if (needs != null) ...[
                             // 1. Weekly fluid chart for kidney patients
-                            if (auth.currentUser?.diseaseType == DiseaseType.chronicKidneyDisease) ...[
+                            if (auth.currentUser?.diseaseType ==
+                                DiseaseType.chronicKidneyDisease) ...[
                               _WeeklyFluidChart(target: needs.cairan),
                               const SizedBox(height: 16),
                               // 2. Daily circular gauge for kidney patients
@@ -477,12 +522,16 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
                               const SizedBox(height: 16),
                             ],
                             // 2. HF Patients: Show weekly nutrition charts
-                            if (auth.currentUser?.diseaseType == DiseaseType.heartFailure && _weeklyData != null && _weeklyData!.isNotEmpty) ...[
+                            if (auth.currentUser?.diseaseType ==
+                                    DiseaseType.heartFailure &&
+                                _weeklyData != null &&
+                                _weeklyData!.isNotEmpty) ...[
                               _HFWeeklyChartsSection(weeklyData: _weeklyData!),
                               const SizedBox(height: 16),
                             ],
                             // 3. DM Patients: Show hierarchical meal table
-                            if (auth.currentUser?.diseaseType == DiseaseType.type2DiabetesMellitus)
+                            if (auth.currentUser?.diseaseType ==
+                                DiseaseType.type2DiabetesMellitus)
                               _DMDailyMealTable(
                                 entriesByMeal: _groupEntriesByMeal(_entries),
                                 needs: needs,
@@ -490,9 +539,10 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
                             // 3. Other patients: Show nutrition summary
                             else
                               _NutritionSummaryCard(
-                                  needs: needs,
-                                  intake: intake,
-                                  diseaseType: auth.currentUser?.diseaseType),
+                                needs: needs,
+                                intake: intake,
+                                diseaseType: auth.currentUser?.diseaseType,
+                              ),
                           ] else
                             const _NoFormulaCard(),
                           const SizedBox(height: 16),
@@ -511,17 +561,18 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: uid.isEmpty
             ? () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Silakan login untuk mencatat makanan'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                )
+                const SnackBar(
+                  content: Text('Silakan login untuk mencatat makanan'),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              )
             : _showAddFoodSheet,
         backgroundColor: AppColors.primary,
         icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-        label: const Text('Tambah Makanan',
-            style: TextStyle(
-                color: Colors.white, fontWeight: FontWeight.w600)),
+        label: const Text(
+          'Tambah Makanan',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        ),
       ),
     );
   }
@@ -601,9 +652,10 @@ class _NutritionLoadingCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2)),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: const Row(
@@ -617,8 +669,7 @@ class _NutritionLoadingCard extends StatelessWidget {
           SizedBox(width: 12),
           Text(
             'Memuat data nutrisi...',
-            style:
-                TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
           ),
         ],
       ),
@@ -635,8 +686,11 @@ class _NutritionSummaryCard extends StatelessWidget {
   final NutritionIntake intake;
   final DiseaseType? diseaseType;
 
-  const _NutritionSummaryCard(
-      {required this.needs, required this.intake, this.diseaseType});
+  const _NutritionSummaryCard({
+    required this.needs,
+    required this.intake,
+    this.diseaseType,
+  });
 
   bool get _isDM => diseaseType == DiseaseType.type2DiabetesMellitus;
 
@@ -645,32 +699,76 @@ class _NutritionSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final energyRatio =
-        needs.energi > 0 ? intake.energi / needs.energi : 0.0;
+    final energyRatio = needs.energi > 0 ? intake.energi / needs.energi : 0.0;
 
     // Nutrisi dasar (semua penyakit)
     final nutrients = [
-      _NutrientData('Energi', intake.energi, needs.energi, 'kkal',
-          Icons.local_fire_department_outlined),
-      _NutrientData('Protein', intake.protein, needs.protein, 'g',
-          Icons.egg_outlined),
       _NutrientData(
-          'Lemak', intake.lemak, needs.lemak, 'g', Icons.water_drop_outlined),
-      _NutrientData('Karbohidrat', intake.karbohidrat, needs.karbohidrat,
-          'g', Icons.grain),
+        'Energi',
+        intake.energi,
+        needs.energi,
+        'kkal',
+        Icons.local_fire_department_outlined,
+      ),
+      _NutrientData(
+        'Protein',
+        intake.protein,
+        needs.protein,
+        'g',
+        Icons.egg_outlined,
+      ),
+      _NutrientData(
+        'Lemak',
+        intake.lemak,
+        needs.lemak,
+        'g',
+        Icons.water_drop_outlined,
+      ),
+      _NutrientData(
+        'Karbohidrat',
+        intake.karbohidrat,
+        needs.karbohidrat,
+        'g',
+        Icons.grain,
+      ),
       // DM: serat + tidak ada Na/K/P/cairan
       if (_isDM)
-        _NutrientData('Serat', intake.serat, needs.serat, 'g',
-            Icons.grass_outlined)
+        _NutrientData(
+          'Serat',
+          intake.serat,
+          needs.serat,
+          'g',
+          Icons.grass_outlined,
+        )
       else ...[
-        _NutrientData('Natrium', intake.natrium, needs.natrium, 'mg',
-            Icons.science_outlined),
-        _NutrientData('Kalium', intake.kalium, needs.kalium, 'mg',
-            Icons.bolt_outlined),
-        _NutrientData('Fosfor', intake.fosfor, needs.fosfor, 'mg',
-            Icons.circle_outlined),
-        _NutrientData('Cairan', intake.cairan, needs.cairan, 'ml',
-            Icons.opacity_outlined),
+        _NutrientData(
+          'Natrium',
+          intake.natrium,
+          needs.natrium,
+          'mg',
+          Icons.science_outlined,
+        ),
+        _NutrientData(
+          'Kalium',
+          intake.kalium,
+          needs.kalium,
+          'mg',
+          Icons.bolt_outlined,
+        ),
+        _NutrientData(
+          'Fosfor',
+          intake.fosfor,
+          needs.fosfor,
+          'mg',
+          Icons.circle_outlined,
+        ),
+        _NutrientData(
+          'Cairan',
+          intake.cairan,
+          needs.cairan,
+          'ml',
+          Icons.opacity_outlined,
+        ),
       ],
     ];
 
@@ -680,9 +778,10 @@ class _NutritionSummaryCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2)),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
@@ -699,17 +798,21 @@ class _NutritionSummaryCard extends StatelessWidget {
                     color: _themeColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(Icons.bar_chart_rounded,
-                      color: _themeColor, size: 20),
+                  child: Icon(
+                    Icons.bar_chart_rounded,
+                    color: _themeColor,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 10),
                 const Expanded(
                   child: Text(
                     'Ringkasan Nutrisi Harian',
                     style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: AppColors.textPrimary),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                 ),
                 Column(
@@ -723,26 +826,31 @@ class _NutritionSummaryCard extends StatelessWidget {
                         color: _progressColor(energyRatio),
                       ),
                     ),
-                    const Text('energi',
-                        style: TextStyle(
-                            fontSize: 10,
-                            color: AppColors.textSecondary)),
+                    const Text(
+                      'energi',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
                   ],
                 ),
               ],
             ),
           ),
           const Divider(height: 1, color: AppColors.divider),
-          
+
           // ── Nutrient rows ──
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
             child: Column(
               children: nutrients
-                  .map((n) => Padding(
-                        padding: const EdgeInsets.only(bottom: 14),
-                        child: _NutrientRow(data: n),
-                      ))
+                  .map(
+                    (n) => Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: _NutrientRow(data: n),
+                    ),
+                  )
                   .toList(),
             ),
           ),
@@ -764,7 +872,7 @@ class _NutritionSummaryCard extends StatelessWidget {
 
 class _WeeklyFluidChart extends StatelessWidget {
   final double target;
-  
+
   const _WeeklyFluidChart({required this.target});
 
   List<_DayFluidData> _getWeeklyData() {
@@ -772,30 +880,36 @@ class _WeeklyFluidChart extends StatelessWidget {
     // For now, return mock data with different values per day
     final now = DateTime.now();
     final data = <_DayFluidData>[];
-    
+
     for (int i = 6; i >= 0; i--) {
       final date = now.subtract(Duration(days: i));
-      final dayOfWeek = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'][date.weekday % 7];
-      
+      final dayOfWeek = [
+        'Min',
+        'Sen',
+        'Sel',
+        'Rab',
+        'Kam',
+        'Jum',
+        'Sab',
+      ][date.weekday % 7];
+
       // Mock intake values (0-target * 1.3 for variety)
       double intake = target * (0.4 + (i * 0.15).clamp(0, 1.3));
       if (i == 0) intake = target * 0.65; // Today's partial intake
-      
-      data.add(_DayFluidData(
-        day: dayOfWeek,
-        intake: intake,
-        date: date,
-      ));
+
+      data.add(_DayFluidData(day: dayOfWeek, intake: intake, date: date));
     }
-    
+
     return data;
   }
 
   @override
   Widget build(BuildContext context) {
     final weeklyData = _getWeeklyData();
-    final maxValue = (weeklyData.map((d) => d.intake).reduce((a, b) => a > b ? a : b) * 1.1).clamp(target, double.infinity);
-    
+    final maxValue =
+        (weeklyData.map((d) => d.intake).reduce((a, b) => a > b ? a : b) * 1.1)
+            .clamp(target, double.infinity);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -813,15 +927,16 @@ class _WeeklyFluidChart extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: weeklyData.map((day) {
             final ratio = day.intake / maxValue;
-            final isToday = day.date.year == DateTime.now().year &&
+            final isToday =
+                day.date.year == DateTime.now().year &&
                 day.date.month == DateTime.now().month &&
                 day.date.day == DateTime.now().day;
             final color = day.intake > target
                 ? AppColors.warning
                 : day.intake >= target * 0.8
-                    ? AppColors.primary
-                    : AppColors.textHint;
-            
+                ? AppColors.primary
+                : AppColors.textHint;
+
             return Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -853,7 +968,9 @@ class _WeeklyFluidChart extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
-                        color: isToday ? AppColors.primary : AppColors.textSecondary,
+                        color: isToday
+                            ? AppColors.primary
+                            : AppColors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -862,7 +979,9 @@ class _WeeklyFluidChart extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 10,
                         color: isToday ? AppColors.primary : AppColors.textHint,
-                        fontWeight: isToday ? FontWeight.w600 : FontWeight.normal,
+                        fontWeight: isToday
+                            ? FontWeight.w600
+                            : FontWeight.normal,
                       ),
                     ),
                     if (isToday)
@@ -927,12 +1046,8 @@ class _DayFluidData {
   final String day;
   final double intake;
   final DateTime date;
-  
-  _DayFluidData({
-    required this.day,
-    required this.intake,
-    required this.date,
-  });
+
+  _DayFluidData({required this.day, required this.intake, required this.date});
 }
 
 class _NutrientData {
@@ -943,7 +1058,12 @@ class _NutrientData {
   final IconData icon;
 
   const _NutrientData(
-      this.label, this.intake, this.target, this.unit, this.icon);
+    this.label,
+    this.intake,
+    this.target,
+    this.unit,
+    this.icon,
+  );
 
   double get ratio => target > 0 ? intake / target : 0;
   bool get exceeded => intake > target;
@@ -968,31 +1088,38 @@ class _NutrientRow extends StatelessWidget {
           children: [
             Icon(data.icon, size: 13, color: AppColors.textSecondary),
             const SizedBox(width: 6),
-            Text(data.label,
-                style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary)),
+            Text(
+              data.label,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
             const Spacer(),
             if (data.exceeded)
               Container(
                 margin: const EdgeInsets.only(right: 6),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                 decoration: BoxDecoration(
                   color: AppColors.error.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Text('Melebihi!',
-                    style: TextStyle(
-                        fontSize: 10,
-                        color: AppColors.error,
-                        fontWeight: FontWeight.w700)),
+                child: const Text(
+                  'Melebihi!',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: AppColors.error,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
             Text(
               '${_fmt(data.intake)} / ${_fmt(data.target)} ${data.unit}',
               style: const TextStyle(
-                  fontSize: 11, color: AppColors.textSecondary),
+                fontSize: 11,
+                color: AppColors.textSecondary,
+              ),
             ),
           ],
         ),
@@ -1024,11 +1151,8 @@ class _NutrientRow extends StatelessWidget {
 class _KidneyFluidGauge extends StatelessWidget {
   final double intake;
   final double target;
-  
-  const _KidneyFluidGauge({
-    required this.intake,
-    required this.target,
-  });
+
+  const _KidneyFluidGauge({required this.intake, required this.target});
 
   double get _ratio => target > 0 ? intake / target : 0;
   bool get _exceeded => intake > target;
@@ -1054,9 +1178,7 @@ class _KidneyFluidGauge extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.kidneyColor.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: AppColors.kidneyColor.withValues(alpha: 0.2)),
       ),
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
       child: Column(
@@ -1064,8 +1186,11 @@ class _KidneyFluidGauge extends StatelessWidget {
           // Title
           Row(
             children: [
-              Icon(Icons.opacity_outlined,
-                  color: AppColors.kidneyColor, size: 20),
+              Icon(
+                Icons.opacity_outlined,
+                color: AppColors.kidneyColor,
+                size: 20,
+              ),
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(
@@ -1080,7 +1205,7 @@ class _KidneyFluidGauge extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          
+
           // Circular gauge with progress
           Center(
             child: SizedBox(
@@ -1133,7 +1258,7 @@ class _KidneyFluidGauge extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          
+
           // Status bars
           Container(
             padding: const EdgeInsets.all(12),
@@ -1151,14 +1276,10 @@ class _KidneyFluidGauge extends StatelessWidget {
                   value: '${intake.toStringAsFixed(0)} ml',
                   color: AppColors.success,
                 ),
-                Container(
-                  width: 1,
-                  height: 40,
-                  color: AppColors.divider,
-                ),
+                Container(width: 1, height: 40, color: AppColors.divider),
                 _StatItem(
-                  icon: _exceeded 
-                      ? Icons.warning_outlined 
+                  icon: _exceeded
+                      ? Icons.warning_outlined
                       : Icons.hourglass_bottom_outlined,
                   label: _exceeded ? 'Berlebih' : 'Sisa',
                   value: '${_remaining.toStringAsFixed(0)} ml',
@@ -1246,10 +1367,7 @@ class _StatItem extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 11,
-            color: AppColors.textSecondary,
-          ),
+          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
         ),
         Text(
           value,
@@ -1269,7 +1387,6 @@ class _StatItem extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _NoFormulaCard extends StatelessWidget {
-
   const _NoFormulaCard();
 
   @override
@@ -1284,14 +1401,16 @@ class _NoFormulaCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(Icons.info_outline_rounded,
-              color: AppColors.textHint, size: 36),
+          Icon(Icons.info_outline_rounded, color: AppColors.textHint, size: 36),
           const SizedBox(height: 10),
           const Text(
             'Formula nutrisi untuk penyakit Anda\nsedang dikembangkan.',
             textAlign: TextAlign.center,
             style: TextStyle(
-                color: AppColors.textSecondary, fontSize: 13, height: 1.5),
+              color: AppColors.textSecondary,
+              fontSize: 13,
+              height: 1.5,
+            ),
           ),
         ],
       ),
@@ -1308,8 +1427,11 @@ class _FoodListSection extends StatelessWidget {
   final Future<void> Function(FoodLogEntry) onDelete;
   final Future<void> Function(FoodLogEntry) onEdit;
 
-  const _FoodListSection(
-      {required this.entries, required this.onDelete, required this.onEdit});
+  const _FoodListSection({
+    required this.entries,
+    required this.onDelete,
+    required this.onEdit,
+  });
 
   // Helper: Group entries by meal type
   Map<MealType, List<FoodLogEntry>> _groupByMealType() {
@@ -1330,24 +1452,29 @@ class _FoodListSection extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Text('Makanan Hari Ini',
-                style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                    color: AppColors.textPrimary)),
+            const Text(
+              'Makanan Hari Ini',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+                color: AppColors.textPrimary,
+              ),
+            ),
             const SizedBox(width: 8),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
                 color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Text('${entries.length} item',
-                  style: const TextStyle(
-                      fontSize: 11,
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w600)),
+              child: Text(
+                '${entries.length} item',
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ],
         ),
@@ -1385,17 +1512,24 @@ class _EmptyFoodState extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(Icons.restaurant_menu_outlined,
-              size: 48, color: AppColors.textHint),
+          Icon(
+            Icons.restaurant_menu_outlined,
+            size: 48,
+            color: AppColors.textHint,
+          ),
           const SizedBox(height: 12),
-          const Text('Belum ada makanan dicatat',
-              style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary)),
+          const Text(
+            'Belum ada makanan dicatat',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
           const SizedBox(height: 4),
-          const Text('Tap tombol + untuk menambahkan',
-              style:
-                  TextStyle(fontSize: 12, color: AppColors.textHint)),
+          const Text(
+            'Tap tombol + untuk menambahkan',
+            style: TextStyle(fontSize: 12, color: AppColors.textHint),
+          ),
         ],
       ),
     );
@@ -1439,47 +1573,56 @@ class _MealSection extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
             children: [
-              Text(mealType.emoji,
-                  style: const TextStyle(fontSize: 24)),
+              Text(mealType.emoji, style: const TextStyle(fontSize: 24)),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(mealType.label,
-                        style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary)),
-                    Text(mealType.timeRange,
-                        style: const TextStyle(
-                            fontSize: 11,
-                            color: AppColors.textSecondary)),
+                    Text(
+                      mealType.label,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      mealType.timeRange,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
                   ],
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Text('${entries.length}',
-                    style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600)),
+                child: Text(
+                  '${entries.length}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ],
           ),
         ),
         // Food entries
-        ...entries.map((e) => _FoodEntryCard(
-              entry: e,
-              onDelete: () => onDelete(e),
-              onEdit: () => onEdit(e),
-            )),
+        ...entries.map(
+          (e) => _FoodEntryCard(
+            entry: e,
+            onDelete: () => onDelete(e),
+            onEdit: () => onEdit(e),
+          ),
+        ),
         // Meal subtotals
         Container(
           margin: const EdgeInsets.fromLTRB(0, 4, 0, 12),
@@ -1492,16 +1635,18 @@ class _MealSection extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Subtotal Kalori: ${subtotals['energi']!.toStringAsFixed(0)} kkal',
-                  style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textSecondary)),
               Text(
-                  'Na: ${subtotals['natrium']!.toStringAsFixed(0)} mg  ·  P: ${subtotals['protein']!.toStringAsFixed(1)} g',
-                  style: const TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textHint)),
+                'Subtotal Kalori: ${subtotals['energi']!.toStringAsFixed(0)} kkal',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              Text(
+                'Na: ${subtotals['natrium']!.toStringAsFixed(0)} mg  ·  P: ${subtotals['protein']!.toStringAsFixed(1)} g',
+                style: const TextStyle(fontSize: 11, color: AppColors.textHint),
+              ),
             ],
           ),
         ),
@@ -1511,13 +1656,15 @@ class _MealSection extends StatelessWidget {
 }
 
 class _FoodEntryCard extends StatelessWidget {
-
   final FoodLogEntry entry;
   final VoidCallback onDelete;
   final VoidCallback onEdit;
 
-  const _FoodEntryCard(
-      {required this.entry, required this.onDelete, required this.onEdit});
+  const _FoodEntryCard({
+    required this.entry,
+    required this.onDelete,
+    required this.onEdit,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1528,14 +1675,14 @@ class _FoodEntryCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 4,
-              offset: const Offset(0, 1))
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
         ],
       ),
       child: ListTile(
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         onTap: onEdit,
         leading: Container(
           width: 44,
@@ -1544,18 +1691,23 @@ class _FoodEntryCard extends StatelessWidget {
             color: Colors.orange.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: const Icon(Icons.restaurant_outlined,
-              color: Colors.orange, size: 22),
+          child: const Icon(
+            Icons.restaurant_outlined,
+            color: Colors.orange,
+            size: 22,
+          ),
         ),
-        title: Text(entry.foodName,
-            style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-                color: AppColors.textPrimary)),
+        title: Text(
+          entry.foodName,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+            color: AppColors.textPrimary,
+          ),
+        ),
         subtitle: Text(
           '${entry.grams.toInt()} g  ·  ${entry.energi.toStringAsFixed(0)} kkal',
-          style:
-              const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -1564,17 +1716,28 @@ class _FoodEntryCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text('P: ${entry.protein.toStringAsFixed(1)} g',
-                    style: const TextStyle(
-                        fontSize: 10, color: AppColors.textSecondary)),
-                Text('Na: ${entry.natrium.toStringAsFixed(1)} mg',
-                    style: const TextStyle(
-                        fontSize: 10, color: AppColors.textSecondary)),
+                Text(
+                  'P: ${entry.protein.toStringAsFixed(1)} g',
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                Text(
+                  'Na: ${entry.natrium.toStringAsFixed(1)} mg',
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ],
             ),
             PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert,
-                  size: 20, color: AppColors.textSecondary),
+              icon: const Icon(
+                Icons.more_vert,
+                size: 20,
+                color: AppColors.textSecondary,
+              ),
               onSelected: (val) {
                 if (val == 'edit') onEdit();
                 if (val == 'delete') onDelete();
@@ -1584,8 +1747,11 @@ class _FoodEntryCard extends StatelessWidget {
                   value: 'edit',
                   child: Row(
                     children: [
-                      Icon(Icons.edit_outlined,
-                          size: 18, color: AppColors.primary),
+                      Icon(
+                        Icons.edit_outlined,
+                        size: 18,
+                        color: AppColors.primary,
+                      ),
                       SizedBox(width: 10),
                       Text('Edit Gram'),
                     ],
@@ -1595,11 +1761,13 @@ class _FoodEntryCard extends StatelessWidget {
                   value: 'delete',
                   child: Row(
                     children: [
-                      Icon(Icons.delete_outline,
-                          size: 18, color: AppColors.error),
+                      Icon(
+                        Icons.delete_outline,
+                        size: 18,
+                        color: AppColors.error,
+                      ),
                       SizedBox(width: 10),
-                      Text('Hapus',
-                          style: TextStyle(color: AppColors.error)),
+                      Text('Hapus', style: TextStyle(color: AppColors.error)),
                     ],
                   ),
                 ),
@@ -1617,10 +1785,10 @@ class _FoodEntryCard extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _AddFoodSheet extends StatefulWidget {
-  final MealType mealType;  // ← NEW
+  final MealType mealType; // ← NEW
   final Future<void> Function(FoodItem food, double grams) onAdd;
   const _AddFoodSheet({
-    required this.mealType,  // ← NEW
+    required this.mealType, // ← NEW
     required this.onAdd,
   });
 
@@ -1649,14 +1817,17 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
 
   void _onSearchChanged(String q) {
     _debounce?.cancel();
-    _debounce =
-        Timer(const Duration(milliseconds: 300), () => _search(q));
+    _debounce = Timer(const Duration(milliseconds: 300), () => _search(q));
   }
 
   Future<void> _search(String q) async {
     setState(() => _isSearching = true);
     final results = await FoodDatabaseService.search(q);
-    if (mounted) setState(() { _results = results; _isSearching = false; });
+    if (mounted)
+      setState(() {
+        _results = results;
+        _isSearching = false;
+      });
   }
 
   void _selectFood(FoodItem food) {
@@ -1671,10 +1842,8 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
-        insetPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: _TakaranSajiContent(
           food: food,
           onSave: (grams) async {
@@ -1699,19 +1868,27 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
           final n = food.calcFor(grams);
 
           return AlertDialog(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(food.nama,
-                    style: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.bold)),
-                Text(food.kategori,
-                    style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.normal)),
+                Text(
+                  food.nama,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  food.kategori,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.normal,
+                  ),
+                ),
               ],
             ),
             content: SizedBox(
@@ -1723,14 +1900,18 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                   TextField(
                     controller: gramCtrl,
                     keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true),
+                      decimal: true,
+                    ),
                     decoration: InputDecoration(
                       labelText: 'Berat (gram)',
                       suffixText: 'g',
                       border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10)),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 12),
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                     ),
                     onChanged: (_) => setS(() {}),
                   ),
@@ -1751,8 +1932,12 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                         _previewRow('Natrium', n['natrium']!, 'mg'),
                         _previewRow('Kalium', n['kalium']!, 'mg'),
                         _previewRow('Fosfor', n['fosfor']!, 'mg'),
-                        _previewRow('Cairan (Air)', n['air']!, 'ml',
-                            isLast: true),
+                        _previewRow(
+                          'Cairan (Air)',
+                          n['air']!,
+                          'ml',
+                          isLast: true,
+                        ),
                       ],
                     ),
                   ),
@@ -1761,12 +1946,13 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
             ),
             actions: [
               TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Batal')),
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Batal'),
+              ),
               FilledButton(
                 onPressed: grams > 0
                     ? () async {
-                        Navigator.pop(ctx);   // tutup dialog
+                        Navigator.pop(ctx); // tutup dialog
                         Navigator.pop(context); // tutup sheet
                         await widget.onAdd(food, grams);
                       }
@@ -1780,21 +1966,32 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
     );
   }
 
-  Widget _previewRow(String label, double value, String unit,
-      {bool isLast = false}) {
+  Widget _previewRow(
+    String label,
+    double value,
+    String unit, {
+    bool isLast = false,
+  }) {
     return Padding(
       padding: EdgeInsets.only(bottom: isLast ? 0 : 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label,
-              style: const TextStyle(
-                  fontSize: 12, color: AppColors.textSecondary)),
-          Text('${value.toStringAsFixed(1)} $unit',
-              style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          Text(
+            '${value.toStringAsFixed(1)} $unit',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
         ],
       ),
     );
@@ -1811,8 +2008,7 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
         return Container(
           decoration: const BoxDecoration(
             color: AppColors.surface,
-            borderRadius:
-                BorderRadius.vertical(top: Radius.circular(20)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: Column(
             children: [
@@ -1822,15 +2018,19 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                    color: AppColors.divider,
-                    borderRadius: BorderRadius.circular(2)),
+                  color: AppColors.divider,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
               const SizedBox(height: 14),
-              const Text('Tambah Makanan',
-                  style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary)),
+              const Text(
+                'Tambah Makanan',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
               const SizedBox(height: 12),
               // Search field
               Padding(
@@ -1847,8 +2047,7 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
-                    contentPadding:
-                        const EdgeInsets.symmetric(vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                   onChanged: _onSearchChanged,
                 ),
@@ -1859,42 +2058,49 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                 child: _isSearching
                     ? const Center(child: CircularProgressIndicator())
                     : _results.isEmpty
-                        ? Center(
-                            child: Text('Tidak ditemukan',
-                                style: TextStyle(
-                                    color: AppColors.textHint)),
-                          )
-                        : ListView.separated(
-                            controller: scrollCtrl,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 4),
-                            itemCount: _results.length,
-                            separatorBuilder: (_, __) =>
-                                const Divider(height: 1),
-                            itemBuilder: (_, i) {
-                              final food = _results[i];
-                              return ListTile(
-                                contentPadding:
-                                    const EdgeInsets.symmetric(
-                                        vertical: 4),
-                                title: Text(food.nama,
-                                    style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                        color: AppColors.textPrimary)),
-                                subtitle: Text(
-                                  '${food.energi.toInt()} kkal  ·  P: ${food.protein}g  ·  Na: ${food.natrium.toInt()}mg',
-                                  style: const TextStyle(
-                                      fontSize: 12,
-                                      color: AppColors.textSecondary),
-                                ),
-                                trailing: const Icon(
-                                    Icons.add_circle_outline,
-                                    color: AppColors.primary),
-                                onTap: () => _selectFood(food),
-                              );
-                            },
-                          ),
+                    ? Center(
+                        child: Text(
+                          'Tidak ditemukan',
+                          style: TextStyle(color: AppColors.textHint),
+                        ),
+                      )
+                    : ListView.separated(
+                        controller: scrollCtrl,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 4,
+                        ),
+                        itemCount: _results.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (_, i) {
+                          final food = _results[i];
+                          return ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 4,
+                            ),
+                            title: Text(
+                              food.nama,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            subtitle: Text(
+                              '${food.energi.toInt()} kkal  ·  P: ${food.protein}g  ·  Na: ${food.natrium.toInt()}mg',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            trailing: const Icon(
+                              Icons.add_circle_outline,
+                              color: AppColors.primary,
+                            ),
+                            onTap: () => _selectFood(food),
+                          );
+                        },
+                      ),
               ),
               const SizedBox(height: 16),
             ],
@@ -1912,8 +2118,11 @@ class _EditGramDialog extends StatefulWidget {
   final FoodItem food;
   final Future<void> Function(double newGrams) onSave;
 
-  const _EditGramDialog(
-      {required this.entry, required this.food, required this.onSave});
+  const _EditGramDialog({
+    required this.entry,
+    required this.food,
+    required this.onSave,
+  });
 
   @override
   State<_EditGramDialog> createState() => _EditGramDialogState();
@@ -1927,8 +2136,9 @@ class _EditGramDialogState extends State<_EditGramDialog> {
   @override
   void initState() {
     super.initState();
-    _gramCtrl =
-        TextEditingController(text: widget.entry.grams.toInt().toString());
+    _gramCtrl = TextEditingController(
+      text: widget.entry.grams.toInt().toString(),
+    );
     _recalc();
   }
 
@@ -1946,8 +2156,9 @@ class _EditGramDialogState extends State<_EditGramDialog> {
   Future<void> _save() async {
     final g = double.tryParse(_gramCtrl.text) ?? 0;
     if (g <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gram harus lebih dari 0')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Gram harus lebih dari 0')));
       return;
     }
     setState(() => _saving = true);
@@ -1956,47 +2167,56 @@ class _EditGramDialogState extends State<_EditGramDialog> {
   }
 
   Widget _row(String label, String value) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 3),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label,
-                style: const TextStyle(
-                    fontSize: 13, color: AppColors.textSecondary)),
-            Text(value,
-                style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary)),
-          ],
+    padding: const EdgeInsets.symmetric(vertical: 3),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
         ),
-      );
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+      ],
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
     final g = double.tryParse(_gramCtrl.text) ?? 0;
     return AlertDialog(
-      title: Text('Edit ${widget.food.nama}',
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+      title: Text(
+        'Edit ${widget.food.nama}',
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      ),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Jumlah (gram)',
-                style:
-                    TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+            const Text(
+              'Jumlah (gram)',
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            ),
             const SizedBox(height: 6),
             TextField(
               controller: _gramCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               decoration: InputDecoration(
                 suffixText: 'g',
                 filled: true,
                 fillColor: AppColors.background,
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
               onChanged: (_) => _recalc(),
             ),
@@ -2004,34 +2224,41 @@ class _EditGramDialogState extends State<_EditGramDialog> {
               const SizedBox(height: 14),
               const Divider(),
               const SizedBox(height: 4),
-              const Text('Perkiraan Gizi',
-                  style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary)),
+              const Text(
+                'Perkiraan Gizi',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
               const SizedBox(height: 8),
               _row(
-                  'Energi',
-                  '${(_preview['energi'] ?? 0).toStringAsFixed(1)} kkal'),
+                'Energi',
+                '${(_preview['energi'] ?? 0).toStringAsFixed(1)} kkal',
+              ),
               _row(
-                  'Protein',
-                  '${(_preview['protein'] ?? 0).toStringAsFixed(1)} g'),
-              _row('Lemak',
-                  '${(_preview['lemak'] ?? 0).toStringAsFixed(1)} g'),
+                'Protein',
+                '${(_preview['protein'] ?? 0).toStringAsFixed(1)} g',
+              ),
+              _row('Lemak', '${(_preview['lemak'] ?? 0).toStringAsFixed(1)} g'),
               _row(
-                  'Karbohidrat',
-                  '${(_preview['karbohidrat'] ?? 0).toStringAsFixed(1)} g'),
+                'Karbohidrat',
+                '${(_preview['karbohidrat'] ?? 0).toStringAsFixed(1)} g',
+              ),
               _row(
-                  'Natrium',
-                  '${(_preview['natrium'] ?? 0).toStringAsFixed(1)} mg'),
+                'Natrium',
+                '${(_preview['natrium'] ?? 0).toStringAsFixed(1)} mg',
+              ),
               _row(
-                  'Kalium',
-                  '${(_preview['kalium'] ?? 0).toStringAsFixed(1)} mg'),
+                'Kalium',
+                '${(_preview['kalium'] ?? 0).toStringAsFixed(1)} mg',
+              ),
               _row(
-                  'Fosfor',
-                  '${(_preview['fosfor'] ?? 0).toStringAsFixed(1)} mg'),
-              _row('Air',
-                  '${(_preview['air'] ?? 0).toStringAsFixed(1)} ml'),
+                'Fosfor',
+                '${(_preview['fosfor'] ?? 0).toStringAsFixed(1)} mg',
+              ),
+              _row('Air', '${(_preview['air'] ?? 0).toStringAsFixed(1)} ml'),
             ],
           ],
         ),
@@ -2048,7 +2275,10 @@ class _EditGramDialogState extends State<_EditGramDialog> {
                   width: 18,
                   height: 18,
                   child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white))
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
               : const Text('Simpan'),
         ),
       ],
@@ -2063,8 +2293,11 @@ class _TakaranSajiContent extends StatefulWidget {
   final Future<void> Function(double grams) onSave;
   final VoidCallback onCancel;
 
-  const _TakaranSajiContent(
-      {required this.food, required this.onSave, required this.onCancel});
+  const _TakaranSajiContent({
+    required this.food,
+    required this.onSave,
+    required this.onCancel,
+  });
 
   @override
   State<_TakaranSajiContent> createState() => _TakaranSajiContentState();
@@ -2083,7 +2316,7 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
     'Sisa\n25%',
     'Sisa\n50%',
     'Sisa\n75%',
-    'Tidak\nmakan'
+    'Tidak\nmakan',
   ];
 
   double get _gramDimakan {
@@ -2094,29 +2327,34 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
   Map<String, double> get _preview => widget.food.calcFor(_gramDimakan);
 
   Widget _sectionLabel(String text) => Text(
-        text,
-        style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary),
-      );
+    text,
+    style: const TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      color: AppColors.textPrimary,
+    ),
+  );
 
   Widget _previewRow(String label, double value, String unit) => Padding(
-        padding: const EdgeInsets.only(bottom: 3),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label,
-                style: const TextStyle(
-                    fontSize: 12, color: AppColors.textSecondary)),
-            Text('${value.toStringAsFixed(1)} $unit',
-                style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary)),
-          ],
+    padding: const EdgeInsets.only(bottom: 3),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
         ),
-      );
+        Text(
+          '${value.toStringAsFixed(1)} $unit',
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+      ],
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -2131,14 +2369,18 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Header ──────────────────────────────────────────────────
-          Text(widget.food.nama,
-              style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary)),
-          const Text('Berapa yang kamu makan?',
-              style:
-                  TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+          Text(
+            widget.food.nama,
+            style: const TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const Text(
+            'Berapa yang kamu makan?',
+            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+          ),
           const SizedBox(height: 18),
 
           // ── Pilih ukuran takaran ─────────────────────────────────────
@@ -2154,41 +2396,50 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
                   onTap: () => setState(() => _takaranIdx = i),
                   child: Container(
                     margin: EdgeInsets.only(
-                        right: i < takaran.length - 1 ? 8 : 0),
+                      right: i < takaran.length - 1 ? 8 : 0,
+                    ),
                     padding: const EdgeInsets.symmetric(
-                        vertical: 10, horizontal: 4),
+                      vertical: 10,
+                      horizontal: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: sel
                           ? AppColors.primary.withValues(alpha: 0.1)
                           : Colors.grey.shade50,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: sel
-                            ? AppColors.primary
-                            : Colors.grey.shade200,
+                        color: sel ? AppColors.primary : Colors.grey.shade200,
                         width: sel ? 2 : 1,
                       ),
                     ),
                     child: Column(
                       children: [
-                        Text(widget.food.emoji,
-                            style: TextStyle(fontSize: emojiSize)),
+                        Text(
+                          widget.food.emoji,
+                          style: TextStyle(fontSize: emojiSize),
+                        ),
                         const SizedBox(height: 4),
-                        Text(t.label,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                                fontSize: 10,
-                                color: sel
-                                    ? AppColors.primary
-                                    : AppColors.textSecondary,
-                                fontWeight: FontWeight.w500)),
-                        Text('${t.gram.toInt()} g',
-                            style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: sel
-                                    ? AppColors.primary
-                                    : AppColors.textPrimary)),
+                        Text(
+                          t.label,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: sel
+                                ? AppColors.primary
+                                : AppColors.textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          '${t.gram.toInt()} g',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: sel
+                                ? AppColors.primary
+                                : AppColors.textPrimary,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -2206,20 +2457,20 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
             children: [
               IconButton(
                 icon: const Icon(Icons.remove_circle_outline, size: 36),
-                color: _count > 1
-                    ? AppColors.primary
-                    : Colors.grey.shade300,
-                onPressed:
-                    _count > 1 ? () => setState(() => _count--) : null,
+                color: _count > 1 ? AppColors.primary : Colors.grey.shade300,
+                onPressed: _count > 1 ? () => setState(() => _count--) : null,
               ),
               SizedBox(
                 width: 60,
-                child: Text('$_count',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary)),
+                child: Text(
+                  '$_count',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
               ),
               IconButton(
                 icon: const Icon(Icons.add_circle_outline, size: 36),
@@ -2249,9 +2500,7 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: sel
-                              ? AppColors.primary
-                              : Colors.grey.shade300,
+                          color: sel ? AppColors.primary : Colors.grey.shade300,
                           width: sel ? 2.5 : 1.5,
                         ),
                       ),
@@ -2265,17 +2514,18 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(label,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                            fontSize: 9,
-                            height: 1.2,
-                            color: sel
-                                ? AppColors.primary
-                                : AppColors.textSecondary,
-                            fontWeight: sel
-                                ? FontWeight.bold
-                                : FontWeight.normal)),
+                    Text(
+                      label,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 9,
+                        height: 1.2,
+                        color: sel
+                            ? AppColors.primary
+                            : AppColors.textSecondary,
+                        fontWeight: sel ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
                   ],
                 ),
               );
@@ -2295,17 +2545,19 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('${gram.toStringAsFixed(0)} g dimakan',
-                      style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primary)),
+                  Text(
+                    '${gram.toStringAsFixed(0)} g dimakan',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
                   const SizedBox(height: 6),
                   _previewRow('Energi', preview['energi']!, 'kkal'),
                   _previewRow('Protein', preview['protein']!, 'g'),
                   _previewRow('Lemak', preview['lemak']!, 'g'),
-                  _previewRow(
-                      'Karbohidrat', preview['karbohidrat']!, 'g'),
+                  _previewRow('Karbohidrat', preview['karbohidrat']!, 'g'),
                   _previewRow('Natrium', preview['natrium']!, 'mg'),
                   _previewRow('Kalium', preview['kalium']!, 'mg'),
                   _previewRow('Fosfor', preview['fosfor']!, 'mg'),
@@ -2322,9 +2574,13 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Center(
-                child: Text('Makanan tidak dicatat (sisa 100%)',
-                    style: TextStyle(
-                        color: AppColors.textSecondary, fontSize: 13)),
+                child: Text(
+                  'Makanan tidak dicatat (sisa 100%)',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                  ),
+                ),
               ),
             ),
           const SizedBox(height: 18),
@@ -2350,7 +2606,10 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
                           width: 18,
                           height: 18,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white))
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
                       : const Text('Simpan'),
                 ),
               ),
@@ -2377,8 +2636,7 @@ class _PiePainter extends CustomPainter {
     final rect = Rect.fromCircle(center: center, radius: radius);
 
     // Latar: bagian yang tidak dimakan (abu-abu)
-    canvas.drawCircle(
-        center, radius, Paint()..color = Colors.grey.shade100);
+    canvas.drawCircle(center, radius, Paint()..color = Colors.grey.shade100);
 
     // Bagian yang dimakan (warna primary)
     if (eatFraction > 0) {
@@ -2406,10 +2664,7 @@ class _DMDailyMealTable extends StatelessWidget {
   final Map<MealType, List<FoodLogEntry>> entriesByMeal;
   final NutritionNeeds needs;
 
-  const _DMDailyMealTable({
-    required this.entriesByMeal,
-    required this.needs,
-  });
+  const _DMDailyMealTable({required this.entriesByMeal, required this.needs});
 
   // DM meal distribution (20% + 15% + 30% + 10% + 25% = 100%)
   static const List<MealType> _dmMealOrder = [
@@ -2511,7 +2766,8 @@ class _MealTableSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final percentage = mealType.dmCaloriePercentage;
-    if (percentage == 0.0) return const SizedBox.shrink(); // Skip selingan malam
+    if (percentage == 0.0)
+      return const SizedBox.shrink(); // Skip selingan malam
 
     final targetEnergi = totalNeeds.energi * percentage;
     final targetProtein = totalNeeds.protein * percentage;
@@ -2548,10 +2804,7 @@ class _MealTableSection extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Text(
-                  mealType.emoji,
-                  style: const TextStyle(fontSize: 20),
-                ),
+                Text(mealType.emoji, style: const TextStyle(fontSize: 20)),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -2575,7 +2828,10 @@ class _MealTableSection extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: statusColor,
                     borderRadius: BorderRadius.circular(20),
@@ -2686,16 +2942,29 @@ class _MealTableSection extends StatelessWidget {
               },
               children: [
                 TableRow(
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                  ),
+                  decoration: BoxDecoration(color: Colors.grey.shade50),
                   children: [
                     _tableDataCell('Total Asupan', isBold: true),
-                    _tableDataCell(actualEnergi.toStringAsFixed(0), isBold: true),
-                    _tableDataCell(actualProtein.toStringAsFixed(1), isBold: true),
-                    _tableDataCell(actualLemak.toStringAsFixed(1), isBold: true),
-                    _tableDataCell((totals['karbohidrat'] ?? 0).toStringAsFixed(1), isBold: true),
-                    _tableDataCell(actualSerat.toStringAsFixed(1), isBold: true),
+                    _tableDataCell(
+                      actualEnergi.toStringAsFixed(0),
+                      isBold: true,
+                    ),
+                    _tableDataCell(
+                      actualProtein.toStringAsFixed(1),
+                      isBold: true,
+                    ),
+                    _tableDataCell(
+                      actualLemak.toStringAsFixed(1),
+                      isBold: true,
+                    ),
+                    _tableDataCell(
+                      (totals['karbohidrat'] ?? 0).toStringAsFixed(1),
+                      isBold: true,
+                    ),
+                    _tableDataCell(
+                      actualSerat.toStringAsFixed(1),
+                      isBold: true,
+                    ),
                     _tableDataCell('', isBold: true),
                   ],
                 ),
@@ -2709,11 +2978,33 @@ class _MealTableSection extends StatelessWidget {
                       isBold: true,
                       color: statusColor,
                     ),
-                    _tableDataCell(targetEnergi.toStringAsFixed(0), isBold: true, color: statusColor),
-                    _tableDataCell(targetProtein.toStringAsFixed(1), isBold: true, color: statusColor),
-                    _tableDataCell(targetLemak.toStringAsFixed(1), isBold: true, color: statusColor),
-                    _tableDataCell((targetEnergi * (totalNeeds.karbohidrat / totalNeeds.energi)).toStringAsFixed(1), isBold: true, color: statusColor),
-                    _tableDataCell(targetSerat.toStringAsFixed(1), isBold: true, color: statusColor),
+                    _tableDataCell(
+                      targetEnergi.toStringAsFixed(0),
+                      isBold: true,
+                      color: statusColor,
+                    ),
+                    _tableDataCell(
+                      targetProtein.toStringAsFixed(1),
+                      isBold: true,
+                      color: statusColor,
+                    ),
+                    _tableDataCell(
+                      targetLemak.toStringAsFixed(1),
+                      isBold: true,
+                      color: statusColor,
+                    ),
+                    _tableDataCell(
+                      (targetEnergi *
+                              (totalNeeds.karbohidrat / totalNeeds.energi))
+                          .toStringAsFixed(1),
+                      isBold: true,
+                      color: statusColor,
+                    ),
+                    _tableDataCell(
+                      targetSerat.toStringAsFixed(1),
+                      isBold: true,
+                      color: statusColor,
+                    ),
                     _tableDataCell('', isBold: true),
                   ],
                 ),
@@ -2741,11 +3032,7 @@ class _MealTableSection extends StatelessWidget {
     );
   }
 
-  Widget _tableDataCell(
-    String text, {
-    bool isBold = true,
-    Color? color,
-  }) {
+  Widget _tableDataCell(String text, {bool isBold = true, Color? color}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
       child: Text(
@@ -2812,10 +3099,7 @@ class _DailyInterpretationTable extends StatelessWidget {
             ),
             child: const Text(
               'Interpretasi Hasil (%)',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
           ),
 
@@ -2865,10 +3149,7 @@ class _DailyInterpretationTable extends StatelessWidget {
             ),
             child: const Text(
               'Ringkasan Per Waktu Makan',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
           ),
 
@@ -2923,9 +3204,7 @@ class _DailyInterpretationTable extends StatelessWidget {
     final statusColor = getStatusColor(ratio);
 
     return TableRow(
-      decoration: BoxDecoration(
-        color: statusColor.withValues(alpha: 0.05),
-      ),
+      decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.05)),
       children: [
         _interpDataCell('${meal.emoji} ${meal.label}'),
         _interpDataCell(targetEnergi.toStringAsFixed(0)),
@@ -2958,9 +3237,7 @@ class _DailyInterpretationTable extends StatelessWidget {
     final dailyTotals = calculateDailyTotals();
 
     return TableRow(
-      decoration: BoxDecoration(
-        color: statusColor.withValues(alpha: 0.1),
-      ),
+      decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1)),
       children: [
         _interpDataCell(
           dailyTotals['energi']!.toStringAsFixed(0),
@@ -2978,7 +3255,9 @@ class _DailyInterpretationTable extends StatelessWidget {
           color: statusColor,
         ),
         _interpDataCell(
-          (dailyTotals['energi']! * (totalNeeds.karbohidrat / totalNeeds.energi)).toStringAsFixed(1),
+          (dailyTotals['energi']! *
+                  (totalNeeds.karbohidrat / totalNeeds.energi))
+              .toStringAsFixed(1),
           isBold: true,
           color: statusColor,
         ),
@@ -3025,11 +3304,7 @@ class _DailyInterpretationTable extends StatelessWidget {
     );
   }
 
-  Widget _interpDataCell(
-    String text, {
-    bool isBold = false,
-    Color? color,
-  }) {
+  Widget _interpDataCell(String text, {bool isBold = false, Color? color}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
       child: Text(

@@ -17,8 +17,8 @@ class HealthTrackerScreen extends StatelessWidget {
           final label = diseaseType == DiseaseType.heartFailure
               ? 'Monitoring Gagal Jantung'
               : diseaseType == DiseaseType.chronicKidneyDisease
-                  ? 'Monitoring Gagal Ginjal'
-                  : 'Monitoring Kesehatan';
+              ? 'Monitoring Gagal Ginjal'
+              : 'Monitoring Kesehatan';
 
           return Center(
             child: Text(

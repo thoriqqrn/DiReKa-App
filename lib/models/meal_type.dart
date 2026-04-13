@@ -1,10 +1,10 @@
 enum MealType {
-  sarapan,           // Breakfast
-  selinganPagi,      // Morning Snack
-  makanSiang,        // Lunch
-  selinganSiang,     // Afternoon Snack
-  makanMalam,        // Dinner
-  selinganMalam,     // Evening Snack
+  sarapan, // Breakfast
+  selinganPagi, // Morning Snack
+  makanSiang, // Lunch
+  selinganSiang, // Afternoon Snack
+  makanMalam, // Dinner
+  selinganMalam, // Evening Snack
 }
 
 extension MealTypeExtension on MealType {

@@ -31,9 +31,7 @@ class HomeScreen extends StatelessWidget {
               ],
 
               // Login prompt (jika guest)
-              if (!auth.isAuthenticated) ...[
-                _GuestPromptCard(),
-              ],
+              if (!auth.isAuthenticated) ...[_GuestPromptCard()],
             ],
           ),
         ),
@@ -193,4 +191,3 @@ class _GuestPromptCard extends StatelessWidget {
     );
   }
 }
-

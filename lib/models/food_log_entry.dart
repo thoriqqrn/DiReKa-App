@@ -10,7 +10,7 @@ class FoodLogEntry {
   final String foodName;
   final double grams;
   final DateTime loggedAt;
-  final MealType mealType;  // ← NEW: Which meal category
+  final MealType mealType; // ← NEW: Which meal category
 
   // Nilai nutrisi sudah dihitung untuk [grams] gram
   final double energi;
@@ -29,7 +29,7 @@ class FoodLogEntry {
     required this.foodName,
     required this.grams,
     required this.loggedAt,
-    required this.mealType,  // ← NEW
+    required this.mealType, // ← NEW
     required this.energi,
     required this.protein,
     required this.lemak,
@@ -45,7 +45,7 @@ class FoodLogEntry {
   factory FoodLogEntry.create({
     required FoodItem food,
     required double grams,
-    required MealType mealType,  // ← NEW
+    required MealType mealType, // ← NEW
   }) {
     final n = food.calcFor(grams);
     return FoodLogEntry(
@@ -54,7 +54,7 @@ class FoodLogEntry {
       foodName: food.nama,
       grams: grams,
       loggedAt: DateTime.now(),
-      mealType: mealType,  // ← SET
+      mealType: mealType, // ← SET
       energi: n['energi']!,
       protein: n['protein']!,
       lemak: n['lemak']!,
@@ -74,7 +74,7 @@ class FoodLogEntry {
       'foodName': foodName,
       'grams': grams,
       'loggedAt': Timestamp.fromDate(loggedAt),
-      'mealType': mealType.value,  // ← NEW
+      'mealType': mealType.value, // ← NEW
       'energi': energi,
       'protein': protein,
       'lemak': lemak,
@@ -94,7 +94,9 @@ class FoodLogEntry {
       foodName: map['foodName'] as String,
       grams: (map['grams'] as num).toDouble(),
       loggedAt: (map['loggedAt'] as Timestamp).toDate(),
-      mealType: MealTypeExtension.fromValue(map['mealType'] as String? ?? 'makan_siang'),  // ← NEW
+      mealType: MealTypeExtension.fromValue(
+        map['mealType'] as String? ?? 'makan_siang',
+      ), // ← NEW
       energi: (map['energi'] as num).toDouble(),
       protein: (map['protein'] as num).toDouble(),
       lemak: (map['lemak'] as num).toDouble(),

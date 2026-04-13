@@ -5,21 +5,21 @@ import '../models/food_item.dart';
 /// Service untuk membaca dan mencari data TKPI dari local JSON asset.
 class FoodDatabaseService {
   static List<FoodItem>? _cache;
-  
+
   /// Special water item - only contains fluid (cairan)
   static final FoodItem waterItem = FoodItem(
     id: 'water-special',
     nama: 'Air Putih',
     kategori: 'Minuman',
-    energi: 0,      // no calories
-    protein: 0,     // no protein
-    lemak: 0,       // no fat
+    energi: 0, // no calories
+    protein: 0, // no protein
+    lemak: 0, // no fat
     karbohidrat: 0, // no carbs
-    natrium: 0,     // no sodium
-    kalium: 0,      // no potassium
-    fosfor: 0,      // no phosphorus
-    air: 100,       // 100ml per 100ml (1:1)
-    serat: 0,       // no fiber
+    natrium: 0, // no sodium
+    kalium: 0, // no potassium
+    fosfor: 0, // no phosphorus
+    air: 100, // 100ml per 100ml (1:1)
+    serat: 0, // no fiber
     takaranSaji: [
       const TakaranSaji(ukuran: 'kecil', label: 'Gelas Kecil', gram: 200),
       const TakaranSaji(ukuran: 'sedang', label: 'Gelas Sedang', gram: 250),
@@ -49,7 +49,9 @@ class FoodDatabaseService {
     final all = await getAll();
     if (query.trim().isEmpty) return all;
     final q = query.toLowerCase().trim();
-    final results = all.where((item) => item.nama.toLowerCase().contains(q)).toList();
+    final results = all
+        .where((item) => item.nama.toLowerCase().contains(q))
+        .toList();
     // Prioritize water if searching for "air" or empty
     if (q == 'air' || q.isEmpty) {
       if (results.contains(waterItem)) {

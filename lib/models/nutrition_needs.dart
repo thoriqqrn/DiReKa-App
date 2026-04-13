@@ -1,15 +1,15 @@
 /// Kebutuhan nutrisi harian pasien (target/batas asupan).
 /// Dihitung dari BBI (Berat Badan Ideal) berdasarkan jenis penyakit.
 class NutritionNeeds {
-  final double energi;      // kkal/hari
-  final double protein;     // g/hari
-  final double lemak;       // g/hari
+  final double energi; // kkal/hari
+  final double protein; // g/hari
+  final double lemak; // g/hari
   final double karbohidrat; // g/hari
-  final double natrium;     // mg/hari (0 = tidak dipantau)
-  final double kalium;      // mg/hari (0 = tidak dipantau)
-  final double fosfor;      // mg/hari (0 = tidak dipantau)
-  final double cairan;      // ml/hari (0 = tidak dipantau)
-  final double serat;       // g/hari  (0 = tidak dipantau)
+  final double natrium; // mg/hari (0 = tidak dipantau)
+  final double kalium; // mg/hari (0 = tidak dipantau)
+  final double fosfor; // mg/hari (0 = tidak dipantau)
+  final double cairan; // ml/hari (0 = tidak dipantau)
+  final double serat; // g/hari  (0 = tidak dipantau)
 
   const NutritionNeeds({
     required this.energi,
@@ -63,10 +63,11 @@ class NutritionNeeds {
   /// Serat        = 25 g/hari    (tetap)
   factory NutritionNeeds.diabetes({
     required double bbi,
-    required String gender,       // 'laki-laki' | 'perempuan'
-    required int age,             // usia dalam tahun
-    required double koreksiFraksiAktivitas, // dari ActivityLevel.koreksiFraction
-    required String bmiCategory,  // dari UserModel.bmiCategory
+    required String gender, // 'laki-laki' | 'perempuan'
+    required int age, // usia dalam tahun
+    required double
+    koreksiFraksiAktivitas, // dari ActivityLevel.koreksiFraction
+    required String bmiCategory, // dari UserModel.bmiCategory
   }) {
     // Kalori basal berdasarkan gender
     final basal = gender == 'perempuan' ? 25.0 * bbi : 30.0 * bbi;
@@ -87,9 +88,9 @@ class NutritionNeeds {
     // Koreksi berat badan (DM: 3 kategori)
     double koreksiBB = 0;
     if (bmiCategory == 'Gemuk') {
-      koreksiBB = -0.20 * basal;  // -20% untuk gemuk
+      koreksiBB = -0.20 * basal; // -20% untuk gemuk
     } else if (bmiCategory == 'Kurus') {
-      koreksiBB = 0.20 * basal;   // +20% untuk kurus
+      koreksiBB = 0.20 * basal; // +20% untuk kurus
     }
     // Normal: koreksiBB = 0 (no change)
 
@@ -125,12 +126,13 @@ class NutritionNeeds {
   ///   - Jika ada edema: 0.5 ml × Energi
   ///   - Jika tidak ada: 1500 ml (range 1500-2000 ml)
   factory NutritionNeeds.heartFailure({
-    required double weight,        // kg (berat badan aktual)
-    required double height,        // cm
-    required String gender,        // 'laki-laki' | 'perempuan'
-    required int age,              // usia dalam tahun
-    required double koreksiFraksiAktivitas, // dari ActivityLevel.koreksiFraction
-    required bool hasEdema,        // riwayat pembengkakan
+    required double weight, // kg (berat badan aktual)
+    required double height, // cm
+    required String gender, // 'laki-laki' | 'perempuan'
+    required int age, // usia dalam tahun
+    required double
+    koreksiFraksiAktivitas, // dari ActivityLevel.koreksiFraction
+    required bool hasEdema, // riwayat pembengkakan
   }) {
     // Harris Benedict BMR (menggunakan berat badan aktual, bukan ideal)
     final bmr = gender == 'perempuan'
@@ -141,8 +143,8 @@ class NutritionNeeds {
     final energiTotal = bmr * koreksiFraksiAktivitas * 1.1;
 
     // Macronutrient dari persentase energi
-    final protein = (0.20 * energiTotal) / 4;  // 20% energi ÷ 4 kkal/g
-    final lemak = (0.30 * energiTotal) / 9;    // 30% energi ÷ 9 kkal/g
+    final protein = (0.20 * energiTotal) / 4; // 20% energi ÷ 4 kkal/g
+    final lemak = (0.30 * energiTotal) / 9; // 30% energi ÷ 9 kkal/g
     final karbohidrat = (0.50 * energiTotal) / 4; // 50% energi ÷ 4 kkal/g
 
     // Cairan berdasarkan edema
@@ -154,10 +156,10 @@ class NutritionNeeds {
       lemak: lemak,
       karbohidrat: karbohidrat,
       natrium: 2400, // limit untuk HF
-      kalium: 0,     // tidak dipantau untuk HF
-      fosfor: 0,     // tidak dipantau untuk HF
+      kalium: 0, // tidak dipantau untuk HF
+      fosfor: 0, // tidak dipantau untuk HF
       cairan: cairan,
-      serat: 0,      // tidak dipantau untuk HF
+      serat: 0, // tidak dipantau untuk HF
     );
   }
 }

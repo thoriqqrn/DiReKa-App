@@ -56,22 +56,23 @@ class AuthProvider extends ChangeNotifier {
   /// Update day streak: increment jika login hari ini, reset jika kemarin tidak login
   Future<void> _updateDayStreak() async {
     if (_userModel == null) return;
-    
+
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final lastLogin = _userModel!.lastLoginDate;
     final yesterday = today.subtract(const Duration(days: 1));
-    
+
     int newStreak = _userModel!.currentStreak;
     int newLongest = _userModel!.longestStreak;
     List<DateTime> updatedLogins = [..._userModel!.loginDates];
-    
+
     // Cek apakah sudah login hari ini
-    final hasLoginToday = lastLogin != null &&
+    final hasLoginToday =
+        lastLogin != null &&
         lastLogin.year == today.year &&
         lastLogin.month == today.month &&
         lastLogin.day == today.day;
-    
+
     if (!hasLoginToday) {
       // Belum login hari ini
       if (lastLogin != null &&
@@ -84,15 +85,15 @@ class AuthProvider extends ChangeNotifier {
         // Tidak login kemarin atau pertama kali → reset streak ke 1
         newStreak = 1;
       }
-      
+
       // Update longest streak jika perlu
       if (newStreak > newLongest) {
         newLongest = newStreak;
       }
-      
+
       // Tambah hari ini ke loginDates
       updatedLogins.add(today);
-      
+
       // Update userModel
       final updated = _userModel!.copyWith(
         currentStreak: newStreak,
@@ -100,7 +101,7 @@ class AuthProvider extends ChangeNotifier {
         lastLoginDate: today,
         loginDates: updatedLogins,
       );
-      
+
       // Simpan ke Firestore
       await _userService.updateUser(updated);
       _userModel = updated;
@@ -113,7 +114,9 @@ class AuthProvider extends ChangeNotifier {
     _clearError();
     try {
       final credential = await _authService.loginWithEmail(
-          email: email, password: password);
+        email: email,
+        password: password,
+      );
       // Pastikan userModel ter-load sebelum navigasi — authStateChanges
       // listener berjalan async dan mungkin belum selesai saat login() return.
       final uid = credential.user?.uid;
