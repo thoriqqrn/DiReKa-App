@@ -455,6 +455,12 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
     required double Function(DailyNutrition) getActual,
     required double Function(DailyNutrition) getTarget,
   }) {
+    final actualMax = weeklyData.fold<double>(
+      0,
+      (max, data) => getActual(data) > max ? getActual(data) : max,
+    );
+    final safeMaxY = actualMax <= 0 ? 10.0 : (actualMax * 1.2);
+
     return NutritionLineChart(
       title: title,
       unit: unit,
@@ -463,14 +469,7 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
       getActual: getActual,
       getTarget: getTarget,
       minY: 0,
-      maxY:
-          (weeklyData.fold<double>(
-                    0,
-                    (max, data) =>
-                        getActual(data) > max ? getActual(data) : max,
-                  ) *
-                  1.2)
-              .toDouble(),
+      maxY: safeMaxY,
     );
   }
 

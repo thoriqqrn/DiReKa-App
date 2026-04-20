@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/food_log_entry.dart';
+import 'family_link_service.dart';
 
 /// Service untuk menyimpan dan membaca log makanan harian ke Firestore.
 ///
@@ -15,6 +16,33 @@ class FoodLogService {
     final d =
         '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
     return '${uid}_$d';
+  }
+
+  static String _dateKey(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  static Future<void> _mirrorFoodLogToLinkedGroup(String uid, DateTime date) async {
+    final groupUids = await FamilyLinkService.getLinkedGroupUids(uid);
+    if (groupUids.length <= 1) return;
+
+    final primaryDoc = await _db.collection('food_logs').doc(_docId(uid, date)).get();
+    final dateStr = _dateKey(date);
+
+    final batch = _db.batch();
+    for (final targetUid in groupUids) {
+      if (targetUid == uid) continue;
+      final familyRef = _db.collection('food_logs').doc('${targetUid}_$dateStr');
+      if (!primaryDoc.exists) {
+        batch.delete(familyRef);
+      } else {
+        final data = Map<String, dynamic>.from(primaryDoc.data() ?? {});
+        data['uid'] = targetUid;
+        data['date'] = dateStr;
+        batch.set(familyRef, data);
+      }
+    }
+    await batch.commit();
   }
 
   /// Ambil semua entri makanan untuk [uid] pada [date].
@@ -48,6 +76,7 @@ class FoodLogService {
         tx.update(docRef, {'entries': entries});
       }
     });
+    await _mirrorFoodLogToLinkedGroup(uid, date);
   }
 
   /// Hapus entri dengan [entryId] dari log hari [date].
@@ -61,6 +90,7 @@ class FoodLogService {
     entries.removeWhere(
         (e) => (e as Map<String, dynamic>)['id'] == entryId);
     await docRef.update({'entries': entries});
+    await _mirrorFoodLogToLinkedGroup(uid, date);
   }
 
   /// Update entri yang sudah ada (cari berdasarkan id, replace datanya).
@@ -76,5 +106,6 @@ class FoodLogService {
     if (idx == -1) return;
     entries[idx] = updated.toMap();
     await docRef.update({'entries': entries});
+    await _mirrorFoodLogToLinkedGroup(uid, date);
   }
 }

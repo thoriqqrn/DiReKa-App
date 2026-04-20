@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
@@ -19,6 +21,8 @@ class AuthProvider extends ChangeNotifier {
   String? _errorMessage;
   bool _isLoading = false;
   bool _isNewGoogleUser = false;
+  List<LinkedFamilyAccount> _linkedFamilyAccounts = [];
+  StreamSubscription<UserModel?>? _userModelSubscription;
 
   AuthStatus get status => _status;
   User? get firebaseUser => _firebaseUser;
@@ -28,6 +32,7 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _status == AuthStatus.authenticated;
   bool get isNewGoogleUser => _isNewGoogleUser;
+  List<LinkedFamilyAccount> get linkedFamilyAccounts => _linkedFamilyAccounts;
 
   AuthProvider() {
     _init();
@@ -36,21 +41,56 @@ class AuthProvider extends ChangeNotifier {
   void _init() {
     _authService.authStateChanges.listen((user) async {
       _firebaseUser = user;
-      if (user != null) {
-        await _loadUserModel(user.uid);
-        _status = AuthStatus.authenticated;
-        // Update day streak saat user login
-        await _updateDayStreak();
-      } else {
+      try {
+        if (user != null) {
+          await _loadUserModel(user.uid);
+          _listenUserModel(user.uid);
+          await loadLinkedFamilyAccounts();
+          if (_userModel != null) {
+            await _authService.syncLinkedFamilyAllData(_userModel!);
+          }
+          _status = AuthStatus.authenticated;
+          // Update day streak saat user login
+          await _updateDayStreak();
+        } else {
+          await _userModelSubscription?.cancel();
+          _userModelSubscription = null;
+          _userModel = null;
+          _linkedFamilyAccounts = [];
+          _status = AuthStatus.unauthenticated;
+        }
+      } catch (e) {
+        // Jangan biarkan status tetap "initial" karena bisa bikin splash freeze.
         _userModel = null;
-        _status = AuthStatus.unauthenticated;
+          _linkedFamilyAccounts = [];
+        _errorMessage =
+            'Gagal memuat profil pengguna. Periksa izin Firestore (users/{uid}).';
+        _status = user != null
+            ? AuthStatus.authenticated
+            : AuthStatus.unauthenticated;
       }
+      notifyListeners();
+    }, onError: (_) {
+      _userModel = null;
+      _linkedFamilyAccounts = [];
+      _errorMessage = 'Terjadi kesalahan pada autentikasi.';
+      _status = AuthStatus.unauthenticated;
       notifyListeners();
     });
   }
 
   Future<void> _loadUserModel(String uid) async {
     _userModel = await _userService.getUser(uid);
+  }
+
+  void _listenUserModel(String uid) {
+    _userModelSubscription?.cancel();
+    _userModelSubscription = _userService.userStream(uid).listen((user) {
+      if (user != null) {
+        _userModel = user;
+        notifyListeners();
+      }
+    });
   }
 
   /// Update day streak: increment jika login hari ini, reset jika kemarin tidak login
@@ -247,9 +287,60 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> signOut() async {
     await _authService.signOut();
+    await _userModelSubscription?.cancel();
+    _userModelSubscription = null;
     _userModel = null;
+    _linkedFamilyAccounts = [];
     _status = AuthStatus.unauthenticated;
     notifyListeners();
+  }
+
+  Future<void> loadLinkedFamilyAccounts() async {
+    final uid = _firebaseUser?.uid;
+    if (uid == null) {
+      _linkedFamilyAccounts = [];
+      notifyListeners();
+      return;
+    }
+    try {
+      _linkedFamilyAccounts = await _authService.getLinkedFamilyAccounts(uid);
+      notifyListeners();
+    } catch (_) {
+      _linkedFamilyAccounts = [];
+      notifyListeners();
+    }
+  }
+
+  Future<bool> createFamilyAccount({
+    required String familyName,
+    required String familyEmail,
+    required String familyPassword,
+  }) async {
+    if (_userModel == null) {
+      _setError('Akun utama belum siap. Coba lagi.');
+      return false;
+    }
+    _setLoading(true);
+    _clearError();
+    try {
+      await _authService.createFamilyLinkedAccount(
+        primaryUser: _userModel!,
+        familyName: familyName,
+        familyEmail: familyEmail,
+        familyPassword: familyPassword,
+      );
+      await loadLinkedFamilyAccounts();
+      _setLoading(false);
+      return true;
+    } on FirebaseAuthException catch (e) {
+      _setError(_mapFirebaseError(e.code));
+      _setLoading(false);
+      return false;
+    } catch (_) {
+      _setError('Gagal membuat akun keluarga. Coba lagi.');
+      _setLoading(false);
+      return false;
+    }
   }
 
   Future<bool> updateProfile(UserModel updated) async {
@@ -257,6 +348,7 @@ class AuthProvider extends ChangeNotifier {
     _clearError();
     try {
       await _userService.updateUser(updated);
+      await _authService.syncLinkedFamilyAllData(updated);
       _userModel = updated;
       _setLoading(false);
       notifyListeners();
@@ -266,6 +358,12 @@ class AuthProvider extends ChangeNotifier {
       _setLoading(false);
       return false;
     }
+  }
+
+  @override
+  void dispose() {
+    _userModelSubscription?.cancel();
+    super.dispose();
   }
 
   void _setLoading(bool value) {

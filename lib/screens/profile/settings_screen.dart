@@ -112,6 +112,14 @@ class SettingsScreen extends StatelessWidget {
                     ),
                     const Divider(height: 1),
                     _SettingsTile(
+                      icon: Icons.group_add_outlined,
+                      label: 'Buat akun untuk keluarga',
+                      subtitle:
+                          'Data kesehatan akun baru akan disalin dari akun utama',
+                      onTap: () => _showCreateFamilyAccountDialog(context),
+                    ),
+                    const Divider(height: 1),
+                    _SettingsTile(
                       icon: Icons.logout,
                       label: 'Keluar',
                       color: AppColors.error,
@@ -137,6 +145,75 @@ class SettingsScreen extends StatelessWidget {
                 ],
               ),
 
+              if (auth.isAuthenticated) ...[
+                const SizedBox(height: 20),
+                _SectionCard(
+                  title: 'Akun Keluarga Aktif',
+                  children: [
+                    if (auth.linkedFamilyAccounts.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Text(
+                          'Belum ada akun keluarga yang ditautkan.',
+                          style: TextStyle(color: AppColors.textSecondary),
+                        ),
+                      )
+                    else
+                      ...auth.linkedFamilyAccounts.asMap().entries.map((entry) {
+                        final i = entry.key;
+                        final item = entry.value;
+                        return Column(
+                          children: [
+                            ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 4,
+                              ),
+                              leading: const Icon(
+                                Icons.family_restroom,
+                                color: AppColors.diabetesColor,
+                              ),
+                              title: Text(item.name),
+                              subtitle: Text(
+                                '${item.email}\n${item.lastLoginDate != null ? 'Terakhir login: ${_formatDate(item.lastLoginDate!)}' : 'Belum ada riwayat login'}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                              isThreeLine: true,
+                              trailing: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: item.isActive
+                                      ? AppColors.success.withValues(alpha: 0.12)
+                                      : AppColors.warning.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  item.isActive ? 'Aktif' : 'Nonaktif',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: item.isActive
+                                        ? AppColors.success
+                                        : AppColors.warning,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            if (i != auth.linkedFamilyAccounts.length - 1)
+                              const Divider(height: 1),
+                          ],
+                        );
+                      }),
+                  ],
+                ),
+              ],
+
               const SizedBox(height: 32),
               const Center(
                 child: Text(
@@ -148,6 +225,140 @@ class SettingsScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  static String _formatDate(DateTime date) {
+    final d = date.day.toString().padLeft(2, '0');
+    final m = date.month.toString().padLeft(2, '0');
+    final y = date.year;
+    return '$d/$m/$y';
+  }
+
+  void _showCreateFamilyAccountDialog(BuildContext context) {
+    final nameController = TextEditingController();
+    final emailController = TextEditingController();
+    final passwordController = TextEditingController();
+    final confirmController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+            insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+            title: const Text('Buat akun untuk keluarga'),
+            content: SizedBox(
+              width: 430,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Text(
+                        'Akun keluarga akan dibuat dengan fitur yang sama dan data profil kesehatan disalin dari akun utama.',
+                        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(labelText: 'Nama akun keluarga'),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(labelText: 'Email akun keluarga'),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: passwordController,
+                      obscureText: true,
+                      decoration: const InputDecoration(labelText: 'Password'),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: confirmController,
+                      obscureText: true,
+                      decoration:
+                          const InputDecoration(labelText: 'Konfirmasi password'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  final auth = context.read<AuthProvider>();
+                  final name = nameController.text.trim();
+                  final email = emailController.text.trim();
+                  final password = passwordController.text.trim();
+                  final confirm = confirmController.text.trim();
+
+                  if (name.isEmpty || email.isEmpty || password.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Nama, email, dan password wajib diisi.'),
+                      ),
+                    );
+                    return;
+                  }
+                  if (password.length < 6) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Password minimal 6 karakter.'),
+                      ),
+                    );
+                    return;
+                  }
+                  if (password != confirm) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Konfirmasi password tidak sama.'),
+                      ),
+                    );
+                    return;
+                  }
+
+                  final success = await auth.createFamilyAccount(
+                    familyName: name,
+                    familyEmail: email,
+                    familyPassword: password,
+                  );
+
+                  if (!context.mounted) return;
+                  if (success) {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Akun keluarga berhasil dibuat dan ditautkan.'),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          auth.errorMessage ?? 'Gagal membuat akun keluarga.',
+                        ),
+                      ),
+                    );
+                  }
+                },
+                child: const Text('Buat akun'),
+              ),
+            ],
+          ),
     );
   }
 
