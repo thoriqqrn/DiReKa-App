@@ -589,45 +589,121 @@ class _AdminScreenState extends State<AdminScreen> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // Quick Actions
+          const Text(
+            'Aksi Cepat',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [AppColors.primary, AppColors.primaryDark],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.3),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () => Navigator.pushNamed(
+                  context,
+                  AppConstants.routeAdminFoodCatalog,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.table_chart_rounded, color: Colors.white, size: 28),
+                      ),
+                      const SizedBox(width: 16),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Kelola Katalog Makanan',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Tambah, edit, dan hapus database makanan (Firestore)',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right, color: Colors.white),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Metrics
           Row(
             children: [
               Expanded(
                 child: _MetricCard(
                   title: 'Total User',
                   value: '$_totalUsers',
-                  icon: Icons.group,
-                  color: const Color(0xFF0F5CC0),
+                  icon: Icons.group_rounded,
+                  colors: const [Color(0xFF4776E6), Color(0xFF8E54E9)],
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: _MetricCard(
                   title: 'Food Logs',
                   value: '${_foodLogs.length}',
-                  icon: Icons.restaurant,
-                  color: const Color(0xFF0AA37A),
+                  icon: Icons.restaurant_rounded,
+                  colors: const [Color(0xFF00B4DB), Color(0xFF0083B0)],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
                 child: _MetricCard(
                   title: 'Health Records',
                   value: '${_healthRecords.length}',
-                  icon: Icons.monitor_heart,
-                  color: const Color(0xFFE06C2B),
+                  icon: Icons.monitor_heart_rounded,
+                  colors: const [Color(0xFFFF512F), Color(0xFFDD2476)],
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: _MetricCard(
                   title: 'Edukasi',
                   value: '${_educationPosts.length}',
-                  icon: Icons.school,
-                  color: const Color(0xFF7A4AC7),
+                  icon: Icons.school_rounded,
+                  colors: const [Color(0xFF11998E), Color(0xFF38EF7D)],
                 ),
               ),
             ],
@@ -742,25 +818,42 @@ class _AdminScreenState extends State<AdminScreen> {
             const _EmptyView(message: 'Belum ada user terdaftar.')
           else
             ..._users.map(
-              (user) => Card(
-                color: AppColors.surface,
-                margin: const EdgeInsets.only(bottom: 8),
+              (user) => Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                  border: Border.all(color: AppColors.divider.withValues(alpha: 0.5)),
+                ),
                 child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   leading: CircleAvatar(
+                    radius: 22,
                     backgroundColor: AppColors.primaryLight,
                     child: Text(
                       user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
-                      style: const TextStyle(color: AppColors.primaryDark),
+                      style: const TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.bold, fontSize: 18),
                     ),
                   ),
-                  title: Text(user.name),
-                  subtitle: Text('${user.email}\n${user.diseaseType.shortLabel}'),
+                  title: Text(user.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text('${user.email}\n${user.diseaseType.shortLabel}', style: const TextStyle(height: 1.4)),
+                  ),
                   isThreeLine: true,
                   trailing: Text(
                     DateFormat('dd MMM yyyy', 'id_ID').format(user.createdAt),
                     style: const TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 12,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
@@ -803,68 +896,87 @@ class _AdminScreenState extends State<AdminScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          // ── Tombol Kelola Katalog Makanan ──────────────────────────────
-          FilledButton.icon(
-            onPressed: () => Navigator.pushNamed(
-              context,
-              AppConstants.routeAdminFoodCatalog,
-            ),
-            icon: const Icon(Icons.table_chart_outlined, size: 18),
-            label: const Text('Kelola Katalog Makanan'),
-            style: FilledButton.styleFrom(
-              minimumSize: const Size(double.infinity, 44),
-              backgroundColor: AppColors.primaryDark,
-            ),
-          ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Wrap(
             spacing: 8,
-            runSpacing: 6,
+            runSpacing: 8,
             children: [
               ChoiceChip(
-                label: const Text('All'),
+                label: const Text('Semua Log', style: TextStyle(fontWeight: FontWeight.w600)),
                 selected: _foodFilterUid == 'all',
+                selectedColor: AppColors.primary.withValues(alpha: 0.2),
+                checkmarkColor: AppColors.primaryDark,
                 onSelected: (_) => setState(() => _foodFilterUid = 'all'),
               ),
               ...filters.map(
                 (item) => ChoiceChip(
-                  label: Text(item.name),
+                  label: Text(item.name, style: const TextStyle(fontWeight: FontWeight.w500)),
                   selected: _foodFilterUid == item.uid,
+                  selectedColor: AppColors.primary.withValues(alpha: 0.2),
+                  checkmarkColor: AppColors.primaryDark,
                   onSelected: (_) => setState(() => _foodFilterUid = item.uid),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
           if (logs.isEmpty)
             const _EmptyView(message: 'Belum ada data food tracker.')
           else
             ...logs.map(
-              (item) => Card(
-                color: AppColors.surface,
-                margin: const EdgeInsets.only(bottom: 8),
+              (item) => Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                  border: Border.all(color: AppColors.divider.withValues(alpha: 0.5)),
+                ),
                 child: ExpansionTile(
-                  leading: const Icon(Icons.restaurant_outlined),
-                  title: Text(item.userName),
-                  subtitle: Text(
-                    '${item.userEmail}\n${DateFormat('dd MMM yyyy', 'id_ID').format(item.date)} • ${item.entryCount} entri',
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight.withValues(alpha: 0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.restaurant_rounded, color: AppColors.primaryDark),
                   ),
-                  childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  title: Text(item.userName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      '${item.userEmail}\n${DateFormat('dd MMM yyyy', 'id_ID').format(item.date)} • ${item.entryCount} entri',
+                      style: const TextStyle(height: 1.4),
+                    ),
+                  ),
+                  childrenPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                  expandedCrossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const Divider(height: 1),
+                    const SizedBox(height: 12),
                     if (item.entries.isEmpty)
-                      const Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text('Tidak ada entri.'),
-                      )
+                      const Text('Tidak ada entri log makanan.', style: TextStyle(color: AppColors.textHint))
                     else
                       ...item.entries.map(
-                        (entry) => Align(
-                          alignment: Alignment.centerLeft,
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 6),
-                            child: Text(
-                              '• ${(entry['foodName'] ?? '-')} (${(entry['grams'] ?? 0)} g)',
-                            ),
+                        (entry) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.circle, size: 6, color: AppColors.primary),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  '${(entry['foodName'] ?? '-')} (${(entry['grams'] ?? 0)} g)',
+                                  style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -903,14 +1015,37 @@ class _AdminScreenState extends State<AdminScreen> {
             const _EmptyView(message: 'Belum ada data health tracker.')
           else
             ..._healthRecords.map(
-              (record) => Card(
-                color: AppColors.surface,
-                margin: const EdgeInsets.only(bottom: 8),
+              (record) => Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                  border: Border.all(color: AppColors.divider.withValues(alpha: 0.5)),
+                ),
                 child: ListTile(
-                  leading: const Icon(Icons.monitor_heart_outlined),
-                  title: Text('${record.userName} • ${record.source}'),
-                  subtitle: Text(
-                    '${record.userEmail}\n${record.type} | ${_payloadPreview(record.payload)}',
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.heartColor.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.monitor_heart_rounded, color: AppColors.heartColor),
+                  ),
+                  title: Text('${record.userName} • ${record.source}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      '${record.userEmail}\n${record.type} | ${_payloadPreview(record.payload)}',
+                      style: const TextStyle(height: 1.4, fontSize: 13),
+                    ),
                   ),
                   isThreeLine: true,
                   trailing: Text(
@@ -918,6 +1053,7 @@ class _AdminScreenState extends State<AdminScreen> {
                     textAlign: TextAlign.right,
                     style: const TextStyle(
                       fontSize: 12,
+                      fontWeight: FontWeight.w600,
                       color: AppColors.textSecondary,
                     ),
                   ),
@@ -1026,39 +1162,60 @@ class _AdminScreenState extends State<AdminScreen> {
             const _EmptyView(message: 'Belum ada konten edukasi.')
           else
             ..._educationPosts.map(
-              (post) => Card(
-                color: AppColors.surface,
-                margin: const EdgeInsets.only(bottom: 8),
+              (post) => Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                  border: Border.all(color: AppColors.divider.withValues(alpha: 0.5)),
+                ),
                 child: ListTile(
-                  leading: const Icon(Icons.menu_book_outlined),
-                  title: Text(post.title),
-                  subtitle: Text(
-                    '${post.content}\nOleh: ${post.createdBy}',
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight.withValues(alpha: 0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.school_rounded, color: AppColors.primaryDark),
+                  ),
+                  title: Text(post.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      '${post.content}\nOleh: ${post.createdBy}',
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(height: 1.4, fontSize: 13),
+                    ),
                   ),
                   isThreeLine: true,
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        DateFormat('dd MMM yyyy', 'id_ID')
-                            .format(post.createdAt),
+                        DateFormat('dd MMM yyyy', 'id_ID').format(post.createdAt),
                         style: const TextStyle(
                           fontSize: 11,
+                          fontWeight: FontWeight.w600,
                           color: AppColors.textSecondary,
                         ),
                       ),
                       const SizedBox(width: 4),
                       IconButton(
-                        icon: const Icon(Icons.edit_outlined,
-                            size: 18, color: AppColors.primary),
+                        icon: const Icon(Icons.edit_rounded, size: 20, color: AppColors.primary),
                         tooltip: 'Edit',
                         onPressed: () => _editEducation(post),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.delete_outline,
-                            size: 18, color: AppColors.error),
+                        icon: const Icon(Icons.delete_rounded, size: 20, color: AppColors.error),
                         tooltip: 'Hapus',
                         onPressed: () => _deleteEducation(post),
                       ),
@@ -1095,47 +1252,62 @@ class _MetricCard extends StatelessWidget {
   final String title;
   final String value;
   final IconData icon;
-  final Color color;
+  final List<Color> colors;
 
   const _MetricCard({
     required this.title,
     required this.value,
     required this.icon,
-    required this.color,
+    required this.colors,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: Colors.white.withValues(alpha: 0.2),
-            child: Icon(icon, color: Colors.white),
+        gradient: LinearGradient(
+          colors: colors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: colors.first.withValues(alpha: 0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: Colors.white.withValues(alpha: 0.2),
+                child: Icon(icon, color: Colors.white, size: 18),
+              ),
+              Text(
+                value,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
                 ),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -1153,43 +1325,71 @@ class _StatsHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Total Pengguna',
-            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            'Total Pengguna Terdaftar',
+            style: TextStyle(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 4),
           Text(
             '$totalUsers akun',
             style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              fontSize: 32,
+              fontWeight: FontWeight.w800,
+              color: AppColors.primary,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          const SizedBox(height: 16),
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: 12,
+            runSpacing: 10,
             children: DiseaseType.values.map((disease) {
               final count = usersByDisease[disease] ?? 0;
+              Color badgeColor;
+              switch (disease) {
+                case DiseaseType.chronicKidneyDisease: badgeColor = AppColors.kidneyColor; break;
+                case DiseaseType.type2DiabetesMellitus: badgeColor = AppColors.diabetesColor; break;
+                case DiseaseType.heartFailure:
+                  badgeColor = AppColors.heartColor;
+                  break;
+              }
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(20),
+                  color: badgeColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: badgeColor.withValues(alpha: 0.3)),
                 ),
-                child: Text(
-                  '${disease.shortLabel}: $count',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(color: badgeColor, shape: BoxShape.circle),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${disease.shortLabel}: $count',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: badgeColor),
+                    ),
+                  ],
                 ),
               );
             }).toList(),

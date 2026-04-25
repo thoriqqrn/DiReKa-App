@@ -1,67 +1,82 @@
-import 'dart:convert';
-import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/food_item.dart';
 
-/// Service untuk membaca dan mencari data TKPI dari local JSON asset.
+/// Service untuk membaca dan mencari data makanan HANYA dari Firebase.
+/// Data kustom dikelola admin di koleksi 'food_catalog'.
 class FoodDatabaseService {
   static List<FoodItem>? _cache;
+  static DateTime? _cacheTime;
+
+  // Cache berlaku 5 menit agar data Firebase tidak basi terlalu lama
+  static const _cacheTtl = Duration(minutes: 5);
 
   /// Special water item - only contains fluid (cairan)
   static final FoodItem waterItem = FoodItem(
     id: 'water-special',
     nama: 'Air Putih',
     kategori: 'Minuman',
-    energi: 0, // no calories
-    protein: 0, // no protein
-    lemak: 0, // no fat
-    karbohidrat: 0, // no carbs
-    natrium: 0, // no sodium
-    kalium: 0, // no potassium
-    fosfor: 0, // no phosphorus
-    air: 100, // 100ml per 100ml (1:1)
-    serat: 0, // no fiber
-    takaranSaji: [
-      const TakaranSaji(ukuran: 'kecil', label: 'Gelas Kecil', gram: 200),
-      const TakaranSaji(ukuran: 'sedang', label: 'Gelas Sedang', gram: 250),
-      const TakaranSaji(ukuran: 'besar', label: 'Botol', gram: 500),
+    energi: 0,
+    protein: 0,
+    lemak: 0,
+    karbohidrat: 0,
+    natrium: 0,
+    kalium: 0,
+    fosfor: 0,
+    air: 100,
+    serat: 0,
+    takaranSaji: const [
+      TakaranSaji(ukuran: 'kecil', label: 'Gelas Kecil', gram: 200),
+      TakaranSaji(ukuran: 'sedang', label: 'Gelas Sedang', gram: 250),
+      TakaranSaji(ukuran: 'besar', label: 'Botol', gram: 500),
     ],
     emoji: '💧',
     satuanNama: 'ml',
   );
 
-  /// Load semua bahan makanan dari assets/data/tkpi.json.
-  /// Di-cache setelah load pertama.
+  /// Load semua makanan khusus dari Firebase food_catalog.
+  /// Di-cache dengan TTL 5 menit.
   static Future<List<FoodItem>> getAll() async {
-    if (_cache != null) return _cache!;
-    final jsonStr = await rootBundle.loadString('assets/data/tkpi.json');
-    final List<dynamic> jsonList = jsonDecode(jsonStr);
-    _cache = jsonList
-        .map((e) => FoodItem.fromJson(e as Map<String, dynamic>))
-        .toList();
-    // Add water item to the list
-    _cache!.insert(0, waterItem);
-    return _cache!;
+    final now = DateTime.now();
+    if (_cache != null &&
+        _cacheTime != null &&
+        now.difference(_cacheTime!) < _cacheTtl) {
+      return _cache!;
+    }
+
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('food_catalog')
+          .get();
+      
+      final items = <FoodItem>[];
+      for (final doc in snapshot.docs) {
+        items.add(FoodItem.fromJson(doc.data()));
+      }
+
+      // Tempatkan Air Putih di posisi pertama jika belum ada
+      items.removeWhere((f) => f.id == waterItem.id || f.nama.toLowerCase() == 'air putih');
+      items.insert(0, waterItem);
+
+      _cache = items;
+      _cacheTime = now;
+      return _cache!;
+    } catch (_) {
+      // Jika offline/gagal, tampilkan air putih saja
+      return [waterItem];
+    }
   }
 
-  /// Cari bahan makanan berdasarkan nama (case-insensitive, partial match).
-  /// Water item always shown first if search is empty or matches "air"
+  /// Cari makanan berdasarkan nama (case-insensitive, partial match).
   static Future<List<FoodItem>> search(String query) async {
     final all = await getAll();
     if (query.trim().isEmpty) return all;
     final q = query.toLowerCase().trim();
-    final results = all
-        .where((item) => item.nama.toLowerCase().contains(q))
-        .toList();
-    // Prioritize water if searching for "air" or empty
-    if (q == 'air' || q.isEmpty) {
-      if (results.contains(waterItem)) {
-        results.remove(waterItem);
-        results.insert(0, waterItem);
-      }
-    }
-    return results;
+    return all.where((item) => item.nama.toLowerCase().contains(q)).toList();
   }
 
-  /// Bersihkan cache (untuk keperluan testing).
-  static void clearCache() => _cache = null;
+  /// Bersihkan cache (dipakai setelah admin update katalog).
+  static void clearCache() {
+    _cache = null;
+    _cacheTime = null;
+  }
 }
