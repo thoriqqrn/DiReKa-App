@@ -151,6 +151,8 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
     try {
       final entries = await FoodLogService.getEntries(_uid, _selectedDate);
       if (mounted) setState(() => _entries = entries);
+      // Sinkronkan ulang data mingguan agar chart ikut terupdate (terutama untuk ginjal dan jantung)
+      await _loadWeeklyData();
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -515,8 +517,13 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
                           else if (needs != null) ...[
                             // 1. Weekly fluid chart for kidney patients
                             if (auth.currentUser?.diseaseType ==
-                                DiseaseType.chronicKidneyDisease) ...[
-                              _WeeklyFluidChart(target: needs.cairan),
+                                    DiseaseType.chronicKidneyDisease &&
+                                _weeklyData != null &&
+                                _weeklyData!.isNotEmpty) ...[
+                              _WeeklyFluidChart(
+                                target: needs.cairan,
+                                weeklyData: _weeklyData!,
+                              ),
                               const SizedBox(height: 16),
                               // 2. Daily circular gauge for kidney patients
                               _KidneyFluidGauge(
@@ -872,42 +879,14 @@ class _NutritionSummaryCard extends StatelessWidget {
 
 class _WeeklyFluidChart extends StatelessWidget {
   final double target;
+  final List<DailyNutrition> weeklyData;
 
-  const _WeeklyFluidChart({required this.target});
-
-  List<_DayFluidData> _getWeeklyData() {
-    // Simulate last 7 days of fluid intake (in real app, fetch from Firestore)
-    // For now, return mock data with different values per day
-    final now = DateTime.now();
-    final data = <_DayFluidData>[];
-
-    for (int i = 6; i >= 0; i--) {
-      final date = now.subtract(Duration(days: i));
-      final dayOfWeek = [
-        'Min',
-        'Sen',
-        'Sel',
-        'Rab',
-        'Kam',
-        'Jum',
-        'Sab',
-      ][date.weekday % 7];
-
-      // Mock intake values (0-target * 1.3 for variety)
-      double intake = target * (0.4 + (i * 0.15).clamp(0, 1.3));
-      if (i == 0) intake = target * 0.65; // Today's partial intake
-
-      data.add(_DayFluidData(day: dayOfWeek, intake: intake, date: date));
-    }
-
-    return data;
-  }
+  const _WeeklyFluidChart({required this.target, required this.weeklyData});
 
   @override
   Widget build(BuildContext context) {
-    final weeklyData = _getWeeklyData();
     final maxValue =
-        (weeklyData.map((d) => d.intake).reduce((a, b) => a > b ? a : b) * 1.1)
+        (weeklyData.map((d) => d.cairan).reduce((a, b) => a > b ? a : b) * 1.1)
             .clamp(target, double.infinity);
 
     return Column(
@@ -926,16 +905,26 @@ class _WeeklyFluidChart extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: weeklyData.map((day) {
-            final ratio = day.intake / maxValue;
+            final ratio = day.cairan / maxValue;
             final isToday =
                 day.date.year == DateTime.now().year &&
                 day.date.month == DateTime.now().month &&
                 day.date.day == DateTime.now().day;
-            final color = day.intake > target
-                ? AppColors.warning
-                : day.intake >= target * 0.8
+            final color = day.cairan > target
+                ? AppColors.error
+                : day.cairan >= target * 0.8
                 ? AppColors.primary
                 : AppColors.textHint;
+            
+            final dayOfWeek = [
+              'Min',
+              'Sen',
+              'Sel',
+              'Rab',
+              'Kam',
+              'Jum',
+              'Sab',
+            ][day.date.weekday % 7];
 
             return Expanded(
               child: Padding(
@@ -964,7 +953,7 @@ class _WeeklyFluidChart extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      '${day.intake.toInt()}',
+                      '${day.cairan.toInt()} ml',
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
@@ -975,7 +964,7 @@ class _WeeklyFluidChart extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      day.day,
+                      dayOfWeek,
                       style: TextStyle(
                         fontSize: 10,
                         color: isToday ? AppColors.primary : AppColors.textHint,
@@ -1157,6 +1146,7 @@ class _KidneyFluidGauge extends StatelessWidget {
   double get _ratio => target > 0 ? intake / target : 0;
   bool get _exceeded => intake > target;
   double get _remaining => (target - intake).clamp(0, target);
+  double get _excess => (intake - target).clamp(0, double.infinity);
 
   Color get _gaugeColor {
     if (_exceeded) return AppColors.error;
@@ -1282,7 +1272,9 @@ class _KidneyFluidGauge extends StatelessWidget {
                       ? Icons.warning_outlined
                       : Icons.hourglass_bottom_outlined,
                   label: _exceeded ? 'Berlebih' : 'Sisa',
-                  value: '${_remaining.toStringAsFixed(0)} ml',
+                  value: _exceeded
+                      ? '${_excess.toStringAsFixed(0)} ml'
+                      : '${_remaining.toStringAsFixed(0)} ml',
                   color: _exceeded ? AppColors.error : AppColors.warning,
                 ),
               ],
