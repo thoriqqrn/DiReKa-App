@@ -25,14 +25,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _confirmPassCtrl = TextEditingController();
+  final _addressVillageCtrl = TextEditingController();
+  final _addressDistrictCtrl = TextEditingController();
+  final _addressCityCtrl = TextEditingController();
+  final _addressProvinceCtrl = TextEditingController();
+  final _educationCtrl = TextEditingController();
+  final _occupationCtrl = TextEditingController();
   final _weightCtrl = TextEditingController();
   final _heightCtrl = TextEditingController();
   final _urinOutputCtrl = TextEditingController();
+  final _dmDurationCtrl = TextEditingController();
 
   DateTime? _dateOfBirth;
   DiseaseType? _diseaseType;
   String _gender = 'laki-laki';
   ActivityLevel? _activityLevel;
+  bool _usesInsulinTherapy = false;
   bool _hasEdema = false; // riwayat pembengkakan — untuk pasien gagal jantung
 
   // Hemodialisis — untuk pasien penyakit ginjal
@@ -84,9 +92,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     _confirmPassCtrl.dispose();
+    _addressVillageCtrl.dispose();
+    _addressDistrictCtrl.dispose();
+    _addressCityCtrl.dispose();
+    _addressProvinceCtrl.dispose();
+    _educationCtrl.dispose();
+    _occupationCtrl.dispose();
     _weightCtrl.dispose();
     _heightCtrl.dispose();
     _urinOutputCtrl.dispose();
+    _dmDurationCtrl.dispose();
     _hdLocationCtrl.dispose();
     super.dispose();
   }
@@ -197,6 +212,59 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ),
                   const SizedBox(height: 14),
+                  CustomTextField(
+                    label: 'Desa',
+                    controller: _addressVillageCtrl,
+                    prefixIcon: const Icon(Icons.location_on_outlined),
+                    validator: (v) =>
+                        v == null || v.trim().isEmpty ? 'Desa wajib diisi' : null,
+                  ),
+                  const SizedBox(height: 14),
+                  CustomTextField(
+                    label: 'Kecamatan',
+                    controller: _addressDistrictCtrl,
+                    prefixIcon: const Icon(Icons.map_outlined),
+                    validator: (v) => v == null || v.trim().isEmpty
+                        ? 'Kecamatan wajib diisi'
+                        : null,
+                  ),
+                  const SizedBox(height: 14),
+                  CustomTextField(
+                    label: 'Kab/Kota',
+                    controller: _addressCityCtrl,
+                    prefixIcon: const Icon(Icons.location_city_outlined),
+                    validator: (v) => v == null || v.trim().isEmpty
+                        ? 'Kab/Kota wajib diisi'
+                        : null,
+                  ),
+                  const SizedBox(height: 14),
+                  CustomTextField(
+                    label: 'Provinsi',
+                    controller: _addressProvinceCtrl,
+                    prefixIcon: const Icon(Icons.public_outlined),
+                    validator: (v) => v == null || v.trim().isEmpty
+                        ? 'Provinsi wajib diisi'
+                        : null,
+                  ),
+                  const SizedBox(height: 14),
+                  CustomTextField(
+                    label: 'Pendidikan Terakhir',
+                    controller: _educationCtrl,
+                    prefixIcon: const Icon(Icons.school_outlined),
+                    validator: (v) => v == null || v.trim().isEmpty
+                        ? 'Pendidikan terakhir wajib diisi'
+                        : null,
+                  ),
+                  const SizedBox(height: 14),
+                  CustomTextField(
+                    label: 'Pekerjaan',
+                    controller: _occupationCtrl,
+                    prefixIcon: const Icon(Icons.work_outline),
+                    validator: (v) => v == null || v.trim().isEmpty
+                        ? 'Pekerjaan wajib diisi'
+                        : null,
+                  ),
+                  const SizedBox(height: 14),
 
                   // Berat & Tinggi
                   Row(
@@ -284,7 +352,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           Switch(
                             value: _hasEdema,
                             onChanged: (val) => setState(() => _hasEdema = val),
-                            activeColor: Colors.orange,
+                            activeThumbColor: Colors.orange,
                           ),
                         ],
                       ),
@@ -503,6 +571,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 20),
                     _SectionLabel(label: 'Data Klinis Diabetes'),
                     const SizedBox(height: 10),
+                    CustomTextField(
+                      label: 'Lama menderita DM (tahun)',
+                      controller: _dmDurationCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      prefixIcon: const Icon(Icons.timelapse_outlined),
+                      validator: (v) {
+                        final value = double.tryParse(v ?? '');
+                        if (value == null || value < 0) {
+                          return 'Lama DM wajib diisi';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    SwitchListTile.adaptive(
+                      value: _usesInsulinTherapy,
+                      onChanged: (value) =>
+                          setState(() => _usesInsulinTherapy = value),
+                      title: const Text('Sedang menjalani insulin'),
+                      subtitle: const Text(
+                        'Aktifkan jika pasien saat ini menggunakan terapi insulin.',
+                      ),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    const SizedBox(height: 10),
                     _ActivityLevelSelector(
                       value: _activityLevel,
                       onChanged: (v) => setState(() => _activityLevel = v),
@@ -530,8 +625,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     obscureText: true,
                     prefixIcon: const Icon(Icons.lock_outline),
                     validator: (v) {
-                      if (v == null || v.isEmpty)
+                      if (v == null || v.isEmpty) {
                         return 'Kata sandi wajib diisi';
+                      }
                       if (v.length < 6) return 'Minimal 6 karakter';
                       return null;
                     },
@@ -662,6 +758,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
       email: _emailCtrl.text,
       password: _passwordCtrl.text,
       name: _nameCtrl.text.trim(),
+      addressVillage: _addressVillageCtrl.text.trim(),
+      addressDistrict: _addressDistrictCtrl.text.trim(),
+      addressCity: _addressCityCtrl.text.trim(),
+      addressProvince: _addressProvinceCtrl.text.trim(),
+      education: _educationCtrl.text.trim(),
+      occupation: _occupationCtrl.text.trim(),
       dateOfBirth: _dateOfBirth!,
       weight: double.parse(_weightCtrl.text),
       height: double.parse(_heightCtrl.text),
@@ -671,6 +773,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       activityLevel: _diseaseType == DiseaseType.type2DiabetesMellitus
           ? (_activityLevel ?? ActivityLevel.ringan)
           : null,
+      diabetesDurationYears:
+          double.tryParse(_dmDurationCtrl.text.trim()) ?? 0.0,
+      usesInsulinTherapy: _usesInsulinTherapy,
       hemodialysisData: hemodialysisData,
       hasEdema: _hasEdema,
     );
@@ -707,7 +812,7 @@ class _DiseaseDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField<DiseaseType>(
-      value: value,
+      initialValue: value,
       decoration: InputDecoration(
         labelText: 'Kondisi Penyakit',
         prefixIcon: const Icon(Icons.medical_services_outlined),
@@ -754,8 +859,9 @@ class _UrinOutputField extends StatelessWidget {
           validator: (v) {
             if (v == null || v.isEmpty) return null; // opsional
             final val = double.tryParse(v);
-            if (val == null || val < 0 || val > 5000)
+            if (val == null || val < 0 || val > 5000) {
               return 'Nilai tidak valid';
+            }
             return null;
           },
         ),

@@ -128,7 +128,7 @@ class DayStreakCard extends StatelessWidget {
           // Motivation text
           Text(
             user.currentStreak > 0
-                ? 'Jangan lepaskan apinya! 🔥'
+                ? 'Jaga api tetap menyala! 🔥'
                 : 'Mulai sekarang! Konsistensi adalah kunci kesuksesan.',
             style: const TextStyle(
               fontSize: 13,

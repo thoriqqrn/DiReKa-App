@@ -1,14 +1,18 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:provider/provider.dart';
+import 'firebase_options.dart';
 import 'core/app_constants.dart';
 import 'core/app_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/disease_provider.dart';
 import 'screens/admin/admin_screen.dart';
 import 'screens/admin/admin_settings_screen.dart';
+import 'screens/admin/admin_food_catalog_screen.dart';
 import 'screens/auth/disease_selection_screen.dart';
+import 'screens/notifications/notifications_screen.dart';
 import 'screens/profile/edit_profile_screen.dart';
 import 'screens/auth/google_complete_profile_screen.dart';
 import 'screens/auth/login_screen.dart';
@@ -19,7 +23,7 @@ import 'screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const DiRekaApp());
 }
 
@@ -39,6 +43,7 @@ class DiRekaApp extends StatelessWidget {
         theme: AppTheme.lightTheme,
         // Lokalisasi Bahasa Indonesia
         localizationsDelegates: const [
+          quill.FlutterQuillLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
@@ -53,12 +58,14 @@ class DiRekaApp extends StatelessWidget {
           AppConstants.routeLogin: (_) => const LoginScreen(),
           AppConstants.routeRegister: (_) => const RegisterScreen(),
           AppConstants.routeMain: (_) => const MainScreen(),
+          AppConstants.routeNotifications: (_) => const NotificationsScreen(),
           AppConstants.routeSettings: (_) => const SettingsScreen(),
           AppConstants.routeEditProfile: (_) => const EditProfileScreen(),
           AppConstants.routeGoogleCompleteProfile: (_) =>
               const GoogleCompleteProfileScreen(),
           AppConstants.routeAdmin: (_) => const AdminScreen(),
           AppConstants.routeAdminSettings: (_) => const AdminSettingsScreen(),
+          AppConstants.routeAdminFoodCatalog: (_) => const AdminFoodCatalogScreen(),
         },
       ),
     );

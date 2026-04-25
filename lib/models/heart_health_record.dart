@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum HeartInputType { beratBadan, gejala, obat, pemeriksaan }
+enum HeartInputType { beratBadan, gejala, obat, pemeriksaan, aktivitas }
 
 extension HeartInputTypeExtension on HeartInputType {
   String get value {
@@ -13,6 +13,8 @@ extension HeartInputTypeExtension on HeartInputType {
         return 'obat';
       case HeartInputType.pemeriksaan:
         return 'pemeriksaan';
+      case HeartInputType.aktivitas:
+        return 'aktivitas';
     }
   }
 
@@ -26,6 +28,8 @@ extension HeartInputTypeExtension on HeartInputType {
         return 'Obat';
       case HeartInputType.pemeriksaan:
         return 'Pemeriksaan';
+      case HeartInputType.aktivitas:
+        return 'Aktivitas';
     }
   }
 }
@@ -40,6 +44,8 @@ HeartInputType heartInputTypeFromValue(String value) {
       return HeartInputType.obat;
     case 'pemeriksaan':
       return HeartInputType.pemeriksaan;
+    case 'aktivitas':
+      return HeartInputType.aktivitas;
     default:
       return HeartInputType.beratBadan;
   }

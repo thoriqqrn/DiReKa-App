@@ -173,10 +173,34 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> loginAdmin({
+    required String email,
+    required String password,
+  }) async {
+    _setLoading(true);
+    _clearError();
+    try {
+      await _authService.loginAdmin(email: email, password: password);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } on FirebaseAuthException catch (e) {
+      _setError(_mapFirebaseError(e.code));
+      _setLoading(false);
+      return false;
+    }
+  }
+
   Future<bool> register({
     required String email,
     required String password,
     required String name,
+    String addressVillage = '',
+    String addressDistrict = '',
+    String addressCity = '',
+    String addressProvince = '',
+    String education = '',
+    String occupation = '',
     required DateTime dateOfBirth,
     required double weight,
     required double height,
@@ -184,6 +208,8 @@ class AuthProvider extends ChangeNotifier {
     String gender = 'laki-laki',
     double urinOutput = 300.0,
     ActivityLevel? activityLevel,
+    double diabetesDurationYears = 0.0,
+    bool usesInsulinTherapy = false,
     HemodialysisData? hemodialysisData,
     bool hasEdema = false,
   }) async {
@@ -194,6 +220,12 @@ class AuthProvider extends ChangeNotifier {
         email: email,
         password: password,
         name: name,
+        addressVillage: addressVillage,
+        addressDistrict: addressDistrict,
+        addressCity: addressCity,
+        addressProvince: addressProvince,
+        education: education,
+        occupation: occupation,
         dateOfBirth: dateOfBirth,
         weight: weight,
         height: height,
@@ -201,6 +233,8 @@ class AuthProvider extends ChangeNotifier {
         gender: gender,
         urinOutput: urinOutput,
         activityLevel: activityLevel,
+        diabetesDurationYears: diabetesDurationYears,
+        usesInsulinTherapy: usesInsulinTherapy,
         hemodialysisData: hemodialysisData,
         hasEdema: hasEdema,
       );
@@ -237,8 +271,8 @@ class AuthProvider extends ChangeNotifier {
       _setError(_mapFirebaseError(e.code));
       _setLoading(false);
       return false;
-    } catch (_) {
-      _setError('Login dengan Google gagal. Coba lagi.');
+    } catch (e) {
+      _setError(_mapGoogleSignInError(e));
       _setLoading(false);
       return false;
     }
@@ -249,8 +283,16 @@ class AuthProvider extends ChangeNotifier {
     required DateTime dateOfBirth,
     required double weight,
     required double height,
+    String addressVillage = '',
+    String addressDistrict = '',
+    String addressCity = '',
+    String addressProvince = '',
+    String education = '',
+    String occupation = '',
     String gender = 'laki-laki',
     ActivityLevel? activityLevel,
+    double diabetesDurationYears = 0.0,
+    bool usesInsulinTherapy = false,
     HemodialysisData? hemodialysisData,
     bool hasEdema = false,
   }) async {
@@ -262,12 +304,20 @@ class AuthProvider extends ChangeNotifier {
         uid: user.uid,
         name: user.displayName ?? 'Pengguna',
         email: user.email ?? '',
+        addressVillage: addressVillage,
+        addressDistrict: addressDistrict,
+        addressCity: addressCity,
+        addressProvince: addressProvince,
+        education: education,
+        occupation: occupation,
         gender: gender,
         diseaseType: diseaseType,
         dateOfBirth: dateOfBirth,
         weight: weight,
         height: height,
         activityLevel: activityLevel,
+        diabetesDurationYears: diabetesDurationYears,
+        usesInsulinTherapy: usesInsulinTherapy,
         hemodialysisData: hemodialysisData,
         hasEdema: hasEdema,
         createdAt: DateTime.now(),
@@ -400,8 +450,40 @@ class AuthProvider extends ChangeNotifier {
         return 'Tidak ada koneksi internet.';
       case 'too-many-requests':
         return 'Terlalu banyak percobaan. Coba beberapa saat lagi.';
+      case 'popup-closed-by-user':
+        return 'Login Google dibatalkan sebelum selesai.';
+      case 'account-exists-with-different-credential':
+        return 'Email ini sudah terdaftar dengan metode login lain.';
       default:
         return 'Terjadi kesalahan. Coba lagi.';
     }
+  }
+
+  String _mapGoogleSignInError(Object error) {
+    final raw = error.toString();
+    final message = raw.toLowerCase();
+
+    if (message.contains('apiexception: 10') ||
+        message.contains('developer_error')) {
+      return 'Google Sign-In gagal karena konfigurasi OAuth Android belum sesuai (SHA-1/SHA-256).';
+    }
+    if (message.contains('12500') || message.contains('sign_in_failed')) {
+      return 'Google Sign-In ditolak oleh konfigurasi OAuth. Cek client ID dan SHA aplikasi.';
+    }
+    if (message.contains('network_error') ||
+        message.contains('network-request-failed')) {
+      return 'Tidak ada koneksi internet saat login Google.';
+    }
+    if (message.contains('popup_closed') ||
+        message.contains('popup-closed-by-user')) {
+      return 'Login Google dibatalkan sebelum selesai.';
+    }
+    if (message.contains('10.0.2.2') ||
+        message.contains('localhost') ||
+        message.contains('unauthorized-domain')) {
+      return 'Domain aplikasi belum diizinkan pada Firebase Authentication (Authorized domains).';
+    }
+
+    return 'Login dengan Google gagal: $raw';
   }
 }

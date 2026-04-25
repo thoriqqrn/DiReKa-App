@@ -3,12 +3,17 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/app_colors.dart';
+import '../../core/app_constants.dart';
 import '../../models/diabetes_health_record.dart';
 import '../../models/disease_type.dart';
+import '../../models/food_log_entry.dart';
 import '../../models/heart_health_record.dart';
 import '../../models/kidney_health_record.dart';
+import '../../models/meal_type.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/disease_provider.dart';
 import '../../services/diabetes_health_service.dart';
+import '../../services/food_log_service.dart';
 import '../../services/heart_health_service.dart';
 import '../../services/kidney_health_service.dart';
 
@@ -22,6 +27,34 @@ class HealthTrackerScreen extends StatefulWidget {
 class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   final DateFormat _dateFmt = DateFormat('d MMM yyyy', 'id_ID');
 
+  static const List<String> _activityOptions = [
+    'Mencuci',
+    'Mengepel',
+    'Memasak',
+    'Menyetrika',
+    'Berkebun',
+    'Jalan kaki',
+    'Jogging',
+    'Lari',
+    'Bersepeda',
+    'Senam',
+    'Badminton',
+    'Futsal',
+    'Gym',
+  ];
+  static const List<String> _activityTimeRanges = ['Pagi', 'Siang', 'Sore', 'Malam'];
+  static const List<String> _activityDurationRanges = ['5-20', '21-40', '41-60'];
+  static const List<String> _activityComplaintOptions = [
+    'Normal',
+    'Sesak nafas/terengah-engah',
+    'Pusing',
+    'Mata berkunang',
+    'Kelelahan',
+    'Gemetar',
+    'Keringat dingin',
+    'Nyeri dada',
+  ];
+
   List<KidneyHealthRecord> _records = [];
   List<HeartHealthRecord> _heartRecords = [];
   List<DiabetesHealthRecord> _dmRecords = [];
@@ -31,6 +64,12 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   String? _error;
   String? _heartError;
   String? _dmError;
+
+  bool _canSubmitHealthInput() {
+    if (_uid.isNotEmpty) return true;
+    _showLoginRequired();
+    return false;
+  }
 
   @override
   void initState() {
@@ -166,6 +205,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   }
 
   Future<void> _addRecord(KidneyHealthRecord record) async {
+    if (!_canSubmitHealthInput()) return;
     try {
       await KidneyHealthService.addRecord(_uid, record);
       await _loadRecords();
@@ -181,6 +221,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   }
 
   Future<void> _updateRecord(KidneyHealthRecord record) async {
+    if (!_canSubmitHealthInput()) return;
     try {
       await KidneyHealthService.updateRecord(_uid, record);
       await _loadRecords();
@@ -196,6 +237,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   }
 
   Future<void> _deleteRecord(KidneyHealthRecord record) async {
+    if (!_canSubmitHealthInput()) return;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -253,6 +295,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   }
 
   Future<void> _addHeartRecord(HeartHealthRecord record) async {
+    if (!_canSubmitHealthInput()) return;
     try {
       await HeartHealthService.addRecord(_uid, record);
       await _loadHeartRecords();
@@ -268,6 +311,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   }
 
   Future<void> _updateHeartRecord(HeartHealthRecord record) async {
+    if (!_canSubmitHealthInput()) return;
     try {
       await HeartHealthService.updateRecord(_uid, record);
       await _loadHeartRecords();
@@ -283,6 +327,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   }
 
   Future<void> _deleteHeartRecord(HeartHealthRecord record) async {
+    if (!_canSubmitHealthInput()) return;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -331,6 +376,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
       case HeartInputType.pemeriksaan:
         updated = await _showHeartCheckupDialog(existing: record);
         break;
+      case HeartInputType.aktivitas:
+        updated = await _showHeartActivityDialog(existing: record);
+        break;
     }
     if (updated != null) {
       await _updateHeartRecord(updated);
@@ -338,6 +386,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   }
 
   Future<void> _addDmRecord(DiabetesHealthRecord record) async {
+    if (!_canSubmitHealthInput()) return;
     try {
       await DiabetesHealthService.addRecord(_uid, record);
       await _loadDmRecords();
@@ -353,6 +402,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   }
 
   Future<void> _updateDmRecord(DiabetesHealthRecord record) async {
+    if (!_canSubmitHealthInput()) return;
     try {
       await DiabetesHealthService.updateRecord(_uid, record);
       await _loadDmRecords();
@@ -368,6 +418,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   }
 
   Future<void> _deleteDmRecord(DiabetesHealthRecord record) async {
+    if (!_canSubmitHealthInput()) return;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -410,6 +461,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
         break;
       case DiabetesInputType.insulin:
         updated = await _showInsulinAnalysisDialog(existing: record);
+        break;
+      case DiabetesInputType.aktivitas:
+        updated = await _showDiabetesActivityDialog(existing: record);
         break;
     }
     if (updated != null) {
@@ -469,6 +523,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
         break;
       case DiabetesInputType.insulin:
         record = await _showInsulinAnalysisDialog();
+        break;
+      case DiabetesInputType.aktivitas:
+        record = await _showDiabetesActivityDialog();
         break;
     }
 
@@ -534,6 +591,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
         break;
       case HeartInputType.pemeriksaan:
         record = await _showHeartCheckupDialog();
+        break;
+      case HeartInputType.aktivitas:
+        record = await _showHeartActivityDialog();
         break;
       case HeartInputType.beratBadan:
         // Tidak dipakai lagi pada alur input baru.
@@ -1385,8 +1445,99 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     );
 
     String meal = (payload['meal'] ?? 'Sarapan').toString();
-    if (!['Sarapan', 'Makan Siang', 'Makan Malam', 'Snack'].contains(meal)) {
+    if (meal == 'Snack') {
+      meal = 'Selingan Siang';
+    }
+    if (![
+      'Sarapan',
+      'Selingan Pagi',
+      'Makan Siang',
+      'Selingan Siang',
+      'Makan Malam',
+      'Selingan Malam',
+    ].contains(meal)) {
       meal = 'Sarapan';
+    }
+    bool isAutoLoading = false;
+    String autoInfoText = '';
+    bool didAutoInit = false;
+
+    List<MealType> mapMealLabelToTypes(String mealLabel) {
+      switch (mealLabel) {
+        case 'Sarapan':
+          return const [MealType.sarapan];
+        case 'Selingan Pagi':
+          return const [MealType.selinganPagi];
+        case 'Makan Siang':
+          return const [MealType.makanSiang];
+        case 'Selingan Siang':
+          return const [MealType.selinganSiang];
+        case 'Makan Malam':
+          return const [MealType.makanMalam];
+        case 'Selingan Malam':
+          return const [MealType.selinganMalam];
+        default:
+          return const [MealType.sarapan];
+      }
+    }
+
+    bool isTodayDate(DateTime target) {
+      final now = DateTime.now();
+      return target.year == now.year &&
+          target.month == now.month &&
+          target.day == now.day;
+    }
+
+    Future<void> syncMealFromFood({
+      required StateSetter setLocalState,
+      required DateTime targetDate,
+      required String mealLabel,
+    }) async {
+      if (_uid.isEmpty) {
+        setLocalState(() {
+          carbsController.text = '0';
+          glController.text = '0';
+          autoInfoText = 'Login untuk sinkronisasi data makanan.';
+        });
+        return;
+      }
+
+      setLocalState(() => isAutoLoading = true);
+      try {
+        final entries = await FoodLogService.getEntries(
+          _uid,
+          DateTime(targetDate.year, targetDate.month, targetDate.day),
+        );
+        final allowedTypes = mapMealLabelToTypes(mealLabel);
+        final mealEntries = entries
+            .where((entry) => allowedTypes.contains(entry.mealType))
+            .toList();
+
+        final totalCarb = mealEntries.fold<double>(
+          0.0,
+          (sum, entry) => sum + entry.karbohidrat,
+        );
+        final totalFiber = mealEntries.fold<double>(
+          0.0,
+          (sum, entry) => sum + entry.serat,
+        );
+        final netCarb = (totalCarb - totalFiber).clamp(0.0, double.infinity);
+        final gl = netCarb * 0.5;
+
+        setLocalState(() {
+          carbsController.text = totalCarb.toStringAsFixed(1);
+          glController.text = gl.toStringAsFixed(1);
+          autoInfoText = mealEntries.isEmpty
+              ? 'Belum ada log makanan untuk $mealLabel pada tanggal ini.'
+              : 'Auto dari Food Tracker: ${mealEntries.length} item makanan.';
+        });
+      } catch (_) {
+        setLocalState(() {
+          autoInfoText = 'Gagal mengambil data dari Food Tracker.';
+        });
+      } finally {
+        setLocalState(() => isAutoLoading = false);
+      }
     }
 
     double v(TextEditingController c) => double.tryParse(c.text.trim()) ?? 0;
@@ -1401,6 +1552,17 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocalState) {
+          if (!didAutoInit) {
+            didAutoInit = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              syncMealFromFood(
+                setLocalState: setLocalState,
+                targetDate: date,
+                mealLabel: meal,
+              );
+            });
+          }
+
           final a = v(basalController);
           final b = v(prandialController);
           final c = a + b;
@@ -1445,18 +1607,91 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    _DatePickerField(
-                      label: 'Tanggal',
-                      value: _dateFmt.format(date),
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: date,
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime.now().add(const Duration(days: 1)),
-                        );
-                        if (picked != null) setLocalState(() => date = picked);
-                      },
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              setLocalState(() {
+                                date = date.subtract(const Duration(days: 1));
+                              });
+                              syncMealFromFood(
+                                setLocalState: setLocalState,
+                                targetDate: date,
+                                mealLabel: meal,
+                              );
+                            },
+                            icon: const Icon(Icons.chevron_left),
+                            color: AppColors.textPrimary,
+                          ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () async {
+                                final picked = await showDatePicker(
+                                  context: context,
+                                  initialDate: date,
+                                  firstDate: DateTime(2020),
+                                  lastDate: DateTime.now().add(const Duration(days: 1)),
+                                );
+                                if (picked != null) {
+                                  setLocalState(() => date = picked);
+                                  await syncMealFromFood(
+                                    setLocalState: setLocalState,
+                                    targetDate: date,
+                                    mealLabel: meal,
+                                  );
+                                }
+                              },
+                              child: Column(
+                                children: [
+                                  Text(
+                                    isTodayDate(date)
+                                        ? 'Hari Ini · ${_dateFmt.format(date)}'
+                                        : _dateFmt.format(date),
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  const Text(
+                                    'Tap untuk pilih tanggal',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: isTodayDate(date)
+                                ? null
+                                : () {
+                                    setLocalState(() {
+                                      date = date.add(const Duration(days: 1));
+                                    });
+                                    syncMealFromFood(
+                                      setLocalState: setLocalState,
+                                      targetDate: date,
+                                      mealLabel: meal,
+                                    );
+                                  },
+                            icon: const Icon(Icons.chevron_right),
+                            color: isTodayDate(date)
+                                ? AppColors.textHint
+                                : AppColors.textPrimary,
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 10),
                     DropdownButtonFormField<String>(
@@ -1464,13 +1699,66 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       decoration: const InputDecoration(labelText: 'Waktu makan'),
                       items: const [
                         DropdownMenuItem(value: 'Sarapan', child: Text('Sarapan')),
+                        DropdownMenuItem(value: 'Selingan Pagi', child: Text('Selingan Pagi')),
                         DropdownMenuItem(value: 'Makan Siang', child: Text('Makan Siang')),
+                        DropdownMenuItem(value: 'Selingan Siang', child: Text('Selingan Siang')),
                         DropdownMenuItem(value: 'Makan Malam', child: Text('Makan Malam')),
-                        DropdownMenuItem(value: 'Snack', child: Text('Snack')),
+                        DropdownMenuItem(value: 'Selingan Malam', child: Text('Selingan Malam')),
                       ],
                       onChanged: (value) {
-                        if (value != null) setLocalState(() => meal = value);
+                        if (value != null) {
+                          setLocalState(() => meal = value);
+                          syncMealFromFood(
+                            setLocalState: setLocalState,
+                            targetDate: date,
+                            mealLabel: meal,
+                          );
+                        }
                       },
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              autoInfoText.isEmpty
+                                  ? 'Sinkronisasi karbo/GL dari Food Tracker.'
+                                  : autoInfoText,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                          if (isAutoLoading) ...[
+                            const SizedBox(width: 8),
+                            const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ],
+                          const SizedBox(width: 8),
+                          TextButton(
+                            onPressed: isAutoLoading
+                                ? null
+                                : () => syncMealFromFood(
+                                      setLocalState: setLocalState,
+                                      targetDate: date,
+                                      mealLabel: meal,
+                                    ),
+                            child: const Text('Sinkronkan'),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 10),
                     TextField(
@@ -1499,24 +1787,31 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     const SizedBox(height: 10),
                     TextField(
                       controller: carbsController,
-                      onChanged: (_) => setLocalState(() {}),
+                      readOnly: true,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(labelText: 'Total karbohidrat makan (gram)'),
+                      decoration: const InputDecoration(
+                        labelText: 'Total karbohidrat makan (gram)',
+                        helperText: 'Otomatis dari Food Tracker',
+                      ),
                     ),
                     const SizedBox(height: 4),
                     const Text(
-                      'Isi jumlah gram karbohidrat untuk waktu makan yang dipilih (mis. 65).',
+                      'Nilai ini otomatis sesuai tanggal + waktu makan yang dipilih.',
                       style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
                     ),
                     const SizedBox(height: 10),
                     TextField(
                       controller: glController,
+                      readOnly: true,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(labelText: 'GL'),
+                      decoration: const InputDecoration(
+                        labelText: 'GL',
+                        helperText: 'Otomatis dari Food Tracker',
+                      ),
                     ),
                     const SizedBox(height: 4),
                     const Text(
-                      'Opsional. Isi nilai glycemic load bila tersedia.',
+                      'Nilai GL dihitung otomatis dari log makanan pada waktu makan tersebut.',
                       style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
                     ),
                     const SizedBox(height: 10),
@@ -1599,7 +1894,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                         'dosisAktual': f,
                         'selisih': diff,
                         'category': category,
-                        'gl': glController.text.trim(),
+                        'gl': v(glController),
                       },
                       createdAt: existing?.createdAt ?? DateTime.now(),
                     ),
@@ -1673,6 +1968,422 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     if (record != null) {
       await _addRecord(record);
     }
+  }
+
+  String _activityGroup(String activity) {
+    const daily = {'Mencuci', 'Mengepel', 'Memasak', 'Menyetrika', 'Berkebun'};
+    return daily.contains(activity) ? 'Aktivitas sehari-hari' : 'Olahraga';
+  }
+
+  String _baseActivityCategory(String activity) {
+    const light = {'Mencuci', 'Memasak', 'Menyetrika', 'Berkebun'};
+    const moderate = {'Mengepel', 'Jalan kaki', 'Bersepeda', 'Senam'};
+    if (light.contains(activity)) return 'Aktivitas ringan yang masih ditoleransi';
+    if (moderate.contains(activity)) return 'Aktivitas sedang';
+    return 'Aktivitas berat';
+  }
+
+  ({String category, String analysis, String status}) _activitySystemResult({
+    required String activity,
+    required String complaint,
+  }) {
+    final baseCategory = _baseActivityCategory(activity);
+    final hasComplaint = complaint != 'Normal';
+    const severeComplaints = {'Nyeri dada', 'Keringat dingin'};
+
+    if (severeComplaints.contains(complaint)) {
+      return (
+        category: 'Aktivitas berat',
+        analysis: 'Sesak, palpitasi, nyeri dada, kelelahan jelas',
+        status: 'Tidak normal / tidak disarankan',
+      );
+    }
+
+    if (!hasComplaint) {
+      if (baseCategory == 'Aktivitas ringan yang masih ditoleransi') {
+        return (
+          category: baseCategory,
+          analysis: 'Tidak ada sesak, palpitasi, atau kelelahan berlebihan',
+          status: 'Normal / aman',
+        );
+      }
+      if (baseCategory == 'Aktivitas sedang') {
+        return (
+          category: baseCategory,
+          analysis: 'Gejala muncul saat aktivitas dan membaik saat istirahat',
+          status: 'Perlu pemantauan',
+        );
+      }
+      return (
+        category: baseCategory,
+        analysis: 'Sesak ringan, cepat capek, jantung berdebar',
+        status: 'Waspada / mulai tidak normal',
+      );
+    }
+
+    if (baseCategory == 'Aktivitas ringan yang masih ditoleransi') {
+      return (
+        category: 'Aktivitas ringan tetapi mulai memberatkan',
+        analysis: 'Sesak ringan, cepat capek, jantung berdebar',
+        status: 'Waspada / mulai tidak normal',
+      );
+    }
+    if (baseCategory == 'Aktivitas sedang') {
+      return (
+        category: baseCategory,
+        analysis: 'Gejala muncul saat aktivitas dan membaik saat istirahat',
+        status: 'Perlu pemantauan',
+      );
+    }
+    return (
+      category: baseCategory,
+      analysis: 'Sesak, palpitasi, nyeri dada, kelelahan jelas',
+      status: 'Tidak normal / tidak disarankan',
+    );
+  }
+
+  Future<_ActivityInputResult?> _showActivityDialog({
+    required String title,
+    Map<String, dynamic>? existingPayload,
+    DateTime? existingDate,
+  }) {
+    final payload = existingPayload ?? {};
+    DateTime date = existingDate ?? DateTime.now();
+    String activity = (payload['activityName'] ?? _activityOptions.first).toString();
+    String timeRange =
+        (payload['timeRange'] ?? _activityTimeRanges.first).toString();
+    String duration =
+        (payload['duration'] ?? _activityDurationRanges.first).toString();
+    String complaint =
+        (payload['complaint'] ?? _activityComplaintOptions.first).toString();
+    final heartRateCtrl = TextEditingController(
+      text: (payload['heartRate'] ?? '').toString(),
+    );
+
+    return showDialog<_ActivityInputResult>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocalState) {
+          final result = _activitySystemResult(
+            activity: activity,
+            complaint: complaint,
+          );
+
+          return AlertDialog(
+            insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            title: Text(title),
+            content: SizedBox(
+              width: 420,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _DatePickerField(
+                      label: 'Tanggal',
+                      value: _dateFmt.format(date),
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: date,
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime.now().add(const Duration(days: 1)),
+                        );
+                        if (picked != null) setLocalState(() => date = picked);
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<String>(
+                      initialValue: activity,
+                      decoration: const InputDecoration(labelText: 'Jenis aktivitas'),
+                      items: _activityOptions
+                          .map((v) => DropdownMenuItem(value: v, child: Text(v)))
+                          .toList(),
+                      onChanged: (v) {
+                        if (v == null) return;
+                        setLocalState(() => activity = v);
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Text(
+                        'Kategori aktivitas: ${_activityGroup(activity)}',
+                        style: const TextStyle(color: AppColors.textSecondary),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            initialValue: timeRange,
+                            isExpanded: true,
+                            decoration: const InputDecoration(labelText: 'Range waktu'),
+                            items: _activityTimeRanges
+                                .map(
+                                  (v) => DropdownMenuItem(
+                                    value: v,
+                                    child: Text(
+                                      v,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (v) {
+                              if (v == null) return;
+                              setLocalState(() => timeRange = v);
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            initialValue: duration,
+                            isExpanded: true,
+                            decoration: const InputDecoration(labelText: 'Durasi (menit)'),
+                            items: _activityDurationRanges
+                                .map(
+                                  (v) => DropdownMenuItem(
+                                    value: v,
+                                    child: Text(
+                                      v,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (v) {
+                              if (v == null) return;
+                              setLocalState(() => duration = v);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: heartRateCtrl,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: false),
+                      decoration: const InputDecoration(
+                        labelText: 'Denyut nadi (opsional)',
+                        hintText: 'contoh: 98',
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<String>(
+                      initialValue: complaint,
+                      isExpanded: true,
+                      decoration: const InputDecoration(labelText: 'Keluhan'),
+                      items: _activityComplaintOptions
+                          .map(
+                            (v) => DropdownMenuItem(
+                              value: v,
+                              child: Text(
+                                v,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      selectedItemBuilder: (context) {
+                        return _activityComplaintOptions
+                            .map(
+                              (v) => Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  v,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            )
+                            .toList();
+                      },
+                      onChanged: (v) {
+                        if (v == null) return;
+                        setLocalState(() => complaint = v);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Kategori: ${result.category}'),
+                          const SizedBox(height: 4),
+                          Text('Analisis sistem: ${result.analysis}'),
+                          const SizedBox(height: 6),
+                          _StatusBadge(
+                            text: result.status,
+                            color: result.status.contains('Normal / aman')
+                                ? AppColors.success
+                                : result.status.contains('Waspada')
+                                    ? AppColors.warning
+                                    : result.status.contains('Perlu')
+                                        ? AppColors.warning
+                                        : AppColors.error,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+              ElevatedButton(
+                onPressed: () {
+                  final heartRateText = heartRateCtrl.text.trim();
+                  final payloadOut = <String, dynamic>{
+                    'activityName': activity,
+                    'activityGroup': _activityGroup(activity),
+                    'activityCategory': result.category,
+                    'timeRange': timeRange,
+                    'duration': duration,
+                    'heartRate': heartRateText,
+                    'complaint': complaint,
+                    'analysisSystem': result.analysis,
+                    'status': result.status,
+                  };
+                  Navigator.pop(
+                    ctx,
+                    _ActivityInputResult(
+                      date: DateTime(date.year, date.month, date.day),
+                      payload: payloadOut,
+                    ),
+                  );
+                },
+                child: const Text('Simpan'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Future<HeartHealthRecord?> _showHeartActivityDialog({HeartHealthRecord? existing}) async {
+    final result = await _showActivityDialog(
+      title: existing == null ? 'Input Aktivitas Jantung' : 'Edit Aktivitas Jantung',
+      existingPayload: existing?.payload,
+      existingDate: existing?.date,
+    );
+    if (result == null) return null;
+
+    return HeartHealthRecord(
+      id: existing?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
+      type: HeartInputType.aktivitas,
+      date: result.date,
+      payload: result.payload,
+      createdAt: existing?.createdAt ?? DateTime.now(),
+    );
+  }
+
+  Future<DiabetesHealthRecord?> _showDiabetesActivityDialog({
+    DiabetesHealthRecord? existing,
+  }) async {
+    final result = await _showActivityDialog(
+      title: existing == null
+          ? 'Input Aktivitas Diabetes'
+          : 'Edit Aktivitas Diabetes',
+      existingPayload: existing?.payload,
+      existingDate: existing?.date,
+    );
+    if (result == null) return null;
+
+    return DiabetesHealthRecord(
+      id: existing?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
+      type: DiabetesInputType.aktivitas,
+      date: result.date,
+      payload: result.payload,
+      createdAt: existing?.createdAt ?? DateTime.now(),
+    );
+  }
+
+  void _showLoginRequired() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.divider,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Icon(Icons.lock_outline, size: 52, color: AppColors.primary),
+            const SizedBox(height: 16),
+            const Text(
+              'Login Diperlukan',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Kamu bisa lihat tracker sebagai guest. Untuk menambah data kesehatan, silakan login dulu.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 14,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 28),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  Navigator.pushNamed(context, AppConstants.routeLogin);
+                },
+                child: const Text('Masuk'),
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  Navigator.pushNamed(context, AppConstants.routeRegister);
+                },
+                child: const Text('Daftar Akun'),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<KidneyHealthRecord?> _showHemodialysisDialog({
@@ -2461,6 +3172,8 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
         return Icons.medication_outlined;
       case HeartInputType.pemeriksaan:
         return Icons.fact_check_outlined;
+      case HeartInputType.aktivitas:
+        return Icons.directions_run_outlined;
     }
   }
 
@@ -2470,6 +3183,8 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
         return Icons.monitor_heart;
       case DiabetesInputType.insulin:
         return Icons.calculate_outlined;
+      case DiabetesInputType.aktivitas:
+        return Icons.directions_walk_outlined;
     }
   }
 
@@ -2607,6 +3322,12 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     return list;
   }
 
+  List<HeartHealthRecord> get _heartActivityRecords {
+    final list = _heartRecords.where((e) => e.type == HeartInputType.aktivitas).toList();
+    list.sort((a, b) => b.date.compareTo(a.date));
+    return list;
+  }
+
   List<DiabetesHealthRecord> get _dmCheckupRecords {
     final list =
         _dmRecords.where((e) => e.type == DiabetesInputType.pemeriksaan).toList();
@@ -2620,19 +3341,27 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     return list;
   }
 
+  List<DiabetesHealthRecord> get _dmActivityRecords {
+    final list = _dmRecords.where((e) => e.type == DiabetesInputType.aktivitas).toList();
+    list.sort((a, b) => b.date.compareTo(a.date));
+    return list;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Consumer<AuthProvider>(
         builder: (context, auth, _) {
-          final diseaseType = auth.currentUser?.diseaseType;
+          final guestDisease = context.watch<DiseaseProvider>().selectedDisease;
+          final diseaseType = auth.currentUser?.diseaseType ?? guestDisease;
 
-          if (auth.firebaseUser == null) {
+          if (diseaseType == null) {
             return const Center(
               child: Text(
-                'Silakan login untuk menggunakan pelacak kesehatan.',
+                'Pilih penyakit terlebih dulu untuk melihat tracker kesehatan.',
                 style: TextStyle(color: AppColors.textSecondary),
+                textAlign: TextAlign.center,
               ),
             );
           }
@@ -2652,6 +3381,13 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                   children: [
                     _HeartHeader(onInput: _showHeartInputTypeSheet),
                     const SizedBox(height: 16),
+                    if (_uid.isEmpty) ...[
+                      const _GuestReadOnlyBanner(
+                        message:
+                            'Mode Guest (Read-only). Kamu bisa buka form, tapi tidak bisa menyimpan input tanpa login.',
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     if (_heartError != null)
                       Container(
                         width: double.infinity,
@@ -2674,26 +3410,49 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       idealWeight: auth.currentUser?.bbi ?? auth.currentUser?.weight ?? 0,
                     ),
                     const SizedBox(height: 16),
-                    _HeartSymptomTable(
-                      records: _heartSymptomRecords,
-                      dateFmt: _dateFmt,
-                      onEdit: _editHeartRecord,
-                      onDelete: _deleteHeartRecord,
-                    ),
+                    _heartSymptomRecords.isEmpty
+                        ? const _EmptyTableState(
+                            message: 'Belum ada input gejala jantung.',
+                          )
+                        : _HeartSymptomTable(
+                            records: _heartSymptomRecords,
+                            dateFmt: _dateFmt,
+                            onEdit: _editHeartRecord,
+                            onDelete: _deleteHeartRecord,
+                          ),
                     const SizedBox(height: 16),
-                    _HeartMedicationTable(
-                      records: _heartMedicationRecords,
-                      dateFmt: _dateFmt,
-                      onEdit: _editHeartRecord,
-                      onDelete: _deleteHeartRecord,
-                    ),
+                    _heartActivityRecords.isEmpty
+                        ? const _EmptyTableState(
+                            message: 'Belum ada input aktivitas jantung.',
+                          )
+                        : _HeartActivityTable(
+                            records: _heartActivityRecords,
+                            dateFmt: _dateFmt,
+                            onEdit: _editHeartRecord,
+                            onDelete: _deleteHeartRecord,
+                          ),
                     const SizedBox(height: 16),
-                    _HeartCheckupTable(
-                      records: _heartCheckupRecords,
-                      dateFmt: _dateFmt,
-                      onEdit: _editHeartRecord,
-                      onDelete: _deleteHeartRecord,
-                    ),
+                    _heartMedicationRecords.isEmpty
+                        ? const _EmptyTableState(
+                            message: 'Belum ada input obat jantung.',
+                          )
+                        : _HeartMedicationTable(
+                            records: _heartMedicationRecords,
+                            dateFmt: _dateFmt,
+                            onEdit: _editHeartRecord,
+                            onDelete: _deleteHeartRecord,
+                          ),
+                    const SizedBox(height: 16),
+                    _heartCheckupRecords.isEmpty
+                        ? const _EmptyTableState(
+                            message: 'Belum ada input pemeriksaan jantung.',
+                          )
+                        : _HeartCheckupTable(
+                            records: _heartCheckupRecords,
+                            dateFmt: _dateFmt,
+                            onEdit: _editHeartRecord,
+                            onDelete: _deleteHeartRecord,
+                          ),
                     const SizedBox(height: 16),
                     const _NormalValuesButtonCard(
                       diseaseType: DiseaseType.heartFailure,
@@ -2719,6 +3478,13 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                   children: [
                     _DiabetesHeader(onInput: _showDmInputTypeSheet),
                     const SizedBox(height: 16),
+                    if (_uid.isEmpty) ...[
+                      const _GuestReadOnlyBanner(
+                        message:
+                            'Mode Guest (Read-only). Kamu bisa buka form, tapi tidak bisa menyimpan input tanpa login.',
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     if (_dmError != null)
                       Container(
                         width: double.infinity,
@@ -2739,16 +3505,33 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     _DiabetesInsulinSummaryTable(
                       records: _dmInsulinRecords,
                       dateFmt: _dateFmt,
+                      uid: _uid,
+                      onDataChanged: _loadDmRecords,
                       onEdit: _editDmRecord,
                       onDelete: _deleteDmRecord,
                     ),
                     const SizedBox(height: 16),
-                    _DiabetesCheckupTable(
-                      records: _dmCheckupRecords,
-                      dateFmt: _dateFmt,
-                      onEdit: _editDmRecord,
-                      onDelete: _deleteDmRecord,
-                    ),
+                    _dmActivityRecords.isEmpty
+                        ? const _EmptyTableState(
+                            message: 'Belum ada input aktivitas diabetes.',
+                          )
+                        : _DiabetesActivityTable(
+                            records: _dmActivityRecords,
+                            dateFmt: _dateFmt,
+                            onEdit: _editDmRecord,
+                            onDelete: _deleteDmRecord,
+                          ),
+                    const SizedBox(height: 16),
+                    _dmCheckupRecords.isEmpty
+                        ? const _EmptyTableState(
+                            message: 'Belum ada input pemeriksaan diabetes.',
+                          )
+                        : _DiabetesCheckupTable(
+                            records: _dmCheckupRecords,
+                            dateFmt: _dateFmt,
+                            onEdit: _editDmRecord,
+                            onDelete: _deleteDmRecord,
+                          ),
                     const SizedBox(height: 16),
                     const _NormalValuesButtonCard(
                       diseaseType: DiseaseType.type2DiabetesMellitus,
@@ -2868,6 +3651,13 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
+                  if (_uid.isEmpty) ...[
+                    const _GuestReadOnlyBanner(
+                      message:
+                          'Mode Guest (Read-only). Kamu bisa buka form, tapi tidak bisa menyimpan input tanpa login.',
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   if (_error != null)
                     Container(
                       width: double.infinity,
@@ -3489,7 +4279,7 @@ class _HeartHeader extends StatelessWidget {
                 ),
                 SizedBox(height: 2),
                 Text(
-                  'Pantau gejala, obat, pemeriksaan, dan BB',
+                  'Pantau gejala, aktivitas, obat, pemeriksaan, dan BB',
                   style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                 ),
               ],
@@ -3794,6 +4584,88 @@ class _HeartMedicationTable extends StatelessWidget {
   }
 }
 
+class _HeartActivityTable extends StatelessWidget {
+  final List<HeartHealthRecord> records;
+  final DateFormat dateFmt;
+  final void Function(HeartHealthRecord) onEdit;
+  final void Function(HeartHealthRecord) onDelete;
+
+  const _HeartActivityTable({
+    required this.records,
+    required this.dateFmt,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _TableCard(
+      title: 'Tabel Aktivitas',
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          columnSpacing: 14,
+          columns: const [
+            DataColumn(label: Text('Tgl')),
+            DataColumn(label: Text('Jenis aktivitas')),
+            DataColumn(label: Text('Kategori aktivitas')),
+            DataColumn(label: Text('Range waktu')),
+            DataColumn(label: Text('Durasi')),
+            DataColumn(label: Text('Denyut nadi')),
+            DataColumn(label: Text('Keluhan')),
+            DataColumn(label: Text('Analisis sistem')),
+            DataColumn(label: Text('Status')),
+            DataColumn(label: Text('Aksi')),
+          ],
+          rows: records.map((r) {
+            final p = r.payload;
+            final status = (p['status'] ?? '-').toString();
+            final statusColor = status.contains('Normal / aman')
+                ? AppColors.success
+                : status.contains('Waspada')
+                    ? AppColors.warning
+                    : status.contains('Perlu')
+                        ? AppColors.warning
+                        : AppColors.error;
+            return DataRow(cells: [
+              DataCell(Text(dateFmt.format(r.date))),
+              DataCell(Text((p['activityName'] ?? '-').toString())),
+              DataCell(Text((p['activityCategory'] ?? '-').toString())),
+              DataCell(Text((p['timeRange'] ?? '-').toString())),
+              DataCell(Text((p['duration'] ?? '-').toString())),
+              DataCell(Text((p['heartRate'] ?? '-').toString().isEmpty ? '-' : (p['heartRate'] ?? '-').toString())),
+              DataCell(Text((p['complaint'] ?? '-').toString())),
+              DataCell(Text((p['analysisSystem'] ?? '-').toString())),
+              DataCell(_StatusBadge(text: status, color: statusColor)),
+              DataCell(
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      onPressed: () => onEdit(r),
+                    ),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(
+                        Icons.delete_outline,
+                        size: 18,
+                        color: AppColors.error,
+                      ),
+                      onPressed: () => onDelete(r),
+                    ),
+                  ],
+                ),
+              ),
+            ]);
+          }).toList(),
+        ),
+      ),
+    );
+  }
+}
+
 class _HeartCheckupTable extends StatelessWidget {
   final List<HeartHealthRecord> records;
   final DateFormat dateFmt;
@@ -4024,7 +4896,7 @@ class _DiabetesHeader extends StatelessWidget {
                 ),
                 SizedBox(height: 2),
                 Text(
-                  'Pantau pemeriksaan & analisis insulin',
+                  'Pantau aktivitas, pemeriksaan, dan analisis insulin',
                   style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                 ),
               ],
@@ -4055,90 +4927,440 @@ class _DiabetesHeader extends StatelessWidget {
   }
 }
 
-class _DiabetesInsulinSummaryTable extends StatelessWidget {
+class _DiabetesInsulinSummaryTable extends StatefulWidget {
   final List<DiabetesHealthRecord> records;
   final DateFormat dateFmt;
+  final String uid;
+  final Future<void> Function() onDataChanged;
   final void Function(DiabetesHealthRecord) onEdit;
   final void Function(DiabetesHealthRecord) onDelete;
 
   const _DiabetesInsulinSummaryTable({
     required this.records,
     required this.dateFmt,
+    required this.uid,
+    required this.onDataChanged,
     required this.onEdit,
     required this.onDelete,
   });
 
   @override
+  State<_DiabetesInsulinSummaryTable> createState() =>
+      _DiabetesInsulinSummaryTableState();
+}
+
+class _DiabetesInsulinSummaryTableState extends State<_DiabetesInsulinSummaryTable> {
+  static const List<String> _mealOrder = [
+    'Sarapan',
+    'Selingan Pagi',
+    'Makan Siang',
+    'Selingan Siang',
+    'Makan Malam',
+    'Selingan Malam',
+  ];
+
+  DateTime _selectedDate = DateTime.now();
+  bool _isSyncLoading = false;
+  bool _isTableLoading = false;
+  List<FoodLogEntry> _entriesOnDate = [];
+  String? _syncError;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFoodEntriesForDate();
+  }
+
+  @override
+  void didUpdateWidget(covariant _DiabetesInsulinSummaryTable oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.uid != widget.uid) {
+      _loadFoodEntriesForDate();
+    }
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  bool get _isToday {
+    final now = DateTime.now();
+    return _isSameDay(now, _selectedDate);
+  }
+
+  DateTime get _normalizedSelectedDate =>
+      DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
+
+  Future<void> _loadFoodEntriesForDate() async {
+    if (widget.uid.isEmpty) {
+      setState(() {
+        _entriesOnDate = [];
+        _isTableLoading = false;
+        _syncError = null;
+      });
+      return;
+    }
+
+    setState(() {
+      _isTableLoading = true;
+      _syncError = null;
+    });
+
+    try {
+      final entries = await FoodLogService.getEntries(widget.uid, _normalizedSelectedDate);
+      if (!mounted) return;
+      setState(() {
+        _entriesOnDate = entries;
+        _isTableLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _entriesOnDate = [];
+        _isTableLoading = false;
+        _syncError = 'Gagal sinkronisasi data makanan untuk tanggal ini.';
+      });
+    }
+  }
+
+  List<MealType> _mapMealLabelToTypes(String mealLabel) {
+    switch (mealLabel) {
+      case 'Sarapan':
+        return const [MealType.sarapan];
+      case 'Selingan Pagi':
+        return const [MealType.selinganPagi];
+      case 'Makan Siang':
+        return const [MealType.makanSiang];
+      case 'Selingan Siang':
+        return const [MealType.selinganSiang];
+      case 'Makan Malam':
+        return const [MealType.makanMalam];
+      case 'Selingan Malam':
+        return const [MealType.selinganMalam];
+      default:
+        return const [MealType.sarapan];
+    }
+  }
+
+  int _foodCountForMeal(String mealLabel) {
+    final targetTypes = _mapMealLabelToTypes(mealLabel);
+    return _entriesOnDate.where((entry) => targetTypes.contains(entry.mealType)).length;
+  }
+
+  ({double carb, double gl}) _autoCarbAndGl(String mealLabel) {
+    final targetTypes = _mapMealLabelToTypes(mealLabel);
+    final rows = _entriesOnDate.where((entry) => targetTypes.contains(entry.mealType));
+    final carb = rows.fold<double>(0.0, (sum, e) => sum + e.karbohidrat);
+    final fiber = rows.fold<double>(0.0, (sum, e) => sum + e.serat);
+    final netCarb = (carb - fiber).clamp(0.0, double.infinity);
+    return (carb: carb, gl: netCarb * 0.5);
+  }
+
+  DiabetesHealthRecord? _recordByMeal(String mealLabel) {
+    final dateRecords = widget.records.where((r) => _isSameDay(r.date, _normalizedSelectedDate));
+    final allowedLabels = <String>{mealLabel};
+    if (mealLabel == 'Selingan Siang') {
+      // Backward compatibility: old records used a single "Snack" label.
+      allowedLabels.add('Snack');
+    }
+    final byMeal = dateRecords.where((r) => allowedLabels.contains((r.payload['meal'] ?? '').toString())).toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return byMeal.isEmpty ? null : byMeal.first;
+  }
+
+  double _toDouble(dynamic value) {
+    if (value is num) return value.toDouble();
+    return double.tryParse((value ?? '').toString()) ?? 0.0;
+  }
+
+  String _categoryFromDiff(double diff) {
+    if (diff.abs() <= 1.0) return 'Balance';
+    if (diff > 1.0) return 'Lebih';
+    return 'Kurang';
+  }
+
+  Future<void> _syncRow(DiabetesHealthRecord record, String mealLabel) async {
+    if (widget.uid.isEmpty) return;
+    setState(() => _isSyncLoading = true);
+    try {
+      final auto = _autoCarbAndGl(mealLabel);
+      final p = record.payload;
+      final basal = _toDouble(p['insulinBasal']);
+      final prandial = _toDouble(p['insulinPrandial']);
+      final totalInsulin = basal + prandial;
+      final icr = totalInsulin <= 0 ? 0.0 : 500 / totalInsulin;
+      final estimasi = icr <= 0 ? 0.0 : auto.carb / icr;
+      final aktual = _toDouble(p['dosisAktual']);
+      final diff = aktual - estimasi;
+      final category = _categoryFromDiff(diff);
+
+      final updated = DiabetesHealthRecord(
+        id: record.id,
+        type: record.type,
+        date: record.date,
+        createdAt: record.createdAt,
+        payload: {
+          ...p,
+          'meal': mealLabel,
+          'totalInsulin': totalInsulin,
+          'icr': icr,
+          'karbohidratMakan': auto.carb,
+          'gl': auto.gl,
+          'estimasiInsulin': estimasi,
+          'selisih': diff,
+          'category': category,
+        },
+      );
+
+      await DiabetesHealthService.updateRecord(widget.uid, updated);
+      await widget.onDataChanged();
+      await _loadFoodEntriesForDate();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Sinkronisasi $mealLabel berhasil.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sinkronisasi gagal. Coba lagi.')),
+      );
+    } finally {
+      if (mounted) setState(() => _isSyncLoading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final dateRecords = widget.records.where((r) => _isSameDay(r.date, _normalizedSelectedDate)).toList();
+    final visibleMeals = _mealOrder.where((mealLabel) => _foodCountForMeal(mealLabel) > 0).toList();
+
     return _TableCard(
       title: 'Analisis Insulin (DM)',
-      child: records.isEmpty
-          ? const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text(
-                'Belum ada input analisis insulin.',
-                style: TextStyle(color: AppColors.textSecondary),
-              ),
-            )
-          : SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DataTable(
-                columnSpacing: 16,
-                columns: const [
-                  DataColumn(label: Text('Tgl')),
-                  DataColumn(label: Text('Makan')),
-                  DataColumn(label: Text('Karbohidrat')),
-                  DataColumn(label: Text('GL')),
-                  DataColumn(label: Text('Insulin')), 
-                  DataColumn(label: Text('Kategori')),
-                  DataColumn(label: Text('Aksi')),
-                ],
-                rows: records.map((r) {
-                  final p = r.payload;
-                  final cat = (p['category'] ?? '-').toString();
-                  final insulinText = '${((p['dosisAktual'] ?? 0) as num).toDouble().toStringAsFixed(1)} unit';
-                  return DataRow(
-                    cells: [
-                      DataCell(Text(dateFmt.format(r.date))),
-                      DataCell(Text((p['meal'] ?? '-').toString())),
-                      DataCell(Text('${((p['karbohidratMakan'] ?? 0) as num).toDouble().toStringAsFixed(1)} g')),
-                      DataCell(Text((p['gl'] ?? '-').toString())),
-                      DataCell(Text(insulinText)),
-                      DataCell(
-                        _StatusBadge(
-                          text: cat,
-                          color: cat == 'Balance'
-                              ? AppColors.success
-                              : cat == 'Lebih'
-                                  ? AppColors.warning
-                                  : AppColors.error,
-                        ),
+      child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _selectedDate = _selectedDate.subtract(const Duration(days: 1));
+                          });
+                          _loadFoodEntriesForDate();
+                        },
+                        icon: const Icon(Icons.chevron_left),
                       ),
-                      DataCell(
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
+                      Expanded(
+                        child: Column(
                           children: [
-                            IconButton(
-                              visualDensity: VisualDensity.compact,
-                              icon: const Icon(Icons.edit_outlined, size: 18),
-                              onPressed: () => onEdit(r),
-                            ),
-                            IconButton(
-                              visualDensity: VisualDensity.compact,
-                              icon: const Icon(
-                                Icons.delete_outline,
-                                size: 18,
-                                color: AppColors.error,
+                            Text(
+                              _isToday
+                                  ? 'Hari Ini · ${widget.dateFmt.format(_selectedDate)}'
+                                  : widget.dateFmt.format(_selectedDate),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
                               ),
-                              onPressed: () => onDelete(r),
+                            ),
+                            Text(
+                              '${dateRecords.length} data insulin',
+                              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
                             ),
                           ],
                         ),
                       ),
+                      IconButton(
+                        onPressed: _isToday
+                            ? null
+                            : () {
+                                setState(() {
+                                  _selectedDate = _selectedDate.add(const Duration(days: 1));
+                                });
+                                _loadFoodEntriesForDate();
+                              },
+                        icon: const Icon(Icons.chevron_right),
+                      ),
                     ],
-                  );
-                }).toList(),
-              ),
+                  ),
+                ),
+                if (_syncError != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    _syncError!,
+                    style: const TextStyle(fontSize: 11, color: AppColors.error),
+                  ),
+                ],
+                const SizedBox(height: 10),
+                if (_isTableLoading)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (visibleMeals.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text(
+                      'Belum ada input makanan pada tanggal ini, jadi tabel analisis belum ditampilkan.',
+                      style: TextStyle(color: AppColors.textSecondary),
+                    ),
+                  )
+                else
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.warning.withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: AppColors.warning.withValues(alpha: 0.35),
+                          ),
+                        ),
+                        child: const Text(
+                          'Baris warna kuning: perlu mengisi lewat form input analisis insulin.',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: DataTable(
+                      columnSpacing: 14,
+                      columns: const [
+                        DataColumn(label: Text('Makan')),
+                        DataColumn(label: Text('Karbo\n(Auto)')),
+                        DataColumn(label: Text('GL\n(Auto)')),
+                        DataColumn(label: Text('Basal')),
+                        DataColumn(label: Text('Prandial')),
+                        DataColumn(label: Text('Aktual')),
+                        DataColumn(label: Text('Estimasi')),
+                        DataColumn(label: Text('Selisih')),
+                        DataColumn(label: Text('Status')),
+                        DataColumn(label: Text('Kategori')),
+                        DataColumn(label: Text('Aksi')),
+                      ],
+                      rows: visibleMeals.map((mealLabel) {
+                        final auto = _autoCarbAndGl(mealLabel);
+                        final r = _recordByMeal(mealLabel);
+                        final p = r?.payload ?? const <String, dynamic>{};
+
+                        final basal = _toDouble(p['insulinBasal']);
+                        final prandial = _toDouble(p['insulinPrandial']);
+                        final aktual = _toDouble(p['dosisAktual']);
+                        final totalInsulin = basal + prandial;
+                        final icr = totalInsulin <= 0 ? 0.0 : 500 / totalInsulin;
+                        final estimasi = icr <= 0 ? 0.0 : auto.carb / icr;
+                        final diff = aktual - estimasi;
+                        final computedCategory = _categoryFromDiff(diff);
+
+                        final storedCarb = _toDouble(p['karbohidratMakan']);
+                        final storedGl = _toDouble(p['gl']);
+                        final isSynced = r != null &&
+                            (storedCarb - auto.carb).abs() < 0.1 &&
+                            (storedGl - auto.gl).abs() < 0.1;
+                        final statusText = r == null
+                            ? 'Belum input'
+                            : isSynced
+                                ? 'Sinkron'
+                                : 'Perlu update';
+                        final statusColor = r == null
+                            ? AppColors.warning
+                            : isSynced
+                                ? AppColors.success
+                                : AppColors.warning;
+
+                        return DataRow(
+                          color: (statusText == 'Perlu update' ||
+                                  statusText == 'Belum input')
+                              ? MaterialStatePropertyAll<Color?>(
+                                  AppColors.warning.withValues(
+                                    alpha: statusText == 'Belum input' ? 0.22 : 0.14,
+                                  ),
+                                )
+                              : null,
+                          cells: [
+                            DataCell(Text(mealLabel)),
+                            DataCell(Text('${auto.carb.toStringAsFixed(1)} g')),
+                            DataCell(Text(auto.gl.toStringAsFixed(1))),
+                            DataCell(Text(r == null ? '-' : basal.toStringAsFixed(1))),
+                            DataCell(Text(r == null ? '-' : prandial.toStringAsFixed(1))),
+                            DataCell(Text(r == null ? '-' : aktual.toStringAsFixed(1))),
+                            DataCell(Text(r == null ? '-' : estimasi.toStringAsFixed(1))),
+                            DataCell(Text(r == null ? '-' : diff.toStringAsFixed(1))),
+                            DataCell(_StatusBadge(text: statusText, color: statusColor)),
+                            DataCell(
+                              r == null
+                                  ? const Text('-')
+                                  : _StatusBadge(
+                                      text: computedCategory,
+                                      color: computedCategory == 'Balance'
+                                          ? AppColors.success
+                                          : computedCategory == 'Lebih'
+                                              ? AppColors.warning
+                                              : AppColors.error,
+                                    ),
+                            ),
+                            DataCell(
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (r != null) ...[
+                                    IconButton(
+                                      visualDensity: VisualDensity.compact,
+                                      tooltip: 'Edit',
+                                      icon: const Icon(Icons.edit_outlined, size: 18),
+                                      onPressed: () => widget.onEdit(r),
+                                    ),
+                                    IconButton(
+                                      visualDensity: VisualDensity.compact,
+                                      tooltip: 'Sinkronkan dari food',
+                                      icon: _isSyncLoading
+                                          ? const SizedBox(
+                                              width: 14,
+                                              height: 14,
+                                              child: CircularProgressIndicator(strokeWidth: 2),
+                                            )
+                                          : const Icon(Icons.sync, size: 18),
+                                      onPressed: _isSyncLoading ? null : () => _syncRow(r, mealLabel),
+                                    ),
+                                    IconButton(
+                                      visualDensity: VisualDensity.compact,
+                                      tooltip: 'Hapus',
+                                      icon: const Icon(
+                                        Icons.delete_outline,
+                                        size: 18,
+                                        color: AppColors.error,
+                                      ),
+                                      onPressed: () => widget.onDelete(r),
+                                    ),
+                                  ] else
+                                    const Text(
+                                      'Isi via form',
+                                      style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      }).toList(),
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
             ),
     );
   }
@@ -4227,6 +5449,89 @@ class _DiabetesCheckupTable extends StatelessWidget {
                 }).toList(),
               ),
             ),
+    );
+  }
+}
+
+class _DiabetesActivityTable extends StatelessWidget {
+  final List<DiabetesHealthRecord> records;
+  final DateFormat dateFmt;
+  final void Function(DiabetesHealthRecord) onEdit;
+  final void Function(DiabetesHealthRecord) onDelete;
+
+  const _DiabetesActivityTable({
+    required this.records,
+    required this.dateFmt,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _TableCard(
+      title: 'Tabel Aktivitas',
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          columnSpacing: 14,
+          columns: const [
+            DataColumn(label: Text('Tgl')),
+            DataColumn(label: Text('Jenis aktivitas')),
+            DataColumn(label: Text('Kategori aktivitas')),
+            DataColumn(label: Text('Range waktu')),
+            DataColumn(label: Text('Durasi')),
+            DataColumn(label: Text('Denyut nadi')),
+            DataColumn(label: Text('Keluhan')),
+            DataColumn(label: Text('Analisis sistem')),
+            DataColumn(label: Text('Status')),
+            DataColumn(label: Text('Aksi')),
+          ],
+          rows: records.map((r) {
+            final p = r.payload;
+            final status = (p['status'] ?? '-').toString();
+            final statusColor = status.contains('Normal / aman')
+                ? AppColors.success
+                : status.contains('Waspada')
+                    ? AppColors.warning
+                    : status.contains('Perlu')
+                        ? AppColors.warning
+                        : AppColors.error;
+
+            return DataRow(cells: [
+              DataCell(Text(dateFmt.format(r.date))),
+              DataCell(Text((p['activityName'] ?? '-').toString())),
+              DataCell(Text((p['activityCategory'] ?? '-').toString())),
+              DataCell(Text((p['timeRange'] ?? '-').toString())),
+              DataCell(Text((p['duration'] ?? '-').toString())),
+              DataCell(Text((p['heartRate'] ?? '-').toString().isEmpty ? '-' : (p['heartRate'] ?? '-').toString())),
+              DataCell(Text((p['complaint'] ?? '-').toString())),
+              DataCell(Text((p['analysisSystem'] ?? '-').toString())),
+              DataCell(_StatusBadge(text: status, color: statusColor)),
+              DataCell(
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      onPressed: () => onEdit(r),
+                    ),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(
+                        Icons.delete_outline,
+                        size: 18,
+                        color: AppColors.error,
+                      ),
+                      onPressed: () => onDelete(r),
+                    ),
+                  ],
+                ),
+              ),
+            ]);
+          }).toList(),
+        ),
+      ),
     );
   }
 }
@@ -4755,6 +6060,13 @@ List<_ExamReference> _examReferencesForDiseaseType(DiseaseType diseaseType) {
   }).toList();
 }
 
+class _ActivityInputResult {
+  final DateTime date;
+  final Map<String, dynamic> payload;
+
+  const _ActivityInputResult({required this.date, required this.payload});
+}
+
 class _StatusBadge extends StatelessWidget {
   final String text;
   final Color color;
@@ -4831,6 +6143,75 @@ class _TableCard extends StatelessWidget {
           const SizedBox(height: 8),
           child,
           const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyTableState extends StatelessWidget {
+  final String message;
+
+  const _EmptyTableState({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(minHeight: 140),
+      padding: const EdgeInsets.all(16),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.inbox_outlined,
+              color: AppColors.textHint,
+              size: 28,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.textSecondary),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GuestReadOnlyBanner extends StatelessWidget {
+  final String message;
+
+  const _GuestReadOnlyBanner({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.22)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.visibility_outlined, color: AppColors.primary, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12,
+                height: 1.35,
+              ),
+            ),
+          ),
         ],
       ),
     );

@@ -8,6 +8,12 @@ class UserModel {
   final String uid;
   final String name;
   final String email;
+  final String addressVillage;
+  final String addressDistrict;
+  final String addressCity;
+  final String addressProvince;
+  final String education;
+  final String occupation;
   final String gender; // 'laki-laki' | 'perempuan'
   final DiseaseType diseaseType;
   final DateTime dateOfBirth;
@@ -15,6 +21,8 @@ class UserModel {
   final double height; // cm
   final double urinOutput; // ml/hari — output urin 24 jam (untuk pasien ginjal)
   final ActivityLevel? activityLevel; // hanya untuk DM
+  final double diabetesDurationYears; // hanya untuk DM
+  final bool usesInsulinTherapy; // hanya untuk DM
   final HemodialysisData? hemodialysisData; // hanya untuk penyakit ginjal
   final bool hasEdema; // riwayat pembengkakan — untuk pasien gagal jantung
   final DateTime createdAt;
@@ -27,6 +35,12 @@ class UserModel {
     required this.uid,
     required this.name,
     required this.email,
+    this.addressVillage = '',
+    this.addressDistrict = '',
+    this.addressCity = '',
+    this.addressProvince = '',
+    this.education = '',
+    this.occupation = '',
     this.gender = 'laki-laki',
     required this.diseaseType,
     required this.dateOfBirth,
@@ -34,6 +48,8 @@ class UserModel {
     required this.height,
     this.urinOutput = 300.0,
     this.activityLevel,
+    this.diabetesDurationYears = 0.0,
+    this.usesInsulinTherapy = false,
     this.hemodialysisData,
     this.hasEdema = false,
     required this.createdAt,
@@ -119,6 +135,12 @@ class UserModel {
       'uid': uid,
       'name': name,
       'email': email,
+      'addressVillage': addressVillage,
+      'addressDistrict': addressDistrict,
+      'addressCity': addressCity,
+      'addressProvince': addressProvince,
+      'education': education,
+      'occupation': occupation,
       'gender': gender,
       'diseaseType': diseaseType.value,
       'dateOfBirth': Timestamp.fromDate(dateOfBirth),
@@ -126,6 +148,8 @@ class UserModel {
       'height': height,
       'urinOutput': urinOutput,
       'activityLevel': activityLevel?.value,
+      'diabetesDurationYears': diabetesDurationYears,
+      'usesInsulinTherapy': usesInsulinTherapy,
       'hemodialysisData': hemodialysisData?.toMap(),
       'hasEdema': hasEdema,
       'bmi': double.parse(bmi.toStringAsFixed(2)),
@@ -139,6 +163,12 @@ class UserModel {
       uid: map['uid'] ?? '',
       name: map['name'] ?? '',
       email: map['email'] ?? '',
+      addressVillage: (map['addressVillage'] ?? '').toString(),
+      addressDistrict: (map['addressDistrict'] ?? '').toString(),
+      addressCity: (map['addressCity'] ?? '').toString(),
+      addressProvince: (map['addressProvince'] ?? '').toString(),
+      education: (map['education'] ?? '').toString(),
+      occupation: (map['occupation'] ?? '').toString(),
       gender: map['gender'] as String? ?? 'laki-laki',
       diseaseType: DiseaseTypeExtension.fromValue(map['diseaseType'] ?? ''),
       dateOfBirth: (map['dateOfBirth'] as Timestamp).toDate(),
@@ -148,6 +178,9 @@ class UserModel {
       activityLevel: map['activityLevel'] != null
           ? ActivityLevelExtension.fromValue(map['activityLevel'] as String)
           : null,
+      diabetesDurationYears:
+          (map['diabetesDurationYears'] as num?)?.toDouble() ?? 0.0,
+      usesInsulinTherapy: (map['usesInsulinTherapy'] as bool?) ?? false,
       hemodialysisData: map['hemodialysisData'] != null
           ? HemodialysisData.fromMap(
               map['hemodialysisData'] as Map<String, dynamic>,
@@ -172,6 +205,12 @@ class UserModel {
     String? uid,
     String? name,
     String? email,
+    String? addressVillage,
+    String? addressDistrict,
+    String? addressCity,
+    String? addressProvince,
+    String? education,
+    String? occupation,
     String? gender,
     DiseaseType? diseaseType,
     DateTime? dateOfBirth,
@@ -180,6 +219,8 @@ class UserModel {
     double? urinOutput,
     ActivityLevel? activityLevel,
     bool clearActivityLevel = false,
+    double? diabetesDurationYears,
+    bool? usesInsulinTherapy,
     HemodialysisData? hemodialysisData,
     bool clearHemodialysisData = false,
     bool? hasEdema,
@@ -193,6 +234,12 @@ class UserModel {
       uid: uid ?? this.uid,
       name: name ?? this.name,
       email: email ?? this.email,
+      addressVillage: addressVillage ?? this.addressVillage,
+      addressDistrict: addressDistrict ?? this.addressDistrict,
+      addressCity: addressCity ?? this.addressCity,
+      addressProvince: addressProvince ?? this.addressProvince,
+      education: education ?? this.education,
+      occupation: occupation ?? this.occupation,
       gender: gender ?? this.gender,
       diseaseType: diseaseType ?? this.diseaseType,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
@@ -202,6 +249,9 @@ class UserModel {
       activityLevel: clearActivityLevel
           ? null
           : (activityLevel ?? this.activityLevel),
+      diabetesDurationYears:
+          diabetesDurationYears ?? this.diabetesDurationYears,
+      usesInsulinTherapy: usesInsulinTherapy ?? this.usesInsulinTherapy,
       hemodialysisData: clearHemodialysisData
           ? null
           : (hemodialysisData ?? this.hemodialysisData),

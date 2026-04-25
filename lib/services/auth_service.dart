@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../core/app_constants.dart';
 import '../models/activity_level.dart';
@@ -27,7 +28,11 @@ class LinkedFamilyAccount {
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    clientId: kIsWeb
+        ? '742908514617-ra79b46g0r4onfuvhdkj19nv9bpriv9i.apps.googleusercontent.com'
+        : null,
+  );
   final UserService _userService = UserService();
 
   User? get currentUser => _auth.currentUser;
@@ -45,11 +50,28 @@ class AuthService {
     );
   }
 
+  // Login admin dengan email & password
+  Future<UserCredential> loginAdmin({
+    required String email,
+    required String password,
+  }) async {
+    return await _auth.signInWithEmailAndPassword(
+      email: email.trim(),
+      password: password,
+    );
+  }
+
   // Register dengan email & password
   Future<UserCredential> registerWithEmail({
     required String email,
     required String password,
     required String name,
+    String addressVillage = '',
+    String addressDistrict = '',
+    String addressCity = '',
+    String addressProvince = '',
+    String education = '',
+    String occupation = '',
     required DateTime dateOfBirth,
     required double weight,
     required double height,
@@ -57,6 +79,8 @@ class AuthService {
     String gender = 'laki-laki',
     double urinOutput = 300.0,
     ActivityLevel? activityLevel,
+    double diabetesDurationYears = 0.0,
+    bool usesInsulinTherapy = false,
     HemodialysisData? hemodialysisData,
     bool hasEdema = false,
   }) async {
@@ -71,6 +95,12 @@ class AuthService {
       uid: credential.user!.uid,
       name: name,
       email: email.trim(),
+      addressVillage: addressVillage,
+      addressDistrict: addressDistrict,
+      addressCity: addressCity,
+      addressProvince: addressProvince,
+      education: education,
+      occupation: occupation,
       gender: gender,
       diseaseType: diseaseType,
       dateOfBirth: dateOfBirth,
@@ -78,6 +108,8 @@ class AuthService {
       height: height,
       urinOutput: urinOutput,
       activityLevel: activityLevel,
+      diabetesDurationYears: diabetesDurationYears,
+      usesInsulinTherapy: usesInsulinTherapy,
       hemodialysisData: hemodialysisData,
       hasEdema: hasEdema,
       createdAt: DateTime.now(),
@@ -142,6 +174,12 @@ class AuthService {
         uid: familyUid,
         name: familyName,
         email: familyEmail.trim(),
+        addressVillage: primaryUser.addressVillage,
+        addressDistrict: primaryUser.addressDistrict,
+        addressCity: primaryUser.addressCity,
+        addressProvince: primaryUser.addressProvince,
+        education: primaryUser.education,
+        occupation: primaryUser.occupation,
         gender: primaryUser.gender,
         diseaseType: primaryUser.diseaseType,
         dateOfBirth: primaryUser.dateOfBirth,
@@ -149,6 +187,8 @@ class AuthService {
         height: primaryUser.height,
         urinOutput: primaryUser.urinOutput,
         activityLevel: primaryUser.activityLevel,
+        diabetesDurationYears: primaryUser.diabetesDurationYears,
+        usesInsulinTherapy: primaryUser.usesInsulinTherapy,
         hemodialysisData: primaryUser.hemodialysisData,
         hasEdema: primaryUser.hasEdema,
         createdAt: DateTime.now(),
@@ -201,12 +241,14 @@ class AuthService {
       final data = doc.data();
       final uid = (data['familyUid'] ?? doc.id).toString();
 
-      final familyUserSnap =
-          await db.collection(AppConstants.colUsers).doc(uid).get();
+      final familyUserSnap = await db
+          .collection(AppConstants.colUsers)
+          .doc(uid)
+          .get();
       final userData = familyUserSnap.data() ?? <String, dynamic>{};
 
-      final name =
-          (userData['name'] ?? data['name'] ?? 'Akun keluarga').toString();
+      final name = (userData['name'] ?? data['name'] ?? 'Akun keluarga')
+          .toString();
       final email = (userData['email'] ?? data['email'] ?? '-').toString();
       final lastLogin = userData['lastLoginDate'] is Timestamp
           ? (userData['lastLoginDate'] as Timestamp).toDate()
@@ -237,6 +279,12 @@ class AuthService {
     if (familySnap.docs.isEmpty) return;
 
     final mirroredProfileData = {
+      'addressVillage': primaryUser.addressVillage,
+      'addressDistrict': primaryUser.addressDistrict,
+      'addressCity': primaryUser.addressCity,
+      'addressProvince': primaryUser.addressProvince,
+      'education': primaryUser.education,
+      'occupation': primaryUser.occupation,
       'gender': primaryUser.gender,
       'diseaseType': primaryUser.diseaseType.value,
       'dateOfBirth': Timestamp.fromDate(primaryUser.dateOfBirth),
@@ -244,6 +292,8 @@ class AuthService {
       'height': primaryUser.height,
       'urinOutput': primaryUser.urinOutput,
       'activityLevel': primaryUser.activityLevel?.value,
+      'diabetesDurationYears': primaryUser.diabetesDurationYears,
+      'usesInsulinTherapy': primaryUser.usesInsulinTherapy,
       'hemodialysisData': primaryUser.hemodialysisData?.toMap(),
       'hasEdema': primaryUser.hasEdema,
       'bmi': double.parse(primaryUser.bmi.toStringAsFixed(2)),

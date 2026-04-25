@@ -12,8 +12,11 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    final disease = context.watch<DiseaseProvider>().selectedDisease;
+    final guestDisease = context.watch<DiseaseProvider>().selectedDisease;
     final user = auth.userModel;
+    final disease = auth.isAuthenticated && user != null
+        ? user.diseaseType
+        : guestDisease;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -65,6 +68,39 @@ class SettingsScreen extends StatelessWidget {
                           '${user.bmi.toStringAsFixed(1)} (${user.bmiCategory})',
                       icon: Icons.calculate_outlined,
                     ),
+                    const Divider(height: 1),
+                    _InfoRow(
+                      label: 'Alamat',
+                      value:
+                          '${user.addressVillage}, ${user.addressDistrict}, ${user.addressCity}, ${user.addressProvince}',
+                      icon: Icons.location_on_outlined,
+                    ),
+                    const Divider(height: 1),
+                    _InfoRow(
+                      label: 'Pendidikan',
+                      value: user.education.isEmpty ? '-' : user.education,
+                      icon: Icons.school_outlined,
+                    ),
+                    const Divider(height: 1),
+                    _InfoRow(
+                      label: 'Pekerjaan',
+                      value: user.occupation.isEmpty ? '-' : user.occupation,
+                      icon: Icons.work_outline,
+                    ),
+                    if (user.diseaseType == DiseaseType.type2DiabetesMellitus) ...[
+                      const Divider(height: 1),
+                      _InfoRow(
+                        label: 'Lama DM',
+                        value: '${user.diabetesDurationYears.toStringAsFixed(1)} tahun',
+                        icon: Icons.timelapse_outlined,
+                      ),
+                      const Divider(height: 1),
+                      _InfoRow(
+                        label: 'Terapi insulin',
+                        value: user.usesInsulinTherapy ? 'Ya' : 'Tidak',
+                        icon: Icons.medication_outlined,
+                      ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -567,23 +603,32 @@ class _InfoRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, size: 20, color: AppColors.primary),
           const SizedBox(width: 14),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const Spacer(),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                    height: 1.35,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

@@ -23,12 +23,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _weightCtrl = TextEditingController();
   final _heightCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
+  final _addressVillageCtrl = TextEditingController();
+  final _addressDistrictCtrl = TextEditingController();
+  final _addressCityCtrl = TextEditingController();
+  final _addressProvinceCtrl = TextEditingController();
+  final _educationCtrl = TextEditingController();
+  final _occupationCtrl = TextEditingController();
   final _urinOutputCtrl = TextEditingController();
+  final _dmDurationCtrl = TextEditingController();
 
   DateTime? _dateOfBirth;
   DiseaseType? _diseaseType;
   String _gender = 'laki-laki';
   ActivityLevel? _activityLevel;
+  bool _usesInsulinTherapy = false;
 
   // Hemodialisis — untuk pasien penyakit ginjal
   DateTime? _hdStartDate;
@@ -74,15 +82,25 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (user != null) {
         _nameCtrl.text = user.name;
         _emailCtrl.text = user.email;
+        _addressVillageCtrl.text = user.addressVillage;
+        _addressDistrictCtrl.text = user.addressDistrict;
+        _addressCityCtrl.text = user.addressCity;
+        _addressProvinceCtrl.text = user.addressProvince;
+        _educationCtrl.text = user.education;
+        _occupationCtrl.text = user.occupation;
         _weightCtrl.text = user.weight.toString();
         _heightCtrl.text = user.height.toString();
         _urinOutputCtrl.text = user.urinOutput > 0
             ? user.urinOutput.toStringAsFixed(0)
             : '';
+        _dmDurationCtrl.text = user.diabetesDurationYears > 0
+            ? user.diabetesDurationYears.toString()
+            : '';
         _dateOfBirth = user.dateOfBirth;
         _diseaseType = user.diseaseType;
         _gender = user.gender;
         _activityLevel = user.activityLevel;
+        _usesInsulinTherapy = user.usesInsulinTherapy;
 
         // Load hemodialysis data jika ada
         if (user.hemodialysisData != null) {
@@ -105,7 +123,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _weightCtrl.dispose();
     _heightCtrl.dispose();
     _emailCtrl.dispose();
+    _addressVillageCtrl.dispose();
+    _addressDistrictCtrl.dispose();
+    _addressCityCtrl.dispose();
+    _addressProvinceCtrl.dispose();
+    _educationCtrl.dispose();
+    _occupationCtrl.dispose();
     _urinOutputCtrl.dispose();
+    _dmDurationCtrl.dispose();
     _hdLocationCtrl.dispose();
     super.dispose();
   }
@@ -158,6 +183,59 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     enabled: false,
                     prefixIcon: const Icon(Icons.email_outlined),
                     keyboardType: TextInputType.emailAddress,
+                  ),
+                  const SizedBox(height: 14),
+                  CustomTextField(
+                    label: 'Desa',
+                    controller: _addressVillageCtrl,
+                    prefixIcon: const Icon(Icons.location_on_outlined),
+                    validator: (v) =>
+                        v == null || v.trim().isEmpty ? 'Desa wajib diisi' : null,
+                  ),
+                  const SizedBox(height: 14),
+                  CustomTextField(
+                    label: 'Kecamatan',
+                    controller: _addressDistrictCtrl,
+                    prefixIcon: const Icon(Icons.map_outlined),
+                    validator: (v) => v == null || v.trim().isEmpty
+                        ? 'Kecamatan wajib diisi'
+                        : null,
+                  ),
+                  const SizedBox(height: 14),
+                  CustomTextField(
+                    label: 'Kab/Kota',
+                    controller: _addressCityCtrl,
+                    prefixIcon: const Icon(Icons.location_city_outlined),
+                    validator: (v) => v == null || v.trim().isEmpty
+                        ? 'Kab/Kota wajib diisi'
+                        : null,
+                  ),
+                  const SizedBox(height: 14),
+                  CustomTextField(
+                    label: 'Provinsi',
+                    controller: _addressProvinceCtrl,
+                    prefixIcon: const Icon(Icons.public_outlined),
+                    validator: (v) => v == null || v.trim().isEmpty
+                        ? 'Provinsi wajib diisi'
+                        : null,
+                  ),
+                  const SizedBox(height: 14),
+                  CustomTextField(
+                    label: 'Pendidikan Terakhir',
+                    controller: _educationCtrl,
+                    prefixIcon: const Icon(Icons.school_outlined),
+                    validator: (v) => v == null || v.trim().isEmpty
+                        ? 'Pendidikan terakhir wajib diisi'
+                        : null,
+                  ),
+                  const SizedBox(height: 14),
+                  CustomTextField(
+                    label: 'Pekerjaan',
+                    controller: _occupationCtrl,
+                    prefixIcon: const Icon(Icons.work_outline),
+                    validator: (v) => v == null || v.trim().isEmpty
+                        ? 'Pekerjaan wajib diisi'
+                        : null,
                   ),
                   const SizedBox(height: 14),
 
@@ -257,8 +335,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       validator: (v) {
                         if (v == null || v.isEmpty) return null;
                         final val = double.tryParse(v);
-                        if (val == null || val < 0 || val > 5000)
+                        if (val == null || val < 0 || val > 5000) {
                           return 'Nilai tidak valid';
+                        }
                         return null;
                       },
                     ),
@@ -479,6 +558,33 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     const SizedBox(height: 20),
                     _SectionLabel(label: 'Data Klinis Diabetes'),
                     const SizedBox(height: 10),
+                    CustomTextField(
+                      label: 'Lama menderita DM (tahun)',
+                      controller: _dmDurationCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      prefixIcon: const Icon(Icons.timelapse_outlined),
+                      validator: (v) {
+                        final value = double.tryParse(v ?? '');
+                        if (value == null || value < 0) {
+                          return 'Lama DM wajib diisi';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    SwitchListTile.adaptive(
+                      value: _usesInsulinTherapy,
+                      onChanged: (value) =>
+                          setState(() => _usesInsulinTherapy = value),
+                      title: const Text('Sedang menjalani insulin'),
+                      subtitle: const Text(
+                        'Aktifkan jika pasien saat ini menggunakan terapi insulin.',
+                      ),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    const SizedBox(height: 10),
                     _ActivityLevelSelector(
                       value: _activityLevel,
                       onChanged: (v) => setState(() => _activityLevel = v),
@@ -591,6 +697,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     final updated = currentUser.copyWith(
       name: _nameCtrl.text.trim(),
+      addressVillage: _addressVillageCtrl.text.trim(),
+      addressDistrict: _addressDistrictCtrl.text.trim(),
+      addressCity: _addressCityCtrl.text.trim(),
+      addressProvince: _addressProvinceCtrl.text.trim(),
+      education: _educationCtrl.text.trim(),
+      occupation: _occupationCtrl.text.trim(),
       dateOfBirth: _dateOfBirth,
       weight: double.parse(_weightCtrl.text),
       height: double.parse(_heightCtrl.text),
@@ -600,6 +712,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       activityLevel: _diseaseType == DiseaseType.type2DiabetesMellitus
           ? (_activityLevel ?? ActivityLevel.ringan)
           : null,
+      diabetesDurationYears:
+          double.tryParse(_dmDurationCtrl.text.trim()) ??
+              currentUser.diabetesDurationYears,
+      usesInsulinTherapy: _usesInsulinTherapy,
       clearActivityLevel: _diseaseType != DiseaseType.type2DiabetesMellitus,
       hemodialysisData: hemodialysisData,
       clearHemodialysisData: _diseaseType != DiseaseType.chronicKidneyDisease,

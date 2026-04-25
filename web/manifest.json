@@ -1,6 +1,6 @@
 {
-    "name": "direka_app",
-    "short_name": "direka_app",
+    "name": "DiReKa",
+    "short_name": "DiReKa",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

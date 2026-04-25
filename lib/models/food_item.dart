@@ -1,17 +1,24 @@
 /// Ukuran satu takaran saji (mis. centong kecil / sedang / besar).
 class TakaranSaji {
   final String ukuran; // "kecil" | "sedang" | "besar"
-  final String label;  // "Centong Kecil" dsb.
-  final double gram;   // gram per satu takaran
+  final String label; // "Centong Kecil" dsb.
+  final double gram; // gram per satu takaran
 
-  const TakaranSaji(
-      {required this.ukuran, required this.label, required this.gram});
+  const TakaranSaji({
+    required this.ukuran,
+    required this.label,
+    required this.gram,
+  });
 
   factory TakaranSaji.fromJson(Map<String, dynamic> json) => TakaranSaji(
-        ukuran: json['ukuran'] as String,
-        label: json['label'] as String,
-        gram: (json['gram'] as num).toDouble(),
-      );
+    ukuran: json['ukuran'] as String,
+    label: json['label'] as String,
+    gram: (json['gram'] as num).toDouble(),
+  );
+
+  Map<String, dynamic> toJson() {
+    return {'ukuran': ukuran, 'label': label, 'gram': gram};
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -22,23 +29,27 @@ class FoodItem {
   final String id;
   final String nama;
   final String kategori;
-  final double energi;      // kkal
-  final double protein;     // g
-  final double lemak;       // g
+  final String urt;
+  final double indeksGlikemik;
+  final double energi; // kkal
+  final double protein; // g
+  final double lemak; // g
   final double karbohidrat; // g
-  final double natrium;     // mg
-  final double kalium;      // mg
-  final double fosfor;      // mg
-  final double air;         // ml
+  final double natrium; // mg
+  final double kalium; // mg
+  final double fosfor; // mg
+  final double air; // ml
   final List<TakaranSaji> takaranSaji; // ukuran saji (opsional)
-  final String emoji;       // placeholder sampai asset designer tersedia
-  final String satuanNama;  // nama satuan: Centong, Potong, Butir, Sendok, dll
-  final double serat;       // g per 100g
+  final String emoji; // placeholder sampai asset designer tersedia
+  final String satuanNama; // nama satuan: Centong, Potong, Butir, Sendok, dll
+  final double serat; // g per 100g
 
   const FoodItem({
     required this.id,
     required this.nama,
     required this.kategori,
+    this.urt = '',
+    this.indeksGlikemik = 0.0,
     required this.energi,
     required this.protein,
     required this.lemak,
@@ -54,25 +65,54 @@ class FoodItem {
   });
 
   factory FoodItem.fromJson(Map<String, dynamic> json) {
+    double toDouble(dynamic value) {
+      if (value is num) return value.toDouble();
+      return double.tryParse(value?.toString() ?? '') ?? 0.0;
+    }
+
     return FoodItem(
       id: json['id'] as String,
       nama: json['nama'] as String,
       kategori: json['kategori'] as String,
-      energi: (json['energi'] as num).toDouble(),
-      protein: (json['protein'] as num).toDouble(),
-      lemak: (json['lemak'] as num).toDouble(),
-      karbohidrat: (json['karbohidrat'] as num).toDouble(),
-      natrium: (json['natrium'] as num).toDouble(),
-      kalium: (json['kalium'] as num).toDouble(),
-      fosfor: (json['fosfor'] as num).toDouble(),
-      air: (json['air'] as num).toDouble(),
-      serat: (json['serat'] as num? ?? 0).toDouble(),
+      urt: json['urt'] as String? ?? '',
+      indeksGlikemik: toDouble(json['indeksGlikemik']),
+      energi: toDouble(json['energi']),
+      protein: toDouble(json['protein']),
+      lemak: toDouble(json['lemak']),
+      karbohidrat: toDouble(json['karbohidrat']),
+      natrium: toDouble(json['natrium']),
+      kalium: toDouble(json['kalium']),
+      fosfor: toDouble(json['fosfor']),
+      air: toDouble(json['air']),
+      serat: toDouble(json['serat']),
       takaranSaji: (json['takaranSaji'] as List<dynamic>? ?? [])
           .map((e) => TakaranSaji.fromJson(e as Map<String, dynamic>))
           .toList(),
       emoji: json['emoji'] as String? ?? '🍽️',
       satuanNama: json['satuanNama'] as String? ?? 'Takaran',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'nama': nama,
+      'kategori': kategori,
+      'urt': urt,
+      'indeksGlikemik': indeksGlikemik,
+      'emoji': emoji,
+      'satuanNama': satuanNama,
+      'takaranSaji': takaranSaji.map((e) => e.toJson()).toList(),
+      'energi': energi,
+      'protein': protein,
+      'lemak': lemak,
+      'karbohidrat': karbohidrat,
+      'natrium': natrium,
+      'kalium': kalium,
+      'fosfor': fosfor,
+      'air': air,
+      'serat': serat,
+    };
   }
 
   /// Hitung kandungan nutrisi untuk [grams] gram bahan ini.

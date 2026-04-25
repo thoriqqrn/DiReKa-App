@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/app_colors.dart';
+import '../../core/app_constants.dart';
 import '../../models/disease_type.dart';
 import '../../models/food_item.dart';
 import '../../models/food_log_entry.dart';
@@ -286,10 +287,12 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
   }
 
   void _showAddFoodSheet() {
-    _showMealTimeSelector();
+    final auth = context.read<AuthProvider>();
+    final isGuest = auth.firebaseUser == null && auth.currentUser == null;
+    _showMealTimeSelector(isGuest: isGuest);
   }
 
-  void _showMealTimeSelector() {
+  void _showMealTimeSelector({bool isGuest = false}) {
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
@@ -310,7 +313,7 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
                     onTap: () {
                       Navigator.pop(ctx);
                       setState(() => _selectedMealType = meal);
-                      _proceedToFoodSearch();
+                      _proceedToFoodSearch(isGuest: isGuest);
                     },
                     child: Container(
                       color: Colors.transparent,
@@ -363,7 +366,7 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
     );
   }
 
-  void _proceedToFoodSearch() {
+  void _proceedToFoodSearch({bool isGuest = false}) {
     if (_selectedMealType == null) return;
     final auth = context.read<AuthProvider>();
     final uid = auth.currentUser?.uid ?? auth.firebaseUser?.uid ?? '';
@@ -373,6 +376,7 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => _AddFoodSheet(
         mealType: _selectedMealType!,
+        isGuest: isGuest,
         onAdd: (food, grams) async {
           final entry = FoodLogEntry.create(
             food: food,
@@ -505,7 +509,8 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (isUserModelLoading)
+                          if (isUserModelLoading ||
+                              auth.status == AuthStatus.loading)
                             const _NutritionLoadingCard()
                           else if (needs != null) ...[
                             // 1. Weekly fluid chart for kidney patients
@@ -557,20 +562,16 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: uid.isEmpty
-            ? () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Silakan login untuk mencatat makanan'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              )
-            : _showAddFoodSheet,
-        backgroundColor: AppColors.primary,
-        icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-        label: const Text(
-          'Tambah Makanan',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 100),
+        child: FloatingActionButton.extended(
+          onPressed: _showAddFoodSheet,
+          backgroundColor: AppColors.primary,
+          icon: const Icon(Icons.add_circle_outline, color: Colors.white),
+          label: const Text(
+            'Tambah Makanan',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          ),
         ),
       ),
     );
@@ -1784,11 +1785,13 @@ class _FoodEntryCard extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _AddFoodSheet extends StatefulWidget {
-  final MealType mealType; // ← NEW
+  final MealType mealType;
+  final bool isGuest;
   final Future<void> Function(FoodItem food, double grams) onAdd;
   const _AddFoodSheet({
-    required this.mealType, // ← NEW
+    required this.mealType,
     required this.onAdd,
+    this.isGuest = false,
   });
 
   @override
@@ -1798,6 +1801,8 @@ class _AddFoodSheet extends StatefulWidget {
 class _AddFoodSheetState extends State<_AddFoodSheet> {
   final _searchCtrl = TextEditingController();
   List<FoodItem> _results = [];
+  List<String> _categories = [];
+  String _selectedCategory = 'Semua';
   bool _isSearching = false;
   Timer? _debounce;
 
@@ -1822,11 +1827,25 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
   Future<void> _search(String q) async {
     setState(() => _isSearching = true);
     final results = await FoodDatabaseService.search(q);
-    if (mounted)
+    if (mounted) {
+      // Build category list from full results (only on first/empty load)
+      final cats = <String>{};
+      for (final f in results) {
+        if (f.kategori.isNotEmpty) cats.add(f.kategori);
+      }
+      final sortedCats = cats.toList()..sort();
       setState(() {
         _results = results;
         _isSearching = false;
+        if (q.isEmpty) _categories = ['Semua', ...sortedCats];
       });
+    }
+  }
+
+  /// Results after applying category filter
+  List<FoodItem> get _filteredResults {
+    if (_selectedCategory == 'Semua') return _results;
+    return _results.where((f) => f.kategori == _selectedCategory).toList();
   }
 
   void _selectFood(FoodItem food) {
@@ -1835,6 +1854,41 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
     } else {
       _showGramDialog(food);
     }
+  }
+
+  /// Shows a dialog prompting the guest to login before they can save.
+  void _showGuestLoginDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: const [
+            Icon(Icons.lock_outline, color: AppColors.primary),
+            SizedBox(width: 10),
+            Text('Login Diperlukan'),
+          ],
+        ),
+        content: const Text(
+          'Kamu perlu login terlebih dahulu untuk menyimpan catatan makanan. '
+          'Yuk, buat akun atau masuk sekarang!',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Nanti Saja'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx); // tutup dialog
+              Navigator.pop(context); // tutup sheet
+              Navigator.pushNamed(context, AppConstants.routeLogin);
+            },
+            child: const Text('Login Sekarang'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showTakaranDialog(FoodItem food) {
@@ -1847,6 +1901,10 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
           food: food,
           onSave: (grams) async {
             Navigator.pop(ctx);
+            if (widget.isGuest) {
+              _showGuestLoginDialog();
+              return;
+            }
             Navigator.pop(context);
             await widget.onAdd(food, grams);
           },
@@ -1951,7 +2009,11 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
               FilledButton(
                 onPressed: grams > 0
                     ? () async {
-                        Navigator.pop(ctx); // tutup dialog
+                        Navigator.pop(ctx); // tutup dialog gram
+                        if (widget.isGuest) {
+                          _showGuestLoginDialog();
+                          return;
+                        }
                         Navigator.pop(context); // tutup sheet
                         await widget.onAdd(food, grams);
                       }
@@ -2051,6 +2113,59 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                   onChanged: _onSearchChanged,
                 ),
               ),
+              // Category chips
+              if (_categories.isNotEmpty) ...
+                [
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 36,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: _categories.length,
+                      separatorBuilder: (_, __) =>
+                          const SizedBox(width: 8),
+                      itemBuilder: (_, i) {
+                        final cat = _categories[i];
+                        final selected = cat == _selectedCategory;
+                        return GestureDetector(
+                          onTap: () =>
+                              setState(() => _selectedCategory = cat),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: selected
+                                  ? AppColors.primary
+                                  : AppColors.background,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: selected
+                                    ? AppColors.primary
+                                    : AppColors.border,
+                              ),
+                            ),
+                            child: Text(
+                              cat,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: selected
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                                color: selected
+                                    ? Colors.white
+                                    : AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               const SizedBox(height: 8),
               // Results
               Expanded(
@@ -2063,16 +2178,29 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                           style: TextStyle(color: AppColors.textHint),
                         ),
                       )
+                    : _filteredResults.isEmpty
+                    ? Center(
+                        child: Text(
+                          _selectedCategory == 'Semua'
+                              ? 'Tidak ditemukan'
+                              : 'Tidak ada makanan di kategori "$_selectedCategory"',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: AppColors.textHint,
+                            fontSize: 13,
+                          ),
+                        ),
+                      )
                     : ListView.separated(
                         controller: scrollCtrl,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 4,
                         ),
-                        itemCount: _results.length,
+                        itemCount: _filteredResults.length,
                         separatorBuilder: (_, __) => const Divider(height: 1),
                         itemBuilder: (_, i) {
-                          final food = _results[i];
+                          final food = _filteredResults[i];
                           return ListTile(
                             contentPadding: const EdgeInsets.symmetric(
                               vertical: 4,
@@ -2303,7 +2431,7 @@ class _TakaranSajiContent extends StatefulWidget {
 }
 
 class _TakaranSajiContentState extends State<_TakaranSajiContent> {
-  int _takaranIdx = 1; // default: sedang
+  late int _takaranIdx;
   int _count = 1;
   int _sisaPercent = 0; // default: habis semua
   bool _saving = false;
@@ -2317,6 +2445,13 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
     'Sisa\n75%',
     'Tidak\nmakan',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    final takaranLength = widget.food.takaranSaji.length;
+    _takaranIdx = takaranLength <= 1 ? 0 : 1;
+  }
 
   double get _gramDimakan {
     final t = widget.food.takaranSaji[_takaranIdx];
@@ -2385,18 +2520,18 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
           // ── Pilih ukuran takaran ─────────────────────────────────────
           _sectionLabel('Ukuran ${widget.food.satuanNama}'),
           const SizedBox(height: 8),
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: List.generate(takaran.length, (i) {
               final t = takaran[i];
               final sel = _takaranIdx == i;
-              final emojiSize = [20.0, 27.0, 34.0][i.clamp(0, 2)];
-              return Expanded(
+              final emojiSize = 20.0 + (i.clamp(0, 4) * 3.0);
+              return SizedBox(
+                width: 96,
                 child: GestureDetector(
                   onTap: () => setState(() => _takaranIdx = i),
                   child: Container(
-                    margin: EdgeInsets.only(
-                      right: i < takaran.length - 1 ? 8 : 0,
-                    ),
                     padding: const EdgeInsets.symmetric(
                       vertical: 10,
                       horizontal: 4,
@@ -2434,9 +2569,7 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
-                            color: sel
-                                ? AppColors.primary
-                                : AppColors.textPrimary,
+                            color: sel ? AppColors.primary : AppColors.textPrimary,
                           ),
                         ),
                       ],

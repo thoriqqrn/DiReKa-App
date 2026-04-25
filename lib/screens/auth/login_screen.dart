@@ -194,7 +194,14 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _passwordCtrl.text;
     if (email == AppConstants.adminEmail &&
         password == AppConstants.adminPassword) {
-      Navigator.pushReplacementNamed(context, AppConstants.routeAdmin);
+      context.read<AuthProvider>().clearError();
+      final adminAuthSuccess = await context.read<AuthProvider>().loginAdmin(
+            email: email,
+            password: password,
+          );
+      if (adminAuthSuccess && mounted) {
+        Navigator.pushReplacementNamed(context, AppConstants.routeAdmin);
+      }
       return;
     }
 
