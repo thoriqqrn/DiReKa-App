@@ -211,6 +211,7 @@ class AuthProvider extends ChangeNotifier {
     double diabetesDurationYears = 0.0,
     double heartDiseaseDurationYears = 0.0,
     bool usesInsulinTherapy = false,
+    double insulinDurationYears = 0.0,
     HemodialysisData? hemodialysisData,
     bool hasEdema = false,
   }) async {
@@ -237,6 +238,7 @@ class AuthProvider extends ChangeNotifier {
         diabetesDurationYears: diabetesDurationYears,
         heartDiseaseDurationYears: heartDiseaseDurationYears,
         usesInsulinTherapy: usesInsulinTherapy,
+        insulinDurationYears: insulinDurationYears,
         hemodialysisData: hemodialysisData,
         hasEdema: hasEdema,
       );
@@ -296,6 +298,7 @@ class AuthProvider extends ChangeNotifier {
     double diabetesDurationYears = 0.0,
     double heartDiseaseDurationYears = 0.0,
     bool usesInsulinTherapy = false,
+    double insulinDurationYears = 0.0,
     HemodialysisData? hemodialysisData,
     bool hasEdema = false,
   }) async {
@@ -322,6 +325,7 @@ class AuthProvider extends ChangeNotifier {
         diabetesDurationYears: diabetesDurationYears,
         heartDiseaseDurationYears: heartDiseaseDurationYears,
         usesInsulinTherapy: usesInsulinTherapy,
+        insulinDurationYears: insulinDurationYears,
         hemodialysisData: hemodialysisData,
         hasEdema: hasEdema,
         createdAt: DateTime.now(),

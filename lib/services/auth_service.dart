@@ -82,6 +82,7 @@ class AuthService {
     double diabetesDurationYears = 0.0,
     double heartDiseaseDurationYears = 0.0,
     bool usesInsulinTherapy = false,
+    double insulinDurationYears = 0.0,
     HemodialysisData? hemodialysisData,
     bool hasEdema = false,
   }) async {
@@ -112,6 +113,7 @@ class AuthService {
       diabetesDurationYears: diabetesDurationYears,
       heartDiseaseDurationYears: heartDiseaseDurationYears,
       usesInsulinTherapy: usesInsulinTherapy,
+      insulinDurationYears: insulinDurationYears,
       hemodialysisData: hemodialysisData,
       hasEdema: hasEdema,
       createdAt: DateTime.now(),

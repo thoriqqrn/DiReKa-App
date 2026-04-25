@@ -32,6 +32,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _urinOutputCtrl = TextEditingController();
   final _dmDurationCtrl = TextEditingController();
   final _heartDurationCtrl = TextEditingController();
+  final _insulinDurationCtrl = TextEditingController();
 
   DateTime? _dateOfBirth;
   DiseaseType? _diseaseType;
@@ -99,6 +100,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _heartDurationCtrl.text = user.heartDiseaseDurationYears > 0
             ? user.heartDiseaseDurationYears.toString()
             : '';
+        _insulinDurationCtrl.text = user.insulinDurationYears > 0
+            ? user.insulinDurationYears.toString()
+            : '';
         _dateOfBirth = user.dateOfBirth;
         _diseaseType = user.diseaseType;
         _gender = user.gender;
@@ -134,6 +138,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _urinOutputCtrl.dispose();
     _dmDurationCtrl.dispose();
     _heartDurationCtrl.dispose();
+    _insulinDurationCtrl.dispose();
     _hdLocationCtrl.dispose();
     super.dispose();
   }
@@ -536,6 +541,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                         contentPadding: EdgeInsets.zero,
                       ),
+                      if (_usesInsulinTherapy) ...[
+                        const SizedBox(height: 10),
+                        CustomTextField(
+                          label: 'Lama menggunakan insulin (tahun)',
+                          controller: _insulinDurationCtrl,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          prefixIcon: const Icon(Icons.history_edu_outlined),
+                          validator: (v) {
+                            final value = double.tryParse(v ?? '');
+                            if (value == null || value < 0) {
+                              return 'Wajib diisi jika menjalani insulin';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
                     ],
                     const SizedBox(height: 10),
                     _ActivityLevelSelector(
@@ -671,6 +694,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           double.tryParse(_heartDurationCtrl.text.trim()) ??
               currentUser.heartDiseaseDurationYears,
       usesInsulinTherapy: _usesInsulinTherapy,
+      insulinDurationYears: _usesInsulinTherapy
+          ? (double.tryParse(_insulinDurationCtrl.text.trim()) ?? 0.0)
+          : 0.0,
       clearActivityLevel: !(_diseaseType == DiseaseType.type2DiabetesMellitus ||
           _diseaseType == DiseaseType.heartFailure),
       hemodialysisData: hemodialysisData,

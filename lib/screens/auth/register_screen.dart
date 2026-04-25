@@ -36,6 +36,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _urinOutputCtrl = TextEditingController();
   final _dmDurationCtrl = TextEditingController();
   final _heartDurationCtrl = TextEditingController();
+  final _insulinDurationCtrl = TextEditingController();
 
   DateTime? _dateOfBirth;
   DiseaseType? _diseaseType;
@@ -103,6 +104,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _urinOutputCtrl.dispose();
     _dmDurationCtrl.dispose();
     _heartDurationCtrl.dispose();
+    _insulinDurationCtrl.dispose();
     _hdLocationCtrl.dispose();
     super.dispose();
   }
@@ -548,6 +550,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         contentPadding: EdgeInsets.zero,
                       ),
+                      if (_usesInsulinTherapy) ...[
+                        const SizedBox(height: 10),
+                        CustomTextField(
+                          label: 'Lama menggunakan insulin (tahun)',
+                          controller: _insulinDurationCtrl,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          prefixIcon: const Icon(Icons.history_edu_outlined),
+                          validator: (v) {
+                            final value = double.tryParse(v ?? '');
+                            if (value == null || value < 0) {
+                              return 'Wajib diisi jika menjalani insulin';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
                     ],
                     const SizedBox(height: 10),
                     const _SectionLabel(label: 'Tingkat Aktivitas Fisik'),
@@ -724,6 +744,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       heartDiseaseDurationYears:
           double.tryParse(_heartDurationCtrl.text.trim()) ?? 0.0,
       usesInsulinTherapy: _usesInsulinTherapy,
+      insulinDurationYears: _usesInsulinTherapy
+          ? (double.tryParse(_insulinDurationCtrl.text.trim()) ?? 0.0)
+          : 0.0,
       hemodialysisData: hemodialysisData,
       hasEdema: _hasEdema,
     );

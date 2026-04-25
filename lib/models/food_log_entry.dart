@@ -22,6 +22,7 @@ class FoodLogEntry {
   final double fosfor;
   final double air; // cairan dari makanan ini
   final double serat; // g
+  final double indeksGlikemik; // Samakan dengan FoodItem
 
   const FoodLogEntry({
     required this.id,
@@ -29,7 +30,7 @@ class FoodLogEntry {
     required this.foodName,
     required this.grams,
     required this.loggedAt,
-    required this.mealType, // ← NEW
+    required this.mealType,
     required this.energi,
     required this.protein,
     required this.lemak,
@@ -39,13 +40,22 @@ class FoodLogEntry {
     required this.fosfor,
     required this.air,
     this.serat = 0.0,
+    this.indeksGlikemik = 0.0,
   });
+
+  /// Hitung Glycemic Load (GL) untuk entri ini: (GI * Karbohidrat) / 100
+  double get glycemicLoad {
+    // Defense against any potential non-double values in memory
+    final gi = (indeksGlikemik is double) ? indeksGlikemik : 0.0;
+    final carb = (karbohidrat is double) ? karbohidrat : 0.0;
+    return (gi * carb) / 100.0;
+  }
 
   /// Buat entri baru dari [food] dan jumlah [grams].
   factory FoodLogEntry.create({
     required FoodItem food,
     required double grams,
-    required MealType mealType, // ← NEW
+    required MealType mealType,
   }) {
     final n = food.calcFor(grams);
     return FoodLogEntry(
@@ -54,16 +64,17 @@ class FoodLogEntry {
       foodName: food.nama,
       grams: grams,
       loggedAt: DateTime.now(),
-      mealType: mealType, // ← SET
-      energi: n['energi']!,
-      protein: n['protein']!,
-      lemak: n['lemak']!,
-      karbohidrat: n['karbohidrat']!,
-      natrium: n['natrium']!,
-      kalium: n['kalium']!,
-      fosfor: n['fosfor']!,
-      air: n['air']!,
-      serat: n['serat'] ?? 0.0,
+      mealType: mealType,
+      energi: (n['energi'] ?? 0.0).toDouble(),
+      protein: (n['protein'] ?? 0.0).toDouble(),
+      lemak: (n['lemak'] ?? 0.0).toDouble(),
+      karbohidrat: (n['karbohidrat'] ?? 0.0).toDouble(),
+      natrium: (n['natrium'] ?? 0.0).toDouble(),
+      kalium: (n['kalium'] ?? 0.0).toDouble(),
+      fosfor: (n['fosfor'] ?? 0.0).toDouble(),
+      air: (n['air'] ?? 0.0).toDouble(),
+      serat: (n['serat'] ?? 0.0).toDouble(),
+      indeksGlikemik: food.indeksGlikemik.toDouble(),
     );
   }
 
@@ -74,7 +85,7 @@ class FoodLogEntry {
       'foodName': foodName,
       'grams': grams,
       'loggedAt': Timestamp.fromDate(loggedAt),
-      'mealType': mealType.value, // ← NEW
+      'mealType': mealType.value,
       'energi': energi,
       'protein': protein,
       'lemak': lemak,
@@ -84,28 +95,39 @@ class FoodLogEntry {
       'fosfor': fosfor,
       'air': air,
       'serat': serat,
+      'indeksGlikemik': indeksGlikemik,
     };
   }
 
   factory FoodLogEntry.fromMap(Map<String, dynamic> map) {
+    double toDouble(dynamic val) {
+      if (val == null) return 0.0;
+      if (val is num) return val.toDouble();
+      if (val is String) return double.tryParse(val) ?? 0.0;
+      return 0.0;
+    }
+
     return FoodLogEntry(
-      id: map['id'] as String,
-      foodId: map['foodId'] as String,
-      foodName: map['foodName'] as String,
-      grams: (map['grams'] as num).toDouble(),
-      loggedAt: (map['loggedAt'] as Timestamp).toDate(),
+      id: (map['id'] ?? '').toString(),
+      foodId: (map['foodId'] ?? '').toString(),
+      foodName: (map['foodName'] ?? '').toString(),
+      grams: toDouble(map['grams']),
+      loggedAt: map['loggedAt'] != null
+          ? (map['loggedAt'] as Timestamp).toDate()
+          : DateTime.now(),
       mealType: MealTypeExtension.fromValue(
         map['mealType'] as String? ?? 'makan_siang',
-      ), // ← NEW
-      energi: (map['energi'] as num).toDouble(),
-      protein: (map['protein'] as num).toDouble(),
-      lemak: (map['lemak'] as num).toDouble(),
-      karbohidrat: (map['karbohidrat'] as num).toDouble(),
-      natrium: (map['natrium'] as num).toDouble(),
-      kalium: (map['kalium'] as num).toDouble(),
-      fosfor: (map['fosfor'] as num).toDouble(),
-      air: (map['air'] as num).toDouble(),
-      serat: (map['serat'] as num? ?? 0).toDouble(),
+      ),
+      energi: toDouble(map['energi']),
+      protein: toDouble(map['protein']),
+      lemak: toDouble(map['lemak']),
+      karbohidrat: toDouble(map['karbohidrat']),
+      natrium: toDouble(map['natrium']),
+      kalium: toDouble(map['kalium']),
+      fosfor: toDouble(map['fosfor']),
+      air: toDouble(map['air']),
+      serat: toDouble(map['serat']),
+      indeksGlikemik: toDouble(map['indeksGlikemik'] ?? map['glycemicIndex']),
     );
   }
 }

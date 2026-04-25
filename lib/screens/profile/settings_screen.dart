@@ -106,6 +106,14 @@ class SettingsScreen extends StatelessWidget {
                           value: user.usesInsulinTherapy ? 'Ya' : 'Tidak',
                           icon: Icons.medication_outlined,
                         ),
+                        if (user.usesInsulinTherapy) ...[
+                          const Divider(height: 1),
+                          _InfoRow(
+                            label: 'Lama Insulin',
+                            value: '${user.insulinDurationYears.toStringAsFixed(1)} tahun',
+                            icon: Icons.history_edu_outlined,
+                          ),
+                        ],
                       ],
                     ],
                   ],

@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/app_colors.dart';
@@ -530,20 +531,27 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
                               _HFWeeklyChartsSection(weeklyData: _weeklyData!),
                               const SizedBox(height: 16),
                             ],
-                            // 3. DM Patients: Show hierarchical meal table
+                            // 3. DM Patients: Show Glycemic Load chart and hierarchical meal table
                             if (auth.currentUser?.diseaseType ==
-                                DiseaseType.type2DiabetesMellitus)
+                                DiseaseType.type2DiabetesMellitus) ...[
+                              _GlycemicLoadChart(
+                                key: ValueKey('gl_chart_${_selectedDate.millisecondsSinceEpoch}_${_entries.length}'),
+                                entries: _entries,
+                              ),
+                              const SizedBox(height: 20),
                               _DMDailyMealTable(
                                 entriesByMeal: _groupEntriesByMeal(_entries),
                                 needs: needs,
-                              )
+                              ),
+                            ]
                             // 3. Other patients: Show nutrition summary
-                            else
+                            else ...[
                               _NutritionSummaryCard(
                                 needs: needs,
                                 intake: intake,
                                 diseaseType: auth.currentUser?.diseaseType,
                               ),
+                            ],
                           ] else
                             const _NoFormulaCard(),
                           const SizedBox(height: 16),
@@ -692,7 +700,7 @@ class _NutritionSummaryCard extends StatelessWidget {
   bool get _isDM => diseaseType == DiseaseType.type2DiabetesMellitus;
 
   Color get _themeColor =>
-      _isDM ? AppColors.diabetesColor : AppColors.kidneyColor;
+      _isDM ? AppColors.diabetesColor : AppColors.kidneyColor; // Kembali ke Biru
 
   @override
   Widget build(BuildContext context) {
@@ -1055,7 +1063,7 @@ class _NutrientRow extends StatelessWidget {
   Color get _barColor {
     if (data.exceeded) return AppColors.error;
     if (data.ratio >= 0.8) return AppColors.warning;
-    return AppColors.primary;
+    return AppColors.success; // Ganti dari primary (biru) ke success (hijau)
   }
 
   @override
@@ -2791,6 +2799,7 @@ class _DMDailyMealTable extends StatelessWidget {
     MealType.makanSiang,
     MealType.selinganSiang,
     MealType.makanMalam,
+    MealType.selinganMalam,
   ];
 
   Map<String, double> _calculateMealTotals(List<FoodLogEntry> entries) {
@@ -2884,9 +2893,8 @@ class _MealTableSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final percentage = mealType.dmCaloriePercentage;
-    if (percentage == 0.0)
-      return const SizedBox.shrink(); // Skip selingan malam
-
+    // Note: Selingan malam might be 0.0 but we still want to show it if requested
+    
     final targetEnergi = totalNeeds.energi * percentage;
     final targetProtein = totalNeeds.protein * percentage;
     final targetLemak = totalNeeds.lemak * percentage;
@@ -3433,6 +3441,332 @@ class _DailyInterpretationTable extends StatelessWidget {
           color: color ?? Colors.black87,
         ),
         textAlign: TextAlign.center,
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GLYCEMIC LOAD CHART WIDGET
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _GlycemicLoadChart extends StatelessWidget {
+  final List<FoodLogEntry> entries;
+
+  const _GlycemicLoadChart({super.key, required this.entries});
+
+  static const List<MealType> _dmMealOrder = [
+    MealType.sarapan,
+    MealType.selinganPagi,
+    MealType.makanSiang,
+    MealType.selinganSiang,
+    MealType.makanMalam,
+    MealType.selinganMalam,
+  ];
+
+  Map<MealType, double> _calculateMealGL() {
+    final mealGL = <MealType, double>{};
+    for (final meal in _dmMealOrder) {
+      final mealEntries = entries.where((e) => e.mealType == meal);
+      mealGL[meal] = mealEntries.fold(0.0, (sum, e) => sum + e.glycemicLoad);
+    }
+    return mealGL;
+  }
+
+  Color _getGLColor(double gl) {
+    if (gl < 11) return const Color(0xFF4CAF50); // Rendah: < 11 (mencakup < 10)
+    if (gl < 20) return const Color(0xFFFFC107); // Sedang: 11 - 19
+    return const Color(0xFFF44336); // Tinggi: >= 20
+  }
+
+  String _getGLStatus(double gl) {
+    if (gl < 11) return 'Rendah';
+    if (gl < 20) return 'Sedang';
+    return 'Tinggi';
+  }
+
+  void _showEnlargedChart(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog.fullscreen(
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text('Grafik Glycemic Load'),
+            leading: IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () => Navigator.pop(ctx),
+            ),
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                const SizedBox(height: 20),
+                SizedBox(
+                  height: 500, // Ukuran jauh lebih besar untuk lansia
+                  child: _buildChart(isEnlarged: true),
+                ),
+                const SizedBox(height: 40),
+                _buildLegend(),
+                const SizedBox(height: 40),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLegend() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _LegendItem(label: 'Rendah (<10)', color: const Color(0xFF4CAF50)),
+          const SizedBox(width: 8),
+          _LegendItem(label: 'Sedang (11-19)', color: const Color(0xFFFFC107)),
+          const SizedBox(width: 8),
+          _LegendItem(label: 'Tinggi (>20)', color: const Color(0xFFF44336)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChart({bool isEnlarged = false}) {
+    final mealGL = _calculateMealGL();
+    double maxGL = -1;
+    for (final meal in mealGL.keys) {
+      if (mealGL[meal]! > maxGL) {
+        maxGL = mealGL[meal]!;
+      }
+    }
+
+    return BarChart(
+      BarChartData(
+        alignment: BarChartAlignment.spaceAround,
+        maxY: (maxGL < 25) ? 25 : (maxGL * 1.2),
+        barTouchData: BarTouchData(
+          touchTooltipData: BarTouchTooltipData(
+            getTooltipColor: (_) => Colors.blueGrey,
+            getTooltipItem: (group, groupIndex, rod, rodIndex) {
+              return BarTooltipItem(
+                '${_dmMealOrder[group.x].label}\n',
+                TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: isEnlarged ? 16 : 14,
+                ),
+                children: <TextSpan>[
+                  TextSpan(
+                    text: rod.toY.toStringAsFixed(1),
+                    style: const TextStyle(
+                      color: Colors.yellow,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+        titlesData: FlTitlesData(
+          show: true,
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                final index = value.toInt();
+                if (index < 0 || index >= _dmMealOrder.length) return const SizedBox();
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    _dmMealOrder[index].label.replaceAll(' ', '\n'),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: isEnlarged ? 11 : 9,
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                );
+              },
+              reservedSize: isEnlarged ? 40 : 32,
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: isEnlarged ? 40 : 28,
+              getTitlesWidget: (value, meta) {
+                return Text(
+                  value.toInt().toString(),
+                  style: TextStyle(
+                    fontSize: isEnlarged ? 12 : 10,
+                    color: AppColors.textHint,
+                  ),
+                );
+              },
+            ),
+          ),
+          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: 10,
+          getDrawingHorizontalLine: (value) => FlLine(
+            color: Colors.grey.withValues(alpha: 0.1),
+            strokeWidth: 1,
+          ),
+        ),
+        borderData: FlBorderData(show: false),
+        barGroups: List.generate(_dmMealOrder.length, (i) {
+          final gl = mealGL[_dmMealOrder[i]] ?? 0;
+          return BarChartGroupData(
+            x: i,
+            barRods: [
+              BarChartRodData(
+                toY: gl,
+                color: _getGLColor(gl),
+                width: isEnlarged ? 30 : 16,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+              ),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mealGL = _calculateMealGL();
+    final totalGL = mealGL.values.fold(0.0, (sum, gl) => sum + gl);
+
+    // Find peak GL
+    MealType? peakMeal;
+    double maxGL = -1;
+    for (final meal in mealGL.keys) {
+      if (mealGL[meal]! > maxGL) {
+        maxGL = mealGL[meal]!;
+        peakMeal = meal;
+      }
+    }
+
+    final peakInfo = (peakMeal != null && maxGL > 0)
+        ? 'Puncak: ${peakMeal.label} (${maxGL.toStringAsFixed(1)} - ${_getGLStatus(maxGL)})'
+        : 'Puncak: -';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.show_chart,
+                  color: Colors.orange,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'Grafik Glycemic Load (Estimasi)',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.fullscreen, color: AppColors.primary),
+                onPressed: () => _showEnlargedChart(context),
+                tooltip: 'Perbesar Grafik',
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Total GL hari ini: ${totalGL.toStringAsFixed(1)} • $peakInfo',
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 20),
+          
+          // Chart
+          SizedBox(
+            height: 200,
+            child: _buildChart(),
+          ),
+          
+          const SizedBox(height: 20),
+          
+          // Legend
+          _buildLegend(),
+        ],
+      ),
+    );
+  }
+}
+
+class _LegendItem extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _LegendItem({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 9,
+              color: color,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
       ),
     );
   }

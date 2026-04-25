@@ -24,6 +24,7 @@ class UserModel {
   final double diabetesDurationYears; // hanya untuk DM
   final double heartDiseaseDurationYears; // hanya untuk Jantung Koroner
   final bool usesInsulinTherapy; // hanya untuk DM
+  final double insulinDurationYears; // hanya untuk DM
   final HemodialysisData? hemodialysisData; // hanya untuk penyakit ginjal
   final bool hasEdema; // riwayat pembengkakan — untuk pasien Jantung Koroner
   final DateTime createdAt;
@@ -52,6 +53,7 @@ class UserModel {
     this.diabetesDurationYears = 0.0,
     this.heartDiseaseDurationYears = 0.0,
     this.usesInsulinTherapy = false,
+    this.insulinDurationYears = 0.0,
     this.hemodialysisData,
     this.hasEdema = false,
     required this.createdAt,
@@ -160,6 +162,7 @@ class UserModel {
       'diabetesDurationYears': diabetesDurationYears,
       'heartDiseaseDurationYears': heartDiseaseDurationYears,
       'usesInsulinTherapy': usesInsulinTherapy,
+      'insulinDurationYears': insulinDurationYears,
       'hemodialysisData': hemodialysisData?.toMap(),
       'hasEdema': hasEdema,
       'bmi': double.parse(bmi.toStringAsFixed(2)),
@@ -169,6 +172,13 @@ class UserModel {
   }
 
   factory UserModel.fromMap(Map<String, dynamic> map) {
+    double toDouble(dynamic val) {
+      if (val == null) return 0.0;
+      if (val is num) return val.toDouble();
+      if (val is String) return double.tryParse(val) ?? 0.0;
+      return 0.0;
+    }
+
     return UserModel(
       uid: map['uid'] ?? '',
       name: map['name'] ?? '',
@@ -182,17 +192,16 @@ class UserModel {
       gender: map['gender'] as String? ?? 'laki-laki',
       diseaseType: DiseaseTypeExtension.fromValue(map['diseaseType'] ?? ''),
       dateOfBirth: (map['dateOfBirth'] as Timestamp).toDate(),
-      weight: (map['weight'] as num).toDouble(),
-      height: (map['height'] as num).toDouble(),
-      urinOutput: (map['urinOutput'] as num?)?.toDouble() ?? 300.0,
+      weight: toDouble(map['weight']),
+      height: toDouble(map['height']),
+      urinOutput: map['urinOutput'] != null ? toDouble(map['urinOutput']) : 300.0,
       activityLevel: map['activityLevel'] != null
           ? ActivityLevelExtension.fromValue(map['activityLevel'] as String)
           : null,
-      diabetesDurationYears:
-          (map['diabetesDurationYears'] as num?)?.toDouble() ?? 0.0,
-      heartDiseaseDurationYears:
-          (map['heartDiseaseDurationYears'] as num?)?.toDouble() ?? 0.0,
+      diabetesDurationYears: toDouble(map['diabetesDurationYears']),
+      heartDiseaseDurationYears: toDouble(map['heartDiseaseDurationYears']),
       usesInsulinTherapy: (map['usesInsulinTherapy'] as bool?) ?? false,
+      insulinDurationYears: toDouble(map['insulinDurationYears']),
       hemodialysisData: map['hemodialysisData'] != null
           ? HemodialysisData.fromMap(
               map['hemodialysisData'] as Map<String, dynamic>,
@@ -234,6 +243,7 @@ class UserModel {
     double? diabetesDurationYears,
     double? heartDiseaseDurationYears,
     bool? usesInsulinTherapy,
+    double? insulinDurationYears,
     HemodialysisData? hemodialysisData,
     bool clearHemodialysisData = false,
     bool? hasEdema,
@@ -267,6 +277,7 @@ class UserModel {
       heartDiseaseDurationYears:
           heartDiseaseDurationYears ?? this.heartDiseaseDurationYears,
       usesInsulinTherapy: usesInsulinTherapy ?? this.usesInsulinTherapy,
+      insulinDurationYears: insulinDurationYears ?? this.insulinDurationYears,
       hemodialysisData: clearHemodialysisData
           ? null
           : (hemodialysisData ?? this.hemodialysisData),
