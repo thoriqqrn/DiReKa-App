@@ -69,21 +69,28 @@ class UserModel {
     return weight / (heightM * heightM);
   }
 
-  /// Kategori IMT untuk DM (3 kategori):
-  /// < 18.5 → Kurus (+20% energi)
-  /// 18.5–25 → Normal (0%)
-  /// ≥ 25 → Gemuk (-20% energi)
+  /// Kategori IMT (Asia-Pacific):
+  /// < 18.5    → Berat badan kurang (underweight)
+  /// 18.5–22.9 → Berat badan normal
+  /// 23.0–29.9 → Berat badan berlebih (overweight/risiko obesitas)
+  /// ≥ 30.0    → Obesitas
   String get bmiCategory {
     final b = bmi;
-    if (b < 18.5) return 'Kurus';
-    if (b < 25.0) return 'Normal';
-    return 'Gemuk';
+    if (b < 18.5) return 'Berat Badan Kurang';
+    if (b < 23.0) return 'Normal';
+    if (b < 30.0) return 'Berat Badan Berlebih';
+    return 'Obesitas';
   }
 
   /// BBI (Berat Badan Ideal) — Rumus Broca modifikasi:
   /// BBI = (TB - 100) - ((TB - 100) × 10%)
   double get bbi {
     final base = height - 100;
+    // Untuk laki-laki < 160cm dan perempuan < 150cm, tidak dikurangi 10%
+    if ((gender == 'laki-laki' && height < 160) ||
+        (gender == 'perempuan' && height < 150)) {
+      return base;
+    }
     return base - (base * 0.1);
   }
 
@@ -108,8 +115,8 @@ class UserModel {
         height: height,
         gender: gender,
         age: age['years']!,
-        koreksiFraksiAktivitas:
-            (activityLevel ?? ActivityLevel.ringan).koreksiFraction,
+        activityFactor:
+            (activityLevel ?? ActivityLevel.ringan).activityFactor,
         hasEdema: hasEdema,
       );
     }

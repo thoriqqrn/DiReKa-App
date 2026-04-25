@@ -28,7 +28,7 @@ extension ActivityLevelExtension on ActivityLevel {
     }
   }
 
-  /// Persentase koreksi terhadap kalori basal (mis. 0.20 = +20%).
+  /// Persentase koreksi terhadap kalori basal (mis. 0.20 = +20%) untuk DM.
   double get koreksiFraction {
     switch (this) {
       case ActivityLevel.ringan:
@@ -39,6 +39,20 @@ extension ActivityLevelExtension on ActivityLevel {
         return 0.40;
       case ActivityLevel.sangatBerat:
         return 0.50;
+    }
+  }
+
+  /// Faktor Aktivitas untuk Jantung Koroner (Harris Benedict).
+  double get activityFactor {
+    switch (this) {
+      case ActivityLevel.ringan:
+        return 1.2;
+      case ActivityLevel.sedang:
+        return 1.3;
+      case ActivityLevel.berat:
+        return 1.4;
+      case ActivityLevel.sangatBerat:
+        return 1.5;
     }
   }
 

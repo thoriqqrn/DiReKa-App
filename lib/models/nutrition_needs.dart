@@ -55,7 +55,7 @@ class NutritionNeeds {
   /// Energi basal = 25 kkal × BBI (perempuan) | 30 kkal × BBI (laki-laki)
   /// + Koreksi umur (>40: -5%, >60: -10%, >70: -20% dari basal)
   /// + Koreksi aktivitas (+20% s.d. +50% dari basal)
-  /// + Koreksi BB (-20% gemuk | +20% kurus dari basal)
+  /// + Koreksi BB (-20% Gemuk/Obesitas | +20% Kurus dari basal)
   ///
   /// Protein      = 1.0 × BBI   (g/hari)
   /// Lemak        = 0.89 × BBI  (g/hari)
@@ -85,11 +85,11 @@ class NutritionNeeds {
     // Koreksi aktivitas
     final koreksiAktivitas = koreksiFraksiAktivitas * basal;
 
-    // Koreksi berat badan (DM: 3 kategori)
+    // Koreksi berat badan (DM: 3 kategori sesuai PERKENI)
     double koreksiBB = 0;
-    if (bmiCategory == 'Gemuk') {
-      koreksiBB = -0.20 * basal; // -20% untuk gemuk
-    } else if (bmiCategory == 'Kurus') {
+    if (bmiCategory == 'Berat Badan Berlebih' || bmiCategory == 'Obesitas') {
+      koreksiBB = -0.20 * basal; // -20% untuk gemuk/obesitas
+    } else if (bmiCategory == 'Berat Badan Kurang') {
       koreksiBB = 0.20 * basal; // +20% untuk kurus
     }
     // Normal: koreksiBB = 0 (no change)
@@ -118,20 +118,19 @@ class NutritionNeeds {
   ///
   /// Energi total = BMR × Faktor Aktivitas × 1.1
   ///
-  /// Protein      = 20% × Energi ÷ 4     (g/hari)
-  /// Lemak        = 30% × Energi ÷ 9     (g/hari)
-  /// Karbohidrat  = 50% × Energi ÷ 4     (g/hari)
+  /// Protein      = (20% × Energi) / 4     (g/hari)
+  /// Lemak        = (30% × Energi) / 9     (g/hari)
+  /// Karbohidrat  = (50% × Energi) / 4     (g/hari)
   /// Natrium      = < 2400 mg/hari
   /// Cairan:
   ///   - Jika ada edema: 0.5 ml × Energi
-  ///   - Jika tidak ada: 1500 ml (range 1500-2000 ml)
+  ///   - Jika tidak ada: 1500 ml
   factory NutritionNeeds.heartFailure({
     required double weight, // kg (berat badan aktual)
     required double height, // cm
     required String gender, // 'laki-laki' | 'perempuan'
     required int age, // usia dalam tahun
-    required double
-    koreksiFraksiAktivitas, // dari ActivityLevel.koreksiFraction
+    required double activityFactor, // dari ActivityLevel.activityFactor (1.2 - 1.5)
     required bool hasEdema, // riwayat pembengkakan
   }) {
     // Harris Benedict BMR (menggunakan berat badan aktual, bukan ideal)
@@ -140,8 +139,7 @@ class NutritionNeeds {
         : 66 + (13.7 * weight) + (5 * height) - (6.8 * age);
 
     // Energi total = BMR × Faktor Aktivitas × 1.1
-    // Faktor Aktivitas = 1 + koreksiFraksiAktivitas (misal ringan 0.2 -> 1.2)
-    final energiTotal = bmr * (1.0 + koreksiFraksiAktivitas) * 1.1;
+    final energiTotal = bmr * activityFactor * 1.1;
 
     // Macronutrient dari persentase energi
     final protein = (0.20 * energiTotal) / 4; // 20% energi ÷ 4 kkal/g
@@ -157,10 +155,10 @@ class NutritionNeeds {
       lemak: lemak,
       karbohidrat: karbohidrat,
       natrium: 2400, // limit untuk HF
-      kalium: 0, // tidak dipantau untuk HF
-      fosfor: 0, // tidak dipantau untuk HF
+      kalium: 0,
+      fosfor: 0,
       cairan: cairan,
-      serat: 0, // tidak dipantau untuk HF
+      serat: 0,
     );
   }
 }
