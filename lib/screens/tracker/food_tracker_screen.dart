@@ -414,7 +414,7 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
           title: 'Energi',
           unit: 'kkal',
           weeklyData: weeklyData,
-          lineColor: Colors.black87,
+          lineColor: Colors.blue.shade600,
           getActual: (data) => data.energi,
           getTarget: (data) => data.targetEnergi,
         ),
@@ -424,7 +424,7 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
           title: 'Lemak',
           unit: 'g',
           weeklyData: weeklyData,
-          lineColor: Colors.amber.shade700,
+          lineColor: Colors.orange.shade700,
           getActual: (data) => data.lemak,
           getTarget: (data) => data.targetLemak,
         ),
@@ -434,19 +434,9 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
           title: 'Natrium',
           unit: 'mg',
           weeklyData: weeklyData,
-          lineColor: Colors.orange,
+          lineColor: Colors.purple.shade600,
           getActual: (data) => data.natrium,
           getTarget: (data) => data.targetNatrium,
-        ),
-        const SizedBox(height: 12),
-        // Cairan Chart
-        _buildHFNutritionChart(
-          title: 'Cairan',
-          unit: 'ml',
-          weeklyData: weeklyData,
-          lineColor: Colors.blue.shade600,
-          getActual: (data) => data.cairan,
-          getTarget: (data) => data.targetCairan,
         ),
       ],
     );
@@ -2319,9 +2309,9 @@ class _EditGramDialogState extends State<_EditGramDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Jumlah (gram)',
-              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            Text(
+              widget.food.satuanNama == 'Gelas' ? 'Jumlah (ml)' : 'Jumlah (gram)',
+              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 6),
             TextField(
@@ -2330,7 +2320,7 @@ class _EditGramDialogState extends State<_EditGramDialog> {
                 decimal: true,
               ),
               decoration: InputDecoration(
-                suffixText: 'g',
+                suffixText: widget.food.satuanNama == 'Gelas' ? 'ml' : 'g',
                 filled: true,
                 fillColor: AppColors.background,
                 border: OutlineInputBorder(
@@ -2557,7 +2547,9 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
                           ),
                         ),
                         Text(
-                          '${t.gram.toInt()} g',
+                          widget.food.satuanNama == 'Gelas'
+                              ? '${t.gram.toInt()} ml'
+                              : '${t.gram.toInt()} g',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
@@ -2606,7 +2598,7 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
           const SizedBox(height: 18),
 
           // ── Sisa di piring ───────────────────────────────────────────
-          _sectionLabel('Sisa di Piring'),
+          _sectionLabel(widget.food.satuanNama == 'Gelas' ? 'Sisa di Gelas' : 'Sisa di Piring'),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -2670,7 +2662,9 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${gram.toStringAsFixed(0)} g dimakan',
+                    widget.food.satuanNama == 'Gelas'
+                        ? '${gram.toStringAsFixed(0)} ml diminum'
+                        : '${gram.toStringAsFixed(0)} g dimakan',
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,

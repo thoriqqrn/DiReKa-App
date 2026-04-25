@@ -143,14 +143,24 @@ class NutritionLineChart extends StatelessWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        reservedSize: 24,
+                        reservedSize: 30,
                         getTitlesWidget: (value, meta) {
-                          final days = ['1', '2', '3', '4', '5', '6', '7'];
-                          if (value.toInt() < days.length) {
+                          if (value.toInt() >= 0 &&
+                              value.toInt() < weeklyData.length) {
+                            final date = weeklyData[value.toInt()].date;
+                            final dayLabel = [
+                              'Min',
+                              'Sen',
+                              'Sel',
+                              'Rab',
+                              'Kam',
+                              'Jum',
+                              'Sab',
+                            ][date.weekday % 7];
                             return Padding(
-                              padding: const EdgeInsets.only(top: 4),
+                              padding: const EdgeInsets.only(top: 8),
                               child: Text(
-                                days[value.toInt()],
+                                dayLabel,
                                 style: const TextStyle(
                                   fontSize: 10,
                                   color: AppColors.textSecondary,

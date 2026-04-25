@@ -25,12 +25,12 @@ class FoodDatabaseService {
     air: 100,
     serat: 0,
     takaranSaji: const [
-      TakaranSaji(ukuran: 'kecil', label: 'Gelas Kecil', gram: 200),
-      TakaranSaji(ukuran: 'sedang', label: 'Gelas Sedang', gram: 250),
-      TakaranSaji(ukuran: 'besar', label: 'Botol', gram: 500),
+      TakaranSaji(ukuran: 'kecil', label: 'Kecil', gram: 200),
+      TakaranSaji(ukuran: 'sedang', label: 'Sedang', gram: 250),
+      TakaranSaji(ukuran: 'besar', label: 'Besar (Botol)', gram: 500),
     ],
     emoji: '💧',
-    satuanNama: 'ml',
+    satuanNama: 'Gelas',
   );
 
   /// Load semua makanan khusus dari Firebase food_catalog.
