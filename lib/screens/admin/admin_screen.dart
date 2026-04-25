@@ -1,9 +1,12 @@
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:syncfusion_flutter_xlsio/xlsio.dart' as xlsio;
 import 'package:universal_html/html.dart' as html;
 
@@ -17,7 +20,8 @@ import '../../services/admin_service.dart';
 enum _AdminTab { home, users, food, health, education }
 
 class AdminScreen extends StatefulWidget {
-  const AdminScreen({super.key});
+  final int initialTabIndex;
+  const AdminScreen({super.key, this.initialTabIndex = 0});
 
   @override
   State<AdminScreen> createState() => _AdminScreenState();
@@ -30,7 +34,7 @@ class _AdminScreenState extends State<AdminScreen> {
   final TextEditingController _contentCtrl = TextEditingController();
   final TextEditingController _sourceUrlCtrl = TextEditingController();
 
-  int _selectedTabIndex = 0;
+  late int _selectedTabIndex;
 
   bool _isUsersLoading = false;
   String? _usersError;
@@ -61,6 +65,7 @@ class _AdminScreenState extends State<AdminScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedTabIndex = widget.initialTabIndex;
     _loadHomeTab();
   }
 
@@ -441,6 +446,14 @@ class _AdminScreenState extends State<AdminScreen> {
                         ],
                       ),
                     ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: AppColors.error),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _deleteUser(user);
+                      },
+                      tooltip: 'Hapus Akun',
+                    ),
                     if (isFamily)
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -579,13 +592,6 @@ class _AdminScreenState extends State<AdminScreen> {
       return;
     }
 
-    if (!kIsWeb) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Export XLSX saat ini tersedia untuk Web.')),
-      );
-      return;
-    }
-
     final workbook = xlsio.Workbook();
     final sheet = workbook.worksheets[0];
     sheet.name = 'Daftar Pengguna';
@@ -651,15 +657,75 @@ class _AdminScreenState extends State<AdminScreen> {
     final bytes = workbook.saveAsStream();
     workbook.dispose();
 
-    final blob = html.Blob([Uint8List.fromList(bytes)], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    final url = html.Url.createObjectUrlFromBlob(blob);
-    html.AnchorElement(href: url)
-      ..setAttribute('download', 'data_user_direka_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}.xlsx')
-      ..click();
-    html.Url.revokeObjectUrl(url);
+    if (kIsWeb) {
+      final blob = html.Blob([Uint8List.fromList(bytes)], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      html.AnchorElement(href: url)
+        ..setAttribute('download', 'data_user_direka_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}.xlsx')
+        ..click();
+      html.Url.revokeObjectUrl(url);
+      
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('File Excel berhasil diunduh.')));
+    } else {
+      // LOGIKA BERBAGI (SHARE) UNTUK MOBILE
+      final directory = await getTemporaryDirectory();
+      final fileName = 'Data_User_DiReKa_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}.xlsx';
+      final file = File('${directory.path}/$fileName');
+      await file.writeAsBytes(bytes);
+      
+      // Memunculkan jendela "Bagikan" sistem HP
+      await Share.shareXFiles(
+        [XFile(file.path, mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')],
+        subject: 'Export Data Pengguna DiReKa',
+        text: 'Berikut adalah lampiran data pengguna aplikasi DiReKa dalam format Excel.',
+      );
+    }
+  }
 
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Export Data User berhasil.')));
+  Future<void> _deleteUser(UserModel user) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Hapus Akun Pengguna'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Apakah Anda yakin ingin menghapus akun "${user.name}"?'),
+            const SizedBox(height: 12),
+            const Text(
+              'Tindakan ini tidak dapat dibatalkan. Semua data profil user di Firestore akan dihapus.',
+              style: TextStyle(color: AppColors.error, fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await _adminService.deleteUserAccount(user.uid);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Akun ${user.name} berhasil dihapus.')),
+        );
+        _loadUsersTab(); // Refresh list
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal menghapus akun: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _exportFoodToXlsx() async {
@@ -1131,23 +1197,27 @@ class _AdminScreenState extends State<AdminScreen> {
           _StatsHeader(totalUsers: _totalUsers, usersByDisease: _usersByDisease),
           const SizedBox(height: 20),
           
-          // Search & Filter Header
-          Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'Manajemen Pengguna',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                ),
-              ),
-              OutlinedButton.icon(
-                onPressed: _exportUsersToXlsx,
-                icon: const Icon(Icons.download_outlined, size: 18),
-                label: const Text('Export XLSX'),
-              ),
-            ],
+          // Header & Export
+          const Text(
+            'Manajemen Pengguna',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _exportUsersToXlsx,
+              icon: const Icon(Icons.download_outlined),
+              label: const Text('Export Data User (XLSX)'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
           
           // Search Bar
           TextField(
@@ -1156,6 +1226,7 @@ class _AdminScreenState extends State<AdminScreen> {
               prefixIcon: const Icon(Icons.search),
               filled: true,
               fillColor: AppColors.surface,
+              contentPadding: const EdgeInsets.symmetric(vertical: 0),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(color: AppColors.border),
@@ -1168,7 +1239,7 @@ class _AdminScreenState extends State<AdminScreen> {
               });
             },
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           
           // Disease Filter Chips
           SingleChildScrollView(
@@ -1198,19 +1269,21 @@ class _AdminScreenState extends State<AdminScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
           if (totalFiltered == 0)
             const _EmptyView(message: 'Tidak ada pengguna yang sesuai kriteria.')
           else ...[
             Text(
-              'Menampilkan \${startIdx + 1} - \$endIdx dari \$totalFiltered user',
-              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              'Menampilkan ${startIdx + 1} - $endIdx dari $totalFiltered user',
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             ...pageItems.map((user) {
-              final isFamily = user.primaryUserUid != null;
-              // Cari nama akun utama jika ini akun keluarga
+              final isFamily = user.primaryUserUid != null && 
+                               user.primaryUserUid!.trim().isNotEmpty &&
+                               user.primaryUserUid != 'null';
+              
               String? primaryName;
               if (isFamily) {
                 try {
@@ -1223,7 +1296,7 @@ class _AdminScreenState extends State<AdminScreen> {
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
-                  color: isFamily ? const Color(0xFFFFF9C4) : AppColors.surface, // Kuning untuk keluarga
+                  color: isFamily ? const Color(0xFFFFF9C4) : AppColors.surface,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
@@ -1233,17 +1306,17 @@ class _AdminScreenState extends State<AdminScreen> {
                     ),
                   ],
                   border: Border.all(
-                    color: isFamily ? Colors.orange.withValues(alpha: 0.3) : AppColors.divider.withValues(alpha: 0.5),
-                    width: isFamily ? 1.5 : 1,
+                    color: isFamily ? Colors.orange.withValues(alpha: 0.5) : AppColors.divider.withValues(alpha: 0.5),
+                    width: isFamily ? 2 : 1,
                   ),
                 ),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(16),
                   onTap: () => _showUserDetailDialog(user),
                   child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     leading: CircleAvatar(
-                      radius: 22,
+                      radius: 24,
                       backgroundColor: isFamily ? Colors.orange.withValues(alpha: 0.2) : AppColors.primaryLight,
                       child: Text(
                         user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
@@ -1259,68 +1332,88 @@ class _AdminScreenState extends State<AdminScreen> {
                         Expanded(
                           child: Text(
                             user.name,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                           ),
                         ),
                         if (isFamily)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Colors.orange,
-                              borderRadius: BorderRadius.circular(4),
+                              color: Colors.orange.shade700,
+                              borderRadius: BorderRadius.circular(6),
                             ),
                             child: const Text(
                               'KELUARGA',
-                              style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                              style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                             ),
                           ),
                       ],
                     ),
                     subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 4),
+                      padding: const EdgeInsets.only(top: 6),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(user.email),
-                          const SizedBox(height: 2),
+                          Text(user.email, style: const TextStyle(fontSize: 13)),
+                          const SizedBox(height: 4),
                           Text(
                             DiseaseTypeExtension.getLabel(user.diseaseType),
                             style: TextStyle(
-                              color: isFamily ? Colors.orange.shade800 : AppColors.primary,
-                              fontWeight: FontWeight.w600,
+                              color: isFamily ? Colors.orange.shade900 : AppColors.primary,
+                              fontWeight: FontWeight.bold,
                               fontSize: 12,
                             ),
                           ),
                           if (isFamily) ...[
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                const Icon(Icons.link, size: 12, color: Colors.orange),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: Text(
-                                    'Tautan keluarga dari: $primaryName',
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      fontStyle: FontStyle.italic,
-                                      color: Colors.black87,
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.orange.withValues(alpha: 0.2)),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.link_rounded, size: 14, color: Colors.orange),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      'Tautan keluarga dari: $primaryName',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black87,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ],
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(Icons.calendar_today_outlined, size: 10, color: AppColors.textHint),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Daftar: ${DateFormat('dd MMM yyyy', 'id_ID').format(user.createdAt)}',
+                                style: const TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
                     isThreeLine: true,
-                    trailing: Text(
-                      DateFormat('dd MMM yyyy', 'id_ID').format(user.createdAt),
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete_outline, size: 24, color: AppColors.error),
+                      onPressed: () => _deleteUser(user),
+                      tooltip: 'Hapus User',
                     ),
                   ),
                 ),

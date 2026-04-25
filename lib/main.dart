@@ -53,6 +53,18 @@ class DiRekaApp extends StatelessWidget {
         supportedLocales: const [Locale('id', 'ID'), Locale('en', 'US')],
         locale: const Locale('id', 'ID'),
         initialRoute: AppConstants.routeSplash,
+        onGenerateRoute: (settings) {
+          if (settings.name == AppConstants.routeAdmin) {
+            final args = settings.arguments;
+            int initialTabIndex = 0;
+            if (args is int) initialTabIndex = args;
+            
+            return MaterialPageRoute(
+              builder: (_) => AdminScreen(initialTabIndex: initialTabIndex),
+            );
+          }
+          return null; // Let routes handle other cases
+        },
         routes: {
           AppConstants.routeSplash: (_) => const SplashScreen(),
           AppConstants.routeDiseaseSelection: (_) =>
@@ -65,7 +77,7 @@ class DiRekaApp extends StatelessWidget {
           AppConstants.routeEditProfile: (_) => const EditProfileScreen(),
           AppConstants.routeGoogleCompleteProfile: (_) =>
               const GoogleCompleteProfileScreen(),
-          AppConstants.routeAdmin: (_) => const AdminScreen(),
+          // AppConstants.routeAdmin now handled by onGenerateRoute
           AppConstants.routeAdminSettings: (_) => const AdminSettingsScreen(),
           AppConstants.routeAdminFoodCatalog: (_) => const AdminFoodCatalogScreen(),
         },

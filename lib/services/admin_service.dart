@@ -269,6 +269,21 @@ class AdminService {
     return _users.snapshots().map((snap) => snap.docs.length);
   }
 
+  /// Hapus akun user (Hanya Firestore data, untuk Auth perlu admin SDK/Firebase Console)
+  Future<void> deleteUserAccount(String uid) async {
+    final batch = _db.batch();
+    
+    // 1. Hapus dokumen profil
+    batch.delete(_users.doc(uid));
+
+    // 2. Hapus log makanan (jika ada)
+    // Note: Karena Firestore tidak bisa delete collection secara rekursif via batch dengan wildcard,
+    // kita hapus log yang tanggalnya tersimpan (limitasi: butuh query dlu jika ingin bersih total)
+    // Untuk saat ini kita hapus data profil dan trigger refresh ui.
+    
+    await batch.commit();
+  }
+
   AdminHealthRecordSummary _mapHealthDoc(
     Map<String, dynamic> data,
     String uid,

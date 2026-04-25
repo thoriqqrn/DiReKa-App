@@ -31,26 +31,35 @@ class AdminSettingsScreen extends StatelessWidget {
               children: [
                 _SettingsTile(
                   icon: Icons.download_outlined,
-                  label: 'Export Daftar Pengguna (CSV)',
-                  subtitle: 'Download semua data akun pengguna',
-                  isSoon: true,
-                  onTap: () => _showSoon(context),
+                  label: 'Export Daftar Pengguna (XLSX)',
+                  subtitle: 'Download semua data profil akun pengguna',
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    AppConstants.routeAdmin,
+                    arguments: 1, // Buka tab index 1 (Users)
+                  ),
                 ),
                 const Divider(height: 1),
                 _SettingsTile(
                   icon: Icons.filter_list,
                   label: 'Filter & Pencarian Pengguna',
                   subtitle: 'Cari pengguna berdasarkan nama atau penyakit',
-                  isSoon: true,
-                  onTap: () => _showSoon(context),
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    AppConstants.routeAdmin,
+                    arguments: 1,
+                  ),
                 ),
                 const Divider(height: 1),
                 _SettingsTile(
                   icon: Icons.person_remove_outlined,
                   label: 'Hapus Akun Pengguna',
-                  subtitle: 'Nonaktifkan atau hapus akun tertentu',
-                  isSoon: true,
-                  onTap: () => _showSoon(context),
+                  subtitle: 'Hapus akun pengguna tertentu dari sistem',
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    AppConstants.routeAdmin,
+                    arguments: 1,
+                  ),
                 ),
               ],
             ),
