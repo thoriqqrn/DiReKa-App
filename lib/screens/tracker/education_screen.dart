@@ -87,7 +87,7 @@ class _EducationScreenState extends State<EducationScreen> {
                           ],
                         )
                       : GridView.builder(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
                           gridDelegate:
                               SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: isWide ? 2 : 1,

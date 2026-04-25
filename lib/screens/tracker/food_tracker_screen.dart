@@ -507,7 +507,7 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
                     onRefresh: _loadEntries,
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 200),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
