@@ -45,7 +45,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   // Hemodialisis — untuk pasien penyakit ginjal
   DateTime? _hdStartDate;
-  DateTime? _hdEndDate;
   final List<String> _hdDayOptions = [
     'Senin',
     'Selasa',
@@ -412,10 +411,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 Text(
                                   _hdStartDate != null
                                       ? DateFormat(
-                                          'dd MMM yyyy',
+                                          'MMMM yyyy', // Hanya bulan dan tahun
                                           'id_ID',
                                         ).format(_hdStartDate!)
-                                      : 'Pilih tanggal',
+                                      : 'Pilih bulan & tahun',
                                   style: const TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
@@ -432,73 +431,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     const SizedBox(height: 14),
-                    // Tanggal Berakhir
-                    InkWell(
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: _hdStartDate ?? DateTime.now(),
-                          firstDate: _hdStartDate ?? DateTime.now(),
-                          lastDate: DateTime.now().add(
-                            const Duration(days: 36500),
-                          ),
-                          cancelText: 'Batal',
-                          confirmText: 'Pilih',
-                        );
-                        if (picked != null) {
-                          setState(() => _hdEndDate = picked);
-                        }
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          border: Border.all(color: AppColors.border),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Tanggal Berakhir',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  _hdEndDate != null
-                                      ? DateFormat(
-                                          'dd MMM yyyy',
-                                          'id_ID',
-                                        ).format(_hdEndDate!)
-                                      : 'Pilih tanggal',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const Icon(
-                              Icons.calendar_today_outlined,
-                              color: AppColors.primary,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                    // (Tanggal berakhir dihapus sesuai requirement)
                     const SizedBox(height: 14),
-                    // Jadwal dialisis (checkbox grid)
                     const Text(
-                      'Jadwal Dialisis (pilih max 3 hari)',
+                      'Jadwal Dialisis (Bisa pilih lebih dari satu)',
                       style: TextStyle(
                         fontSize: 13,
                         color: AppColors.textSecondary,
@@ -517,7 +453,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             setState(() {
                               if (isSelected) {
                                 _hdSelectedDays.remove(day);
-                              } else if (_hdSelectedDays.length < 3) {
+                              } else {
                                 _hdSelectedDays.add(day);
                               }
                             });
@@ -713,15 +649,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
         return;
       }
-      if (_hdEndDate == null) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tanggal berakhir dialisis wajib diisi'),
-          ),
-        );
-        return;
-      }
+      // endDate removed
       if (_hdSelectedDays.isEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(
@@ -748,7 +676,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (_diseaseType == DiseaseType.chronicKidneyDisease) {
       hemodialysisData = HemodialysisData(
         startDate: _hdStartDate!,
-        endDate: _hdEndDate!,
         scheduleDays: _hdSelectedDays.toList(),
         location: _hdLocationCtrl.text.trim(),
       );

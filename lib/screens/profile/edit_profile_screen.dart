@@ -40,7 +40,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   // Hemodialisis — untuk pasien penyakit ginjal
   DateTime? _hdStartDate;
-  DateTime? _hdEndDate;
   final List<String> _hdDayOptions = [
     'Senin',
     'Selasa',
@@ -106,7 +105,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         if (user.hemodialysisData != null) {
           final hd = user.hemodialysisData!;
           _hdStartDate = hd.startDate;
-          _hdEndDate = hd.endDate;
           _hdSelectedDays.addAll(hd.scheduleDays);
           _hdLocationCtrl.text = hd.location;
         }
@@ -392,7 +390,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
-                                  'Tanggal Mulai',
+                                  'Bulan Mulai',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: AppColors.textSecondary,
@@ -402,10 +400,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 Text(
                                   _hdStartDate != null
                                       ? DateFormat(
-                                          'dd MMM yyyy',
+                                          'MMMM yyyy',
                                           'id_ID',
                                         ).format(_hdStartDate!)
-                                      : 'Pilih tanggal',
+                                      : 'Pilih bulan & tahun',
                                   style: const TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
@@ -422,74 +420,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 14),
-                    // Tanggal Berakhir
-                    InkWell(
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate:
-                              _hdEndDate ?? (_hdStartDate ?? DateTime.now()),
-                          firstDate: _hdStartDate ?? DateTime.now(),
-                          lastDate: DateTime.now().add(
-                            const Duration(days: 36500),
-                          ),
-                          cancelText: 'Batal',
-                          confirmText: 'Pilih',
-                        );
-                        if (picked != null) {
-                          setState(() => _hdEndDate = picked);
-                        }
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          border: Border.all(color: AppColors.border),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Tanggal Berakhir',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  _hdEndDate != null
-                                      ? DateFormat(
-                                          'dd MMM yyyy',
-                                          'id_ID',
-                                        ).format(_hdEndDate!)
-                                      : 'Pilih tanggal',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const Icon(
-                              Icons.calendar_today_outlined,
-                              color: AppColors.primary,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                    // Tanggal berakhir dihapus
                     const SizedBox(height: 14),
-                    // Jadwal dialisis
                     const Text(
-                      'Jadwal Dialisis (pilih max 3 hari)',
+                      'Jadwal Dialisis',
                       style: TextStyle(
                         fontSize: 13,
                         color: AppColors.textSecondary,
@@ -508,7 +442,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             setState(() {
                               if (isSelected) {
                                 _hdSelectedDays.remove(day);
-                              } else if (_hdSelectedDays.length < 3) {
+                              } else {
                                 _hdSelectedDays.add(day);
                               }
                             });
@@ -684,12 +618,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     HemodialysisData? hemodialysisData;
     if (_diseaseType == DiseaseType.chronicKidneyDisease &&
         _hdStartDate != null &&
-        _hdEndDate != null &&
         _hdSelectedDays.isNotEmpty &&
         _hdLocationCtrl.text.isNotEmpty) {
       hemodialysisData = HemodialysisData(
         startDate: _hdStartDate!,
-        endDate: _hdEndDate!,
         scheduleDays: _hdSelectedDays.toList(),
         location: _hdLocationCtrl.text.trim(),
       );
