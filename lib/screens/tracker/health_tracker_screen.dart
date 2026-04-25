@@ -3138,14 +3138,14 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   }
 
   String _riskCategory(double percent) {
-    if (percent < 3.0) return 'Ringan';
-    if (percent <= 3.9) return 'Sedang';
+    if (percent < 2.0) return 'Ringan';
+    if (percent <= 4.0) return 'Sedang';
     return 'Berat';
   }
 
   Color _riskColor(double percent) {
-    if (percent < 3.0) return AppColors.success;
-    if (percent <= 3.9) return AppColors.warning;
+    if (percent < 2.0) return AppColors.success;
+    if (percent <= 4.0) return AppColors.warning;
     return AppColors.error;
   }
 
@@ -3996,14 +3996,38 @@ class _HemodialysisTable extends StatelessWidget {
                     const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                 dataTextStyle: const TextStyle(fontSize: 12),
                 columnSpacing: 18,
-                columns: const [
-                  DataColumn(label: Text('Tanggal')),
-                  DataColumn(label: Text('BB setelah\nHemodialisa I')),
-                  DataColumn(label: Text('BB sebelum\nHemodialisa II')),
-                  DataColumn(label: Text('Kenaikan\nBB')),
-                  DataColumn(label: Text('%')),
-                  DataColumn(label: Text('Kategori')),
-                  DataColumn(label: Text('Aksi')),
+                columns: [
+                  const DataColumn(label: Text('Tanggal')),
+                  const DataColumn(label: Text('BB setelah\nHemodialisa I')),
+                  const DataColumn(label: Text('BB sebelum\nHemodialisa II')),
+                  const DataColumn(label: Text('Kenaikan\nBB')),
+                  const DataColumn(label: Text('%')),
+                  DataColumn(
+                    label: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('Kategori'),
+                        const SizedBox(width: 4),
+                        Tooltip(
+                          triggerMode: TooltipTriggerMode.tap,
+                          showDuration: const Duration(seconds: 4),
+                          padding: const EdgeInsets.all(10),
+                          textStyle: const TextStyle(color: Colors.white, fontSize: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.black87,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          message: 'Kategori % IDWG:\nRingan: < 2%\nSedang: 2% - 4%\nBerat: > 4%',
+                          child: const Icon(
+                            Icons.info_outline,
+                            size: 15,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const DataColumn(label: Text('Aksi')),
                 ],
                 rows: records.reversed.map((e) {
                   return DataRow(
@@ -5882,7 +5906,7 @@ const List<_ExamReference> _examReferenceCatalog = [
     id: 'urin_protein',
     group: 'Urin',
     name: 'Protein urin',
-    unit: 'strip',
+    unit: '',
     normal: 'Negatif',
     forKidney: true,
     forHeart: false,
@@ -5900,7 +5924,7 @@ const List<_ExamReference> _examReferenceCatalog = [
     id: 'urin_hb',
     group: 'Urin',
     name: 'Hb urin',
-    unit: 'strip',
+    unit: '',
     normal: 'Negatif',
     forKidney: true,
     forHeart: false,
