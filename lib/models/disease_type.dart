@@ -8,7 +8,7 @@ extension DiseaseTypeExtension on DiseaseType {
       case DiseaseType.type2DiabetesMellitus:
         return 'Diabetes Mellitus Tipe 2';
       case DiseaseType.heartFailure:
-        return 'Gagal Jantung';
+        return 'Jantung Koroner';
     }
   }
 
@@ -19,7 +19,7 @@ extension DiseaseTypeExtension on DiseaseType {
       case DiseaseType.type2DiabetesMellitus:
         return 'Diabetes Mellitus';
       case DiseaseType.heartFailure:
-        return 'Gagal Jantung';
+        return 'Jantung Koroner';
     }
   }
 
