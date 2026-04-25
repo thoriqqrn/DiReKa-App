@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/app_colors.dart';
 import '../../core/app_constants.dart';
 import '../../providers/auth_provider.dart';
@@ -25,7 +26,121 @@ class _MainScreenState extends State<MainScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshNotificationsIfNeeded(force: true);
+      _checkAndShowNotificationPrompt();
     });
+  }
+
+  Future<void> _checkAndShowNotificationPrompt() async {
+    final prefs = await SharedPreferences.getInstance();
+    
+    // Jangan ganggu jika user sudah pernah di prompt dalam 3 hari terakhir
+    final lastPromptStr = prefs.getString('last_notif_prompt');
+    if (lastPromptStr != null) {
+      final lastPrompt = DateTime.parse(lastPromptStr);
+      if (DateTime.now().difference(lastPrompt).inDays < 3) {
+        return;
+      }
+    }
+
+    final allowed = await AppNotificationService.checkPermissionStatus();
+    if (!allowed && mounted) {
+      _showNotifPermissionModal();
+    }
+  }
+
+  void _showNotifPermissionModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.notifications_active_outlined,
+                size: 40,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Aktifkan Notifikasi Kesehatan',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Dapatkan peringatan otomatis jika asupan cairan/makanan berlebih, jadwal cuci darah, dan pantauan kondisi harian kamu.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  await AppNotificationService.requestPermissions();
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setString('last_notif_prompt', DateTime.now().toIso8601String());
+                },
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: const Text(
+                  'Ya, Izinkan Sekarang',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setString('last_notif_prompt', DateTime.now().toIso8601String());
+              },
+              child: const Text(
+                'Mungkin Nanti',
+                style: TextStyle(color: AppColors.textHint),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override

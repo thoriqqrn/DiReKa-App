@@ -68,4 +68,15 @@ extension DiseaseTypeExtension on DiseaseType {
         return '🫀';
     }
   }
+
+  static String getLabel(DiseaseType type) {
+    switch (type) {
+      case DiseaseType.chronicKidneyDisease:
+        return 'Penyakit Ginjal Kronis';
+      case DiseaseType.type2DiabetesMellitus:
+        return 'Diabetes Mellitus Tipe 2';
+      case DiseaseType.heartFailure:
+        return 'Jantung Koroner';
+    }
+  }
 }

@@ -8,6 +8,7 @@ import 'core/app_constants.dart';
 import 'core/app_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/disease_provider.dart';
+import 'services/app_notification_service.dart';
 import 'screens/admin/admin_screen.dart';
 import 'screens/admin/admin_settings_screen.dart';
 import 'screens/admin/admin_food_catalog_screen.dart';
@@ -24,6 +25,7 @@ import 'screens/splash_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await AppNotificationService.init();
   runApp(const DiRekaApp());
 }
 

@@ -1,4 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../core/app_constants.dart';
 import '../models/app_notification.dart';
@@ -7,6 +9,7 @@ import '../models/disease_type.dart';
 import '../models/food_log_entry.dart';
 import '../models/heart_health_record.dart';
 import '../models/kidney_health_record.dart';
+import '../models/meal_type.dart';
 import '../models/user_model.dart';
 import 'diabetes_health_service.dart';
 import 'family_link_service.dart';
@@ -16,6 +19,77 @@ import 'kidney_health_service.dart';
 
 class AppNotificationService {
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
+  static final FlutterLocalNotificationsPlugin _localNotifications =
+      FlutterLocalNotificationsPlugin();
+  static bool _isInitialized = false;
+
+  static Future<void> init() async {
+    if (_isInitialized) return;
+
+    try {
+      const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const iosInit = DarwinInitializationSettings();
+      const initSettings = InitializationSettings(android: androidInit, iOS: iosInit);
+
+      final success = await _localNotifications.initialize(initSettings);
+      _isInitialized = success ?? false;
+    } catch (e) {
+      debugPrint('Notification Init Error: $e');
+      _isInitialized = false;
+    }
+  }
+
+  static Future<bool> checkPermissionStatus() async {
+    if (kIsWeb) return false;
+    
+    final platform = _localNotifications.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    if (platform != null) {
+      final allowed = await platform.areNotificationsEnabled();
+      return allowed ?? false;
+    }
+    // Untuk iOS, areNotificationsEnabled tidak langsung tersedia di plugin dasar dengan cara yang sama, 
+    // tapi kita bisa menganggap true jika sudah pernah diapprove.
+    return _isInitialized;
+  }
+
+  static Future<bool> requestPermissions() async {
+    if (!_isInitialized) await init();
+    
+    try {
+      final platform = _localNotifications.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      if (platform != null) {
+        await platform.requestNotificationsPermission();
+      }
+      
+      final iosPlatform = _localNotifications.resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin>();
+      if (iosPlatform != null) {
+        await iosPlatform.requestPermissions(alert: true, badge: true, sound: true);
+      }
+      return true;
+    } catch (e) {
+      debugPrint('Request Permission Error: $e');
+      return false;
+    }
+  }
+
+  static Future<void> sendTestNotification() async {
+    if (!_isInitialized) await init();
+    
+    await _showLocalNotification(
+      AppNotification(
+        id: 'test-notification',
+        title: 'Tes Notifikasi DiReKa',
+        message: 'Selamat! Notifikasi di HP kamu sudah aktif dan berjalan dengan baik.',
+        typeKey: 'test',
+        source: 'system',
+        createdAt: DateTime.now(),
+        diseaseType: 'all',
+      ),
+    );
+  }
 
   static CollectionReference<Map<String, dynamic>> _notificationsRef(String uid) {
     return _db
@@ -105,13 +179,20 @@ class AppNotificationService {
 
     for (final item in notifications) {
       final existing = existingById[item.id];
+      final isRead = existing?.isRead ?? false;
+
       batch.set(
         _notificationsRef(uid).doc(item.id),
         item.copyWith(
           source: source,
-          isRead: existing?.isRead ?? false,
+          isRead: isRead,
         ).toMap(),
       );
+
+      // Jika baru dan belum dibaca, tampilkan local notification
+      if (existing == null && !isRead) {
+        _showLocalNotification(item);
+      }
     }
 
     for (final doc in existingSnapshot.docs) {
@@ -145,14 +226,14 @@ class AppNotificationService {
 
       if (needs != null && needs.cairan > 0) {
         final ratio = foodTotals['cairan']! / needs.cairan;
-        if (ratio >= 0.5) {
+        if (ratio >= 0.5) { // Zona kuning > 50%
           intakeMismatchCount++;
           notifications.add(
             AppNotification(
               id: 'kidney-fluid-$dateKey',
               title: 'Asupan cairan mulai tinggi',
               message:
-                  'Asupan cairan hari ini sudah ${(ratio * 100).toStringAsFixed(0)}% dari batas harian.',
+                  'Asupan cairan hari ini sudah ${(ratio * 100).toStringAsFixed(0)}% (Zona Kuning). Harap batasi minum.',
               typeKey: 'kidney_fluid_warning',
               source: 'system',
               createdAt: now,
@@ -186,7 +267,7 @@ class AppNotificationService {
           AppNotification(
             id: 'kidney-no-input-$dateKey',
             title: 'Belum ada input hari ini',
-            message: 'Catat makanan atau data kesehatan ginjal hari ini agar pemantauan tetap akurat.',
+            message: 'Jangan lupa catat makanan atau data kesehatan ginjal hari ini.',
             typeKey: 'kidney_daily_reminder',
             source: 'system',
             createdAt: now,
@@ -195,13 +276,13 @@ class AppNotificationService {
         );
       }
 
-      if (badExamCount >= 2 && intakeMismatchCount >= 2) {
+      if ((badExamCount >= 2 && intakeMismatchCount >= 2) || (badExamCount >= 3)) {
         notifications.add(
           AppNotification(
             id: 'kidney-family-alert-$dateKey',
             title: 'Kondisi ginjal perlu perhatian keluarga',
             message:
-                'Terdapat beberapa hasil pemeriksaan yang kurang baik dan asupan hari ini belum sesuai target.',
+                'Terdapat hasil pemeriksaan yang kurang baik dan asupan belum sesuai target.',
             typeKey: 'kidney_family_alert',
             source: 'system',
             createdAt: now,
@@ -209,6 +290,25 @@ class AppNotificationService {
             isFamilyAlert: true,
           ),
         );
+      }
+
+      // H-1 Hemodialisis Reminder
+      if (user.hemodialysisData != null) {
+        final tomorrow = now.add(const Duration(days: 1));
+        final dayNameTomorrow = _getDayNameIndonesian(tomorrow.weekday);
+        if (user.hemodialysisData!.scheduleDays.contains(dayNameTomorrow)) {
+          notifications.add(
+            AppNotification(
+              id: 'kidney-hd-reminder-$dateKey',
+              title: 'Jadwal Dialisis Besok',
+              message: 'Besok kamu ada jadwal dialisis di ${user.hemodialysisData!.location}.',
+              typeKey: 'kidney_hd_reminder',
+              source: 'system',
+              createdAt: now,
+              diseaseType: user.diseaseType.value,
+            ),
+          );
+        }
       }
     }
 
@@ -219,25 +319,25 @@ class AppNotificationService {
         limit: 50,
       );
       final todayRecords = dmRecords.where((e) => _isSameDay(e.date, today)).toList();
-      final todayInsulin = todayRecords
-          .where((record) => record.type == DiabetesInputType.insulin)
-          .toList();
       final todayCheckups = todayRecords
           .where((record) => record.type == DiabetesInputType.pemeriksaan)
           .toList();
 
-      for (final record in todayInsulin) {
-        final meal = (record.payload['meal'] ?? 'Waktu makan').toString();
-        final gl = _toDouble(record.payload['gl']);
-        final carbs = _toDouble(record.payload['karbohidratMakan']);
-        if (gl > 20 || carbs > 45) {
+      // Warning Glycemic Load per makan
+      final entriesByMeal = <MealType, List<FoodLogEntry>>{};
+      for (var e in entriesToday) {
+        entriesByMeal.putIfAbsent(e.mealType, () => []).add(e);
+      }
+
+      entriesByMeal.forEach((mealType, entries) {
+        final mealGL = entries.fold(0.0, (sum, e) => sum + e.glycemicLoad);
+        if (mealGL >= 20) { // GL Tinggi > 20
           intakeMismatchCount++;
           notifications.add(
             AppNotification(
-              id: 'dm-gl-$dateKey-${record.id}',
-              title: 'GL makan tinggi',
-              message:
-                  '$meal terdeteksi memiliki glycemic load/asupan karbohidrat tinggi. Pertimbangkan evaluasi porsi dan pilihan makanan.',
+              id: 'dm-gl-$dateKey-\${mealType.value}',
+              title: 'Glycemic Load \${mealType.label} Tinggi',
+              message: 'Menu \${mealType.label} kamu memiliki beban glikemik tinggi (\${mealGL.toStringAsFixed(1)}).',
               typeKey: 'dm_gl_warning',
               source: 'system',
               createdAt: now,
@@ -245,7 +345,7 @@ class AppNotificationService {
             ),
           );
         }
-      }
+      });
 
       badExamCount = todayCheckups
           .where((record) => !_isNormalCategory(record.payload['category']))
@@ -256,7 +356,7 @@ class AppNotificationService {
           AppNotification(
             id: 'dm-no-input-$dateKey',
             title: 'Belum ada input hari ini',
-            message: 'Masukkan makanan atau data kesehatan diabetes hari ini agar analisis tetap terjaga.',
+            message: 'Masukkan data makanan atau kesehatan diabetes kamu hari ini.',
             typeKey: 'dm_daily_reminder',
             source: 'system',
             createdAt: now,
@@ -265,18 +365,21 @@ class AppNotificationService {
         );
       }
 
-      if (todayInsulin.isEmpty) {
-        notifications.add(
-          AppNotification(
-            id: 'dm-insulin-reminder-$dateKey',
-            title: 'Pengingat input insulin',
-            message: 'Belum ada input analisis insulin hari ini.',
-            typeKey: 'dm_insulin_reminder',
-            source: 'system',
-            createdAt: now,
-            diseaseType: user.diseaseType.value,
-          ),
-        );
+      if (user.usesInsulinTherapy) {
+        final hasInsulinInput = todayRecords.any((r) => r.type == DiabetesInputType.insulin);
+        if (!hasInsulinInput) {
+          notifications.add(
+            AppNotification(
+              id: 'dm-insulin-reminder-$dateKey',
+              title: 'Pengingat Input Insulin',
+              message: 'Kamu belum memasukkan data analisis insulin hari ini.',
+              typeKey: 'dm_insulin_reminder',
+              source: 'system',
+              createdAt: now,
+              diseaseType: user.diseaseType.value,
+            ),
+          );
+        }
       }
 
       if (badExamCount >= 2 && intakeMismatchCount >= 1) {
@@ -285,7 +388,7 @@ class AppNotificationService {
             id: 'dm-family-alert-$dateKey',
             title: 'Kondisi diabetes perlu perhatian keluarga',
             message:
-                'Beberapa hasil pemeriksaan dan pola asupan hari ini menunjukkan kondisi yang perlu dipantau lebih ketat.',
+                'Hasil pemeriksaan dan pola makan hari ini memerlukan pantauan lebih ketat.',
             typeKey: 'dm_family_alert',
             source: 'system',
             createdAt: now,
@@ -315,7 +418,7 @@ class AppNotificationService {
               id: 'heart-sodium-$dateKey',
               title: 'Asupan natrium tinggi',
               message:
-                  'Asupan natrium hari ini sudah ${(natriumRatio * 100).toStringAsFixed(0)}% dari batas harian.',
+                  'Asupan natrium sudah mencapai ${(natriumRatio * 100).toStringAsFixed(0)}% dari batas harian.',
               typeKey: 'heart_sodium_warning',
               source: 'system',
               createdAt: now,
@@ -332,7 +435,7 @@ class AppNotificationService {
           AppNotification(
             id: 'heart-pressure-trend-$dateKey',
             title: 'Tren tekanan darah meningkat',
-            message: 'Tekanan darah terbaru menunjukkan tren naik dibanding catatan sebelumnya.',
+            message: 'Tekanan darah menunjukkan tren naik. Harap waspada dan istirahat.',
             typeKey: 'heart_pressure_trend',
             source: 'system',
             createdAt: now,
@@ -346,7 +449,7 @@ class AppNotificationService {
           AppNotification(
             id: 'heart-no-input-$dateKey',
             title: 'Belum ada input hari ini',
-            message: 'Catat makanan atau data kesehatan jantung hari ini agar pemantauan tetap lengkap.',
+            message: 'Catat makanan atau data kesehatan jantung hari ini.',
             typeKey: 'heart_daily_reminder',
             source: 'system',
             createdAt: now,
@@ -356,15 +459,11 @@ class AppNotificationService {
       }
 
       if (todaySymptoms.isEmpty || todayMeds.isEmpty) {
-        final missing = <String>[
-          if (todaySymptoms.isEmpty) 'gejala',
-          if (todayMeds.isEmpty) 'obat',
-        ].join(' dan ');
         notifications.add(
           AppNotification(
             id: 'heart-input-reminder-$dateKey',
-            title: 'Pengingat input harian jantung',
-            message: 'Belum ada input $missing untuk hari ini.',
+            title: 'Pengingat input harian',
+            message: 'Jangan lupa masukkan data gejala dan konsumsi obat hari ini.',
             typeKey: 'heart_input_reminder',
             source: 'system',
             createdAt: now,
@@ -384,7 +483,7 @@ class AppNotificationService {
             id: 'heart-family-alert-$dateKey',
             title: 'Kondisi jantung perlu perhatian keluarga',
             message:
-                'Terdapat tren pemeriksaan yang memburuk dan pola asupan hari ini belum sesuai target.',
+                'Tren kesehatan menurun dan asupan natrium tidak sesuai target.',
             typeKey: 'heart_family_alert',
             source: 'system',
             createdAt: now,
@@ -499,6 +598,42 @@ class AppNotificationService {
 
   static String _dateKey(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  static String _getDayNameIndonesian(int weekday) {
+    switch (weekday) {
+      case 1: return 'Senin';
+      case 2: return 'Selasa';
+      case 3: return 'Rabu';
+      case 4: return 'Kamis';
+      case 5: return 'Jumat';
+      case 6: return 'Sabtu';
+      case 7: return 'Minggu';
+      default: return '';
+    }
+  }
+
+  static Future<void> _showLocalNotification(AppNotification item) async {
+    final id = item.id.hashCode;
+    const androidDetails = AndroidNotificationDetails(
+      'direka_alerts',
+      'Alerts & Reminders',
+      channelDescription: 'Pemberitahuan kesehatan DiReKa',
+      importance: Importance.max,
+      priority: Priority.high,
+    );
+    const iosDetails = DarwinNotificationDetails();
+    const platformDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    await _localNotifications.show(
+      id,
+      item.title,
+      item.message,
+      platformDetails,
+    );
   }
 
   static double _toDouble(dynamic value) {

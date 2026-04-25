@@ -197,6 +197,7 @@ class AuthService {
         hemodialysisData: primaryUser.hemodialysisData,
         hasEdema: primaryUser.hasEdema,
         createdAt: DateTime.now(),
+        primaryUserUid: primaryUser.uid, // Simpan referensi ke akun utama
       );
       await _userService.saveUser(familyUser);
 

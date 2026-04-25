@@ -9,6 +9,7 @@ import 'package:universal_html/html.dart' as html;
 
 import '../../core/app_colors.dart';
 import '../../core/app_constants.dart';
+import '../../models/activity_level.dart';
 import '../../models/disease_type.dart';
 import '../../models/user_model.dart';
 import '../../services/admin_service.dart';
@@ -36,6 +37,12 @@ class _AdminScreenState extends State<AdminScreen> {
   int _totalUsers = 0;
   Map<DiseaseType, int> _usersByDisease = {};
   List<UserModel> _users = [];
+  
+  // Search & Filter state for Users
+  String _userSearchQuery = '';
+  DiseaseType? _userDiseaseFilter;
+  int _userCurrentPage = 0;
+  static const int _userPageSize = 10;
 
   bool _isFoodLoading = false;
   String? _foodError;
@@ -385,6 +392,276 @@ class _AdminScreenState extends State<AdminScreen> {
     }
   }
 
+  void _showUserDetailDialog(UserModel user) {
+    final isFamily = user.primaryUserUid != null;
+    String primaryName = '-';
+    if (isFamily) {
+      try {
+        primaryName = _users.firstWhere((u) => u.uid == user.primaryUserUid).name;
+      } catch (_) { primaryName = 'Akun Utama'; }
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog.fullscreen(
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text('Detail Profil Pengguna'),
+            leading: IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () => Navigator.pop(ctx),
+            ),
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header Profil
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 32,
+                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                      child: Text(
+                        user.name[0].toUpperCase(),
+                        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.primary),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user.name,
+                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                          ),
+                          Text(user.email, style: const TextStyle(color: AppColors.textSecondary)),
+                        ],
+                      ),
+                    ),
+                    if (isFamily)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.orange,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'AKUN KELUARGA',
+                          style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 32),
+
+                // Data Biografi
+                _buildDetailSection('Data Biografi', [
+                  _detailRow('Jenis Kelamin', user.gender),
+                  _detailRow('Tanggal Lahir', DateFormat('dd MMMM yyyy', 'id_ID').format(user.dateOfBirth)),
+                  _detailRow('Usia', user.ageString),
+                  _detailRow('Pendidikan', user.education.isEmpty ? '-' : user.education),
+                  _detailRow('Pekerjaan', user.occupation.isEmpty ? '-' : user.occupation),
+                ]),
+
+                // Alamat
+                _buildDetailSection('Alamat', [
+                  _detailRow('Desa/Kelurahan', user.addressVillage),
+                  _detailRow('Kecamatan', user.addressDistrict),
+                  _detailRow('Kota/Kabupaten', user.addressCity),
+                  _detailRow('Provinsi', user.addressProvince),
+                ]),
+
+                // Data Klinis Umum
+                _buildDetailSection('Informasi Klinis & Gizi', [
+                  _detailRow('Jenis Penyakit', DiseaseTypeExtension.getLabel(user.diseaseType)),
+                  _detailRow('Berat Badan', '${user.weight} kg'),
+                  _detailRow('Tinggi Badan', '${user.height} cm'),
+                  _detailRow('IMT', '${user.bmi.toStringAsFixed(1)} (${user.bmiCategory})'),
+                  _detailRow('Berat Badan Ideal', '${user.bbi.toStringAsFixed(1)} kg'),
+                  _detailRow('Tingkat Aktivitas', user.activityLevel?.label ?? '-'),
+                  _detailRow('Output Urin', '${user.urinOutput} ml/hari'),
+                ]),
+
+                // Data Penyakit Spesifik
+                if (user.diseaseType == DiseaseType.type2DiabetesMellitus)
+                  _buildDetailSection('Data Khusus Diabetes', [
+                    _detailRow('Lama Menderita DM', '${user.diabetesDurationYears} tahun'),
+                    _detailRow('Terapi Insulin', user.usesInsulinTherapy ? 'Ya' : 'Tidak'),
+                    if (user.usesInsulinTherapy)
+                      _detailRow('Lama Pakai Insulin', '${user.insulinDurationYears} tahun'),
+                  ]),
+
+                if (user.diseaseType == DiseaseType.heartFailure)
+                  _buildDetailSection('Data Khusus Jantung', [
+                    _detailRow('Lama Jantung Koroner', '${user.heartDiseaseDurationYears} tahun'),
+                    _detailRow('Riwayat Bengkak', user.hasEdema ? 'Ada' : 'Tidak Ada'),
+                  ]),
+
+                // Info Akun
+                _buildDetailSection('Informasi Sistem', [
+                  _detailRow('Tipe Akun', isFamily ? 'Keluarga' : 'Utama'),
+                  if (isFamily) _detailRow('Akun Utama', primaryName),
+                  _detailRow('Terdaftar Sejak', DateFormat('dd MMM yyyy HH:mm', 'id_ID').format(user.createdAt)),
+                  _detailRow('Login Terakhir', user.lastLoginDate != null ? DateFormat('dd MMM yyyy HH:mm', 'id_ID').format(user.lastLoginDate!) : '-'),
+                  _detailRow('Current Streak', '${user.currentStreak} hari'),
+                ]),
+                const SizedBox(height: 50),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailSection(String title, List<Widget> children) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Text(
+            title.toUpperCase(),
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary, letterSpacing: 1),
+          ),
+        ),
+        Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(children: children),
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+
+  Widget _detailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 130,
+            child: Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary, fontSize: 14),
+              textAlign: TextAlign.right,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _exportUsersToXlsx() async {
+    final filtered = _users.where((u) {
+      final matchesSearch = u.name.toLowerCase().contains(_userSearchQuery.toLowerCase()) ||
+          u.email.toLowerCase().contains(_userSearchQuery.toLowerCase());
+      final matchesDisease = _userDiseaseFilter == null || u.diseaseType == _userDiseaseFilter;
+      return matchesSearch && matchesDisease;
+    }).toList();
+
+    if (filtered.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tidak ada data user untuk diexport.')),
+      );
+      return;
+    }
+
+    if (!kIsWeb) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Export XLSX saat ini tersedia untuk Web.')),
+      );
+      return;
+    }
+
+    final workbook = xlsio.Workbook();
+    final sheet = workbook.worksheets[0];
+    sheet.name = 'Daftar Pengguna';
+
+    final headers = [
+      'Nama', 'Email', 'Gender', 'Tgl Lahir', 'Usia',
+      'Desa', 'Kecamatan', 'Kota/Kab', 'Provinsi',
+      'Pendidikan', 'Pekerjaan', 'Penyakit',
+      'BB (kg)', 'TB (cm)', 'IMT', 'Kategori IMT', 'BBI (kg)',
+      'Lama DM (thn)', 'Terapi Insulin', 'Lama Insulin (thn)',
+      'Lama Jantung (thn)', 'Riwayat Bengkak',
+      'Urin Output (ml)', 'Aktifitas Fisik',
+      'Tipe Akun', 'Tautan Dari', 'Tgl Daftar'
+    ];
+
+    for (var i = 0; i < headers.length; i++) {
+      sheet.getRangeByIndex(1, i + 1).setText(headers[i]);
+    }
+
+    var rowIndex = 2;
+    for (final u in filtered) {
+      final isFamily = u.primaryUserUid != null;
+      String primaryName = '-';
+      if (isFamily) {
+        try {
+          primaryName = _users.firstWhere((p) => p.uid == u.primaryUserUid).name;
+        } catch (_) { primaryName = 'Akun Utama'; }
+      }
+
+      sheet.getRangeByIndex(rowIndex, 1).setText(u.name);
+      sheet.getRangeByIndex(rowIndex, 2).setText(u.email);
+      sheet.getRangeByIndex(rowIndex, 3).setText(u.gender);
+      sheet.getRangeByIndex(rowIndex, 4).setText(DateFormat('yyyy-MM-dd').format(u.dateOfBirth));
+      sheet.getRangeByIndex(rowIndex, 5).setText(u.ageString);
+      sheet.getRangeByIndex(rowIndex, 6).setText(u.addressVillage);
+      sheet.getRangeByIndex(rowIndex, 7).setText(u.addressDistrict);
+      sheet.getRangeByIndex(rowIndex, 8).setText(u.addressCity);
+      sheet.getRangeByIndex(rowIndex, 9).setText(u.addressProvince);
+      sheet.getRangeByIndex(rowIndex, 10).setText(u.education);
+      sheet.getRangeByIndex(rowIndex, 11).setText(u.occupation);
+      sheet.getRangeByIndex(rowIndex, 12).setText(DiseaseTypeExtension.getLabel(u.diseaseType));
+      sheet.getRangeByIndex(rowIndex, 13).setNumber(u.weight);
+      sheet.getRangeByIndex(rowIndex, 14).setNumber(u.height);
+      sheet.getRangeByIndex(rowIndex, 15).setNumber(double.parse(u.bmi.toStringAsFixed(2)));
+      sheet.getRangeByIndex(rowIndex, 16).setText(u.bmiCategory);
+      sheet.getRangeByIndex(rowIndex, 17).setNumber(double.parse(u.bbi.toStringAsFixed(2)));
+      sheet.getRangeByIndex(rowIndex, 18).setNumber(u.diabetesDurationYears);
+      sheet.getRangeByIndex(rowIndex, 19).setText(u.usesInsulinTherapy ? 'Ya' : 'Tidak');
+      sheet.getRangeByIndex(rowIndex, 20).setNumber(u.insulinDurationYears);
+      sheet.getRangeByIndex(rowIndex, 21).setNumber(u.heartDiseaseDurationYears);
+      sheet.getRangeByIndex(rowIndex, 22).setText(u.hasEdema ? 'Ya' : 'Tidak');
+      sheet.getRangeByIndex(rowIndex, 23).setNumber(u.urinOutput);
+      sheet.getRangeByIndex(rowIndex, 24).setText(u.activityLevel?.label ?? '-');
+      sheet.getRangeByIndex(rowIndex, 25).setText(isFamily ? 'KELUARGA' : 'UTAMA');
+      sheet.getRangeByIndex(rowIndex, 26).setText(primaryName);
+      sheet.getRangeByIndex(rowIndex, 27).setText(DateFormat('yyyy-MM-dd HH:mm').format(u.createdAt));
+      
+      rowIndex++;
+    }
+
+    for (var i = 1; i <= headers.length; i++) { sheet.autoFitColumn(i); }
+
+    final bytes = workbook.saveAsStream();
+    workbook.dispose();
+
+    final blob = html.Blob([Uint8List.fromList(bytes)], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    final url = html.Url.createObjectUrlFromBlob(blob);
+    html.AnchorElement(href: url)
+      ..setAttribute('download', 'data_user_direka_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}.xlsx')
+      ..click();
+    html.Url.revokeObjectUrl(url);
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Export Data User berhasil.')));
+  }
+
   Future<void> _exportFoodToXlsx() async {
     final rows = _filteredFoodLogs();
     if (rows.isEmpty) {
@@ -710,10 +987,17 @@ class _AdminScreenState extends State<AdminScreen> {
           ),
           const SizedBox(height: 16),
           Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
               border: Border.all(color: AppColors.border),
             ),
             child: Column(
@@ -721,65 +1005,91 @@ class _AdminScreenState extends State<AdminScreen> {
               children: [
                 const Text(
                   'Distribusi Penyakit Pengguna',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 24),
                 SizedBox(
-                  height: 220,
-                  child: BarChart(
-                    BarChartData(
-                      maxY: maxValue + (maxValue * 0.2),
-                      gridData: const FlGridData(show: false),
-                      borderData: FlBorderData(show: false),
-                      alignment: BarChartAlignment.spaceAround,
-                      titlesData: FlTitlesData(
-                        rightTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
-                        topTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
-                        leftTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: true, reservedSize: 28),
-                        ),
-                        bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            getTitlesWidget: (value, _) {
-                              final labels = ['Ginjal', 'Diabetes', 'Jantung'];
-                              final idx = value.toInt();
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 8),
-                                child: Text(
-                                  idx >= 0 && idx < labels.length
-                                      ? labels[idx]
-                                      : '-',
-                                  style: const TextStyle(fontSize: 11),
+                  height: 200,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: PieChart(
+                          PieChartData(
+                            sectionsSpace: 4,
+                            centerSpaceRadius: 40,
+                            sections: DiseaseType.values.map((disease) {
+                              final count = _usersByDisease[disease] ?? 0;
+                              final percentage = _totalUsers > 0 ? (count / _totalUsers * 100) : 0.0;
+                              
+                              Color color;
+                              switch (disease) {
+                                case DiseaseType.chronicKidneyDisease: color = AppColors.kidneyColor; break;
+                                case DiseaseType.type2DiabetesMellitus: color = AppColors.diabetesColor; break;
+                                case DiseaseType.heartFailure: color = AppColors.heartColor; break;
+                              }
+
+                              return PieChartSectionData(
+                                color: color,
+                                value: count.toDouble(),
+                                title: count > 0 ? '${percentage.toStringAsFixed(0)}%' : '',
+                                radius: 50,
+                                titleStyle: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
                                 ),
                               );
-                            },
+                            }).toList(),
                           ),
                         ),
                       ),
-                      barGroups: [
-                        for (var i = 0; i < diseaseCounts.length; i++)
-                          BarChartGroupData(
-                            x: i,
-                            barRods: [
-                              BarChartRodData(
-                                toY: diseaseCounts[i],
-                                width: 24,
-                                color: const [
-                                  AppColors.kidneyColor,
-                                  AppColors.diabetesColor,
-                                  AppColors.heartColor,
-                                ][i],
-                                borderRadius: BorderRadius.circular(6),
+                      const SizedBox(width: 20),
+                      Expanded(
+                        flex: 2,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: DiseaseType.values.map((disease) {
+                            final count = _usersByDisease[disease] ?? 0;
+                            Color color;
+                            switch (disease) {
+                              case DiseaseType.chronicKidneyDisease: color = AppColors.kidneyColor; break;
+                              case DiseaseType.type2DiabetesMellitus: color = AppColors.diabetesColor; break;
+                              case DiseaseType.heartFailure: color = AppColors.heartColor; break;
+                            }
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 10,
+                                    height: 10,
+                                    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      DiseaseTypeExtension.getLabel(disease),
+                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  Text(
+                                    '$count',
+                                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                      ],
-                    ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -798,30 +1108,122 @@ class _AdminScreenState extends State<AdminScreen> {
       return _ErrorView(message: _usersError!, onRetry: _loadUsersTab);
     }
 
+    // Filter logic
+    final filtered = _users.where((u) {
+      final matchesSearch = u.name.toLowerCase().contains(_userSearchQuery.toLowerCase()) ||
+          u.email.toLowerCase().contains(_userSearchQuery.toLowerCase());
+      final matchesDisease = _userDiseaseFilter == null || u.diseaseType == _userDiseaseFilter;
+      return matchesSearch && matchesDisease;
+    }).toList();
+
+    // Pagination logic
+    final totalFiltered = filtered.length;
+    final totalPages = (totalFiltered / _userPageSize).ceil();
+    final startIdx = _userCurrentPage * _userPageSize;
+    final endIdx = math.min(startIdx + _userPageSize, totalFiltered);
+    final pageItems = totalFiltered > 0 ? filtered.sublist(startIdx, endIdx) : [];
+
     return RefreshIndicator(
       onRefresh: _loadUsersTab,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           _StatsHeader(totalUsers: _totalUsers, usersByDisease: _usersByDisease),
-          const SizedBox(height: 16),
-          const Text(
-            'Daftar User',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w600,
+          const SizedBox(height: 20),
+          
+          // Search & Filter Header
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Manajemen Pengguna',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                ),
+              ),
+              OutlinedButton.icon(
+                onPressed: _exportUsersToXlsx,
+                icon: const Icon(Icons.download_outlined, size: 18),
+                label: const Text('Export XLSX'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          
+          // Search Bar
+          TextField(
+            decoration: InputDecoration(
+              hintText: 'Cari nama atau email...',
+              prefixIcon: const Icon(Icons.search),
+              filled: true,
+              fillColor: AppColors.surface,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: AppColors.border),
+              ),
+            ),
+            onChanged: (val) {
+              setState(() {
+                _userSearchQuery = val;
+                _userCurrentPage = 0; // Reset ke page 1
+              });
+            },
+          ),
+          const SizedBox(height: 12),
+          
+          // Disease Filter Chips
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                ChoiceChip(
+                  label: const Text('Semua'),
+                  selected: _userDiseaseFilter == null,
+                  onSelected: (val) => setState(() {
+                    _userDiseaseFilter = null;
+                    _userCurrentPage = 0;
+                  }),
+                ),
+                const SizedBox(width: 8),
+                ...DiseaseType.values.map((d) => Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text(DiseaseTypeExtension.getLabel(d)),
+                    selected: _userDiseaseFilter == d,
+                    onSelected: (val) => setState(() {
+                      _userDiseaseFilter = val ? d : null;
+                      _userCurrentPage = 0;
+                    }),
+                  ),
+                )),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          if (_users.isEmpty)
-            const _EmptyView(message: 'Belum ada user terdaftar.')
-          else
-            ..._users.map(
-              (user) => Container(
+          const SizedBox(height: 16),
+
+          if (totalFiltered == 0)
+            const _EmptyView(message: 'Tidak ada pengguna yang sesuai kriteria.')
+          else ...[
+            Text(
+              'Menampilkan \${startIdx + 1} - \$endIdx dari \$totalFiltered user',
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 10),
+            ...pageItems.map((user) {
+              final isFamily = user.primaryUserUid != null;
+              // Cari nama akun utama jika ini akun keluarga
+              String? primaryName;
+              if (isFamily) {
+                try {
+                  primaryName = _users.firstWhere((u) => u.uid == user.primaryUserUid).name;
+                } catch (_) {
+                  primaryName = 'Akun Utama';
+                }
+              }
+
+              return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: isFamily ? const Color(0xFFFFF9C4) : AppColors.surface, // Kuning untuk keluarga
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
@@ -830,35 +1232,141 @@ class _AdminScreenState extends State<AdminScreen> {
                       offset: const Offset(0, 2),
                     ),
                   ],
-                  border: Border.all(color: AppColors.divider.withValues(alpha: 0.5)),
+                  border: Border.all(
+                    color: isFamily ? Colors.orange.withValues(alpha: 0.3) : AppColors.divider.withValues(alpha: 0.5),
+                    width: isFamily ? 1.5 : 1,
+                  ),
                 ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  leading: CircleAvatar(
-                    radius: 22,
-                    backgroundColor: AppColors.primaryLight,
-                    child: Text(
-                      user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
-                      style: const TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.bold, fontSize: 18),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () => _showUserDetailDialog(user),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    leading: CircleAvatar(
+                      radius: 22,
+                      backgroundColor: isFamily ? Colors.orange.withValues(alpha: 0.2) : AppColors.primaryLight,
+                      child: Text(
+                        user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
+                        style: TextStyle(
+                          color: isFamily ? Colors.orange.shade900 : AppColors.primaryDark,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ),
+                    title: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            user.name,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                          ),
+                        ),
+                        if (isFamily)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.orange,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'KELUARGA',
+                              style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                      ],
+                    ),
+                    subtitle: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(user.email),
+                          const SizedBox(height: 2),
+                          Text(
+                            DiseaseTypeExtension.getLabel(user.diseaseType),
+                            style: TextStyle(
+                              color: isFamily ? Colors.orange.shade800 : AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
+                          ),
+                          if (isFamily) ...[
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                const Icon(Icons.link, size: 12, color: Colors.orange),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    'Tautan keluarga dari: $primaryName',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      fontStyle: FontStyle.italic,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    isThreeLine: true,
+                    trailing: Text(
+                      DateFormat('dd MMM yyyy', 'id_ID').format(user.createdAt),
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                  title: Text(user.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                  subtitle: Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text('${user.email}\n${user.diseaseType.shortLabel}', style: const TextStyle(height: 1.4)),
-                  ),
-                  isThreeLine: true,
-                  trailing: Text(
-                    DateFormat('dd MMM yyyy', 'id_ID').format(user.createdAt),
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                ),
+              );
+            }),
+            
+            // Pagination Controls
+            if (totalPages > 1) ...[
+              const SizedBox(height: 20),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.chevron_left),
+                      onPressed: _userCurrentPage > 0
+                          ? () => setState(() => _userCurrentPage--)
+                          : null,
                     ),
-                  ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'Hal ${_userCurrentPage + 1} / $totalPages',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_right),
+                      onPressed: _userCurrentPage < totalPages - 1
+                          ? () => setState(() => _userCurrentPage++)
+                          : null,
+                    ),
+                  ],
                 ),
               ),
-            ),
+            ],
+          ],
         ],
       ),
     );
@@ -1386,7 +1894,7 @@ class _StatsHeader extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      '${disease.shortLabel}: $count',
+                      '${DiseaseTypeExtension.getLabel(disease)}: $count',
                       style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: badgeColor),
                     ),
                   ],

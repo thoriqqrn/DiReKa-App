@@ -5,6 +5,7 @@ import '../../core/app_constants.dart';
 import '../../models/disease_type.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/disease_provider.dart';
+import '../../services/app_notification_service.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -144,6 +145,36 @@ class SettingsScreen extends StatelessWidget {
                       label: 'Jenis Penyakit',
                       subtitle: disease?.label ?? '-',
                     ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Notifikasi
+              _SectionCard(
+                title: 'Notifikasi',
+                children: [
+                  _SettingsTile(
+                    icon: Icons.notifications_active_outlined,
+                    label: 'Izinkan Notifikasi HP',
+                    subtitle: 'Aktifkan izin untuk menerima peringatan kesehatan di bar HP',
+                    onTap: () async {
+                      await AppNotificationService.requestPermissions();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Permintaan izin notifikasi dikirim.')),
+                        );
+                      }
+                    },
+                  ),
+                  const Divider(height: 1),
+                  _SettingsTile(
+                    icon: Icons.notification_important_outlined,
+                    label: 'Tes Kirim Notifikasi',
+                    subtitle: 'Coba kirim satu notifikasi tes ke HP ini',
+                    onTap: () async {
+                      await AppNotificationService.sendTestNotification();
+                    },
+                  ),
                 ],
               ),
               const SizedBox(height: 20),

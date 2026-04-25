@@ -32,6 +32,7 @@ class UserModel {
   final int longestStreak;
   final DateTime? lastLoginDate;
   final List<DateTime> loginDates;
+  final String? primaryUserUid; // UID akun utama jika ini adalah akun keluarga
 
   UserModel({
     required this.uid,
@@ -61,6 +62,7 @@ class UserModel {
     this.longestStreak = 0,
     this.lastLoginDate,
     this.loginDates = const [],
+    this.primaryUserUid,
   });
 
   // ── Kalkulasi Otomatis ────────────────────────────────────────────────────
@@ -168,6 +170,7 @@ class UserModel {
       'bmi': double.parse(bmi.toStringAsFixed(2)),
       'bbi': double.parse(bbi.toStringAsFixed(2)),
       'createdAt': Timestamp.fromDate(createdAt),
+      'primaryUserUid': primaryUserUid,
     };
   }
 
@@ -219,6 +222,7 @@ class UserModel {
               ?.map((t) => (t as Timestamp).toDate())
               .toList() ??
           [],
+      primaryUserUid: map['primaryUserUid'] as String?,
     );
   }
 
@@ -287,6 +291,7 @@ class UserModel {
       longestStreak: longestStreak ?? this.longestStreak,
       lastLoginDate: lastLoginDate ?? this.lastLoginDate,
       loginDates: loginDates ?? this.loginDates,
+      primaryUserUid: primaryUserUid ?? this.primaryUserUid,
     );
   }
 }
