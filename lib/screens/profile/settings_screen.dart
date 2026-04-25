@@ -87,19 +87,26 @@ class SettingsScreen extends StatelessWidget {
                       value: user.occupation.isEmpty ? '-' : user.occupation,
                       icon: Icons.work_outline,
                     ),
-                    if (user.diseaseType == DiseaseType.type2DiabetesMellitus) ...[
+                    if (user.diseaseType == DiseaseType.type2DiabetesMellitus ||
+                        user.diseaseType == DiseaseType.heartFailure) ...[
                       const Divider(height: 1),
                       _InfoRow(
-                        label: 'Lama DM',
-                        value: '${user.diabetesDurationYears.toStringAsFixed(1)} tahun',
+                        label: user.diseaseType == DiseaseType.type2DiabetesMellitus
+                            ? 'Lama DM'
+                            : 'Lama Jantung Koroner',
+                        value: user.diseaseType == DiseaseType.type2DiabetesMellitus
+                            ? '${user.diabetesDurationYears.toStringAsFixed(1)} tahun'
+                            : '${user.heartDiseaseDurationYears.toStringAsFixed(1)} tahun',
                         icon: Icons.timelapse_outlined,
                       ),
-                      const Divider(height: 1),
-                      _InfoRow(
-                        label: 'Terapi insulin',
-                        value: user.usesInsulinTherapy ? 'Ya' : 'Tidak',
-                        icon: Icons.medication_outlined,
-                      ),
+                      if (user.diseaseType == DiseaseType.type2DiabetesMellitus) ...[
+                        const Divider(height: 1),
+                        _InfoRow(
+                          label: 'Terapi insulin',
+                          value: user.usesInsulinTherapy ? 'Ya' : 'Tidak',
+                          icon: Icons.medication_outlined,
+                        ),
+                      ],
                     ],
                   ],
                 ),

@@ -109,7 +109,7 @@ class NutritionNeeds {
     );
   }
 
-  /// Rumus kebutuhan gizi untuk pasien Gagal Jantung (Heart Failure).
+  /// Rumus kebutuhan gizi untuk pasien Jantung Koroner (Heart Failure).
   ///
   /// Harris Benedict BMR:
   /// Laki-laki: BMR = 66 + (13.7 × BB) + (5 × TB) - (6.8 × U)
@@ -140,7 +140,8 @@ class NutritionNeeds {
         : 66 + (13.7 * weight) + (5 * height) - (6.8 * age);
 
     // Energi total = BMR × Faktor Aktivitas × 1.1
-    final energiTotal = bmr * koreksiFraksiAktivitas * 1.1;
+    // Faktor Aktivitas = 1 + koreksiFraksiAktivitas (misal ringan 0.2 -> 1.2)
+    final energiTotal = bmr * (1.0 + koreksiFraksiAktivitas) * 1.1;
 
     // Macronutrient dari persentase energi
     final protein = (0.20 * energiTotal) / 4; // 20% energi ÷ 4 kkal/g

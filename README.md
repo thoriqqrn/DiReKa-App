@@ -22,7 +22,7 @@
 |---|---|
 | Penyakit Ginjal Kronis | 🫘 |
 | Diabetes Mellitus Tipe 2 | 🩸 |
-| Gagal Jantung | 🫀 |
+| Jantung Koroner | 🫀 |
 
 ### Panel Admin
 - Login admin hardcoded (`admin@direka.app`)

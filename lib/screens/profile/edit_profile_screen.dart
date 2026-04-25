@@ -31,6 +31,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _occupationCtrl = TextEditingController();
   final _urinOutputCtrl = TextEditingController();
   final _dmDurationCtrl = TextEditingController();
+  final _heartDurationCtrl = TextEditingController();
 
   DateTime? _dateOfBirth;
   DiseaseType? _diseaseType;
@@ -95,6 +96,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _dmDurationCtrl.text = user.diabetesDurationYears > 0
             ? user.diabetesDurationYears.toString()
             : '';
+        _heartDurationCtrl.text = user.heartDiseaseDurationYears > 0
+            ? user.heartDiseaseDurationYears.toString()
+            : '';
         _dateOfBirth = user.dateOfBirth;
         _diseaseType = user.diseaseType;
         _gender = user.gender;
@@ -129,6 +133,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _occupationCtrl.dispose();
     _urinOutputCtrl.dispose();
     _dmDurationCtrl.dispose();
+    _heartDurationCtrl.dispose();
     _hdLocationCtrl.dispose();
     super.dispose();
   }
@@ -487,14 +492,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                   ],
 
-                  // Field aktivitas — hanya untuk pasien DM
-                  if (_diseaseType == DiseaseType.type2DiabetesMellitus) ...[
+                  // Field aktivitas — untuk pasien DM & Jantung Koroner
+                  if (_diseaseType == DiseaseType.type2DiabetesMellitus ||
+                      _diseaseType == DiseaseType.heartFailure) ...[
                     const SizedBox(height: 20),
-                    _SectionLabel(label: 'Data Klinis Diabetes'),
+                    _SectionLabel(
+                      label:
+                          _diseaseType == DiseaseType.type2DiabetesMellitus
+                              ? 'Data Klinis Diabetes'
+                              : 'Data Klinis Jantung Koroner',
+                    ),
                     const SizedBox(height: 10),
                     CustomTextField(
-                      label: 'Lama menderita DM (tahun)',
-                      controller: _dmDurationCtrl,
+                      label:
+                          _diseaseType == DiseaseType.type2DiabetesMellitus
+                              ? 'Lama menderita DM (tahun)'
+                              : 'Lama menderita Jantung Koroner (tahun)',
+                      controller:
+                          _diseaseType == DiseaseType.type2DiabetesMellitus
+                              ? _dmDurationCtrl
+                              : _heartDurationCtrl,
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
@@ -502,22 +519,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       validator: (v) {
                         final value = double.tryParse(v ?? '');
                         if (value == null || value < 0) {
-                          return 'Lama DM wajib diisi';
+                          return 'Lama penyakit wajib diisi';
                         }
                         return null;
                       },
                     ),
-                    const SizedBox(height: 12),
-                    SwitchListTile.adaptive(
-                      value: _usesInsulinTherapy,
-                      onChanged: (value) =>
-                          setState(() => _usesInsulinTherapy = value),
-                      title: const Text('Sedang menjalani insulin'),
-                      subtitle: const Text(
-                        'Aktifkan jika pasien saat ini menggunakan terapi insulin.',
+                    if (_diseaseType == DiseaseType.type2DiabetesMellitus) ...[
+                      const SizedBox(height: 12),
+                      SwitchListTile.adaptive(
+                        value: _usesInsulinTherapy,
+                        onChanged: (value) =>
+                            setState(() => _usesInsulinTherapy = value),
+                        title: const Text('Sedang menjalani insulin'),
+                        subtitle: const Text(
+                          'Aktifkan jika pasien saat ini menggunakan terapi insulin.',
+                        ),
+                        contentPadding: EdgeInsets.zero,
                       ),
-                      contentPadding: EdgeInsets.zero,
-                    ),
+                    ],
                     const SizedBox(height: 10),
                     _ActivityLevelSelector(
                       value: _activityLevel,
@@ -641,14 +660,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       gender: _gender,
       urinOutput:
           double.tryParse(_urinOutputCtrl.text) ?? currentUser.urinOutput,
-      activityLevel: _diseaseType == DiseaseType.type2DiabetesMellitus
+      activityLevel: (_diseaseType == DiseaseType.type2DiabetesMellitus ||
+              _diseaseType == DiseaseType.heartFailure)
           ? (_activityLevel ?? ActivityLevel.ringan)
           : null,
       diabetesDurationYears:
           double.tryParse(_dmDurationCtrl.text.trim()) ??
               currentUser.diabetesDurationYears,
+      heartDiseaseDurationYears:
+          double.tryParse(_heartDurationCtrl.text.trim()) ??
+              currentUser.heartDiseaseDurationYears,
       usesInsulinTherapy: _usesInsulinTherapy,
-      clearActivityLevel: _diseaseType != DiseaseType.type2DiabetesMellitus,
+      clearActivityLevel: !(_diseaseType == DiseaseType.type2DiabetesMellitus ||
+          _diseaseType == DiseaseType.heartFailure),
       hemodialysisData: hemodialysisData,
       clearHemodialysisData: _diseaseType != DiseaseType.chronicKidneyDisease,
     );

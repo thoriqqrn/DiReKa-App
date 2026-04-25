@@ -20,11 +20,12 @@ class UserModel {
   final double weight; // kg
   final double height; // cm
   final double urinOutput; // ml/hari — output urin 24 jam (untuk pasien ginjal)
-  final ActivityLevel? activityLevel; // hanya untuk DM
+  final ActivityLevel? activityLevel; // untuk DM dan Jantung Koroner
   final double diabetesDurationYears; // hanya untuk DM
+  final double heartDiseaseDurationYears; // hanya untuk Jantung Koroner
   final bool usesInsulinTherapy; // hanya untuk DM
   final HemodialysisData? hemodialysisData; // hanya untuk penyakit ginjal
-  final bool hasEdema; // riwayat pembengkakan — untuk pasien gagal jantung
+  final bool hasEdema; // riwayat pembengkakan — untuk pasien Jantung Koroner
   final DateTime createdAt;
   final int currentStreak;
   final int longestStreak;
@@ -49,6 +50,7 @@ class UserModel {
     this.urinOutput = 300.0,
     this.activityLevel,
     this.diabetesDurationYears = 0.0,
+    this.heartDiseaseDurationYears = 0.0,
     this.usesInsulinTherapy = false,
     this.hemodialysisData,
     this.hasEdema = false,
@@ -149,6 +151,7 @@ class UserModel {
       'urinOutput': urinOutput,
       'activityLevel': activityLevel?.value,
       'diabetesDurationYears': diabetesDurationYears,
+      'heartDiseaseDurationYears': heartDiseaseDurationYears,
       'usesInsulinTherapy': usesInsulinTherapy,
       'hemodialysisData': hemodialysisData?.toMap(),
       'hasEdema': hasEdema,
@@ -180,6 +183,8 @@ class UserModel {
           : null,
       diabetesDurationYears:
           (map['diabetesDurationYears'] as num?)?.toDouble() ?? 0.0,
+      heartDiseaseDurationYears:
+          (map['heartDiseaseDurationYears'] as num?)?.toDouble() ?? 0.0,
       usesInsulinTherapy: (map['usesInsulinTherapy'] as bool?) ?? false,
       hemodialysisData: map['hemodialysisData'] != null
           ? HemodialysisData.fromMap(
@@ -220,6 +225,7 @@ class UserModel {
     ActivityLevel? activityLevel,
     bool clearActivityLevel = false,
     double? diabetesDurationYears,
+    double? heartDiseaseDurationYears,
     bool? usesInsulinTherapy,
     HemodialysisData? hemodialysisData,
     bool clearHemodialysisData = false,
@@ -251,6 +257,8 @@ class UserModel {
           : (activityLevel ?? this.activityLevel),
       diabetesDurationYears:
           diabetesDurationYears ?? this.diabetesDurationYears,
+      heartDiseaseDurationYears:
+          heartDiseaseDurationYears ?? this.heartDiseaseDurationYears,
       usesInsulinTherapy: usesInsulinTherapy ?? this.usesInsulinTherapy,
       hemodialysisData: clearHemodialysisData
           ? null

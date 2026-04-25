@@ -30,13 +30,14 @@ class _GoogleCompleteProfileScreenState
   final _weightCtrl = TextEditingController();
   final _heightCtrl = TextEditingController();
   final _dmDurationCtrl = TextEditingController();
+  final _heartDurationCtrl = TextEditingController();
 
   DateTime? _dateOfBirth;
   DiseaseType? _diseaseType;
   String _gender = 'laki-laki';
   ActivityLevel? _activityLevel;
   bool _usesInsulinTherapy = false;
-  bool _hasEdema = false; // riwayat pembengkakan — untuk pasien gagal jantung
+  bool _hasEdema = false; // riwayat pembengkakan — untuk pasien Jantung Koroner
 
   double? get _bmi {
     final w = double.tryParse(_weightCtrl.text);
@@ -76,6 +77,7 @@ class _GoogleCompleteProfileScreenState
     _weightCtrl.dispose();
     _heightCtrl.dispose();
     _dmDurationCtrl.dispose();
+    _heartDurationCtrl.dispose();
     super.dispose();
   }
 
@@ -324,7 +326,7 @@ class _GoogleCompleteProfileScreenState
                     _BmiInfo(bmi: _bmi!),
                   ],
 
-                  // Pertanyaan pembengkakan — hanya untuk pasien gagal jantung
+                  // Pertanyaan pembengkakan — hanya untuk pasien Jantung Koroner
                   if (_diseaseType == DiseaseType.heartFailure) ...[
                     const SizedBox(height: 16),
                     Container(
@@ -382,14 +384,26 @@ class _GoogleCompleteProfileScreenState
                     onChanged: (v) => setState(() => _gender = v),
                   ),
 
-                  // Tingkat Aktivitas — hanya untuk DM
-                  if (_diseaseType == DiseaseType.type2DiabetesMellitus) ...[
+                  // Field aktivitas — untuk pasien DM & Jantung Koroner
+                  if (_diseaseType == DiseaseType.type2DiabetesMellitus ||
+                      _diseaseType == DiseaseType.heartFailure) ...[
                     const SizedBox(height: 20),
-                    const _SectionLabel(label: 'Data Klinis Diabetes'),
+                    _SectionLabel(
+                      label:
+                          _diseaseType == DiseaseType.type2DiabetesMellitus
+                              ? 'Data Klinis Diabetes'
+                              : 'Data Klinis Jantung Koroner',
+                    ),
                     const SizedBox(height: 10),
                     CustomTextField(
-                      label: 'Lama menderita DM (tahun)',
-                      controller: _dmDurationCtrl,
+                      label:
+                          _diseaseType == DiseaseType.type2DiabetesMellitus
+                              ? 'Lama menderita DM (tahun)'
+                              : 'Lama menderita Jantung Koroner (tahun)',
+                      controller:
+                          _diseaseType == DiseaseType.type2DiabetesMellitus
+                              ? _dmDurationCtrl
+                              : _heartDurationCtrl,
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
@@ -397,22 +411,24 @@ class _GoogleCompleteProfileScreenState
                       validator: (v) {
                         final value = double.tryParse(v ?? '');
                         if (value == null || value < 0) {
-                          return 'Lama DM wajib diisi';
+                          return 'Lama penyakit wajib diisi';
                         }
                         return null;
                       },
                     ),
-                    const SizedBox(height: 12),
-                    SwitchListTile.adaptive(
-                      value: _usesInsulinTherapy,
-                      onChanged: (value) =>
-                          setState(() => _usesInsulinTherapy = value),
-                      title: const Text('Sedang menjalani insulin'),
-                      subtitle: const Text(
-                        'Aktifkan jika pasien saat ini menggunakan terapi insulin.',
+                    if (_diseaseType == DiseaseType.type2DiabetesMellitus) ...[
+                      const SizedBox(height: 12),
+                      SwitchListTile.adaptive(
+                        value: _usesInsulinTherapy,
+                        onChanged: (value) =>
+                            setState(() => _usesInsulinTherapy = value),
+                        title: const Text('Sedang menjalani insulin'),
+                        subtitle: const Text(
+                          'Aktifkan jika pasien saat ini menggunakan terapi insulin.',
+                        ),
+                        contentPadding: EdgeInsets.zero,
                       ),
-                      contentPadding: EdgeInsets.zero,
-                    ),
+                    ],
                     const SizedBox(height: 10),
                     const _SectionLabel(label: 'Tingkat Aktivitas Fisik'),
                     const SizedBox(height: 10),
@@ -474,11 +490,14 @@ class _GoogleCompleteProfileScreenState
       education: _educationCtrl.text.trim(),
       occupation: _occupationCtrl.text.trim(),
       gender: _gender,
-      activityLevel: _diseaseType == DiseaseType.type2DiabetesMellitus
+      activityLevel: (_diseaseType == DiseaseType.type2DiabetesMellitus ||
+              _diseaseType == DiseaseType.heartFailure)
           ? (_activityLevel ?? ActivityLevel.ringan)
           : null,
       diabetesDurationYears:
           double.tryParse(_dmDurationCtrl.text.trim()) ?? 0.0,
+      heartDiseaseDurationYears:
+          double.tryParse(_heartDurationCtrl.text.trim()) ?? 0.0,
       usesInsulinTherapy: _usesInsulinTherapy,
       hasEdema: _hasEdema,
     );
