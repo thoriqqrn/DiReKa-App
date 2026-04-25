@@ -2807,23 +2807,30 @@ class _DMDailyMealTable extends StatelessWidget {
       'energi': entries.fold(0.0, (sum, e) => sum + e.energi),
       'protein': entries.fold(0.0, (sum, e) => sum + e.protein),
       'lemak': entries.fold(0.0, (sum, e) => sum + e.lemak),
+      'karbohidrat': entries.fold(0.0, (sum, e) => sum + e.karbohidrat),
       'serat': entries.fold(0.0, (sum, e) => sum + e.serat),
     };
   }
 
   Map<String, double> _calculateDailyTotals() {
-    double totalEnergi = 0, totalProtein = 0, totalLemak = 0, totalSerat = 0;
+    double totalEnergi = 0,
+        totalProtein = 0,
+        totalLemak = 0,
+        totalCarb = 0,
+        totalSerat = 0;
     for (final meal in entriesByMeal.values) {
       final totals = _calculateMealTotals(meal);
       totalEnergi += totals['energi']!;
       totalProtein += totals['protein']!;
       totalLemak += totals['lemak']!;
+      totalCarb += totals['karbohidrat']!;
       totalSerat += totals['serat']!;
     }
     return {
       'energi': totalEnergi,
       'protein': totalProtein,
       'lemak': totalLemak,
+      'karbohidrat': totalCarb,
       'serat': totalSerat,
     };
   }
@@ -2898,12 +2905,14 @@ class _MealTableSection extends StatelessWidget {
     final targetEnergi = totalNeeds.energi * percentage;
     final targetProtein = totalNeeds.protein * percentage;
     final targetLemak = totalNeeds.lemak * percentage;
+    final targetKarbo = totalNeeds.karbohidrat * percentage;
     final targetSerat = totalNeeds.serat * percentage;
 
     final totals = calculateMealTotals(entries);
     final actualEnergi = totals['energi']!;
     final actualProtein = totals['protein']!;
     final actualLemak = totals['lemak']!;
+    final actualKarbo = totals['karbohidrat']!;
     final actualSerat = totals['serat']!;
 
     final energiRatio = targetEnergi > 0 ? actualEnergi / targetEnergi : 0.0;
@@ -3084,7 +3093,7 @@ class _MealTableSection extends StatelessWidget {
                       isBold: true,
                     ),
                     _tableDataCell(
-                      (totals['karbohidrat'] ?? 0).toStringAsFixed(1),
+                      actualKarbo.toStringAsFixed(1),
                       isBold: true,
                     ),
                     _tableDataCell(
@@ -3120,9 +3129,7 @@ class _MealTableSection extends StatelessWidget {
                       color: statusColor,
                     ),
                     _tableDataCell(
-                      (targetEnergi *
-                              (totalNeeds.karbohidrat / totalNeeds.energi))
-                          .toStringAsFixed(1),
+                      targetKarbo.toStringAsFixed(1),
                       isBold: true,
                       color: statusColor,
                     ),
@@ -3198,6 +3205,7 @@ class _DailyInterpretationTable extends StatelessWidget {
       MealType.makanSiang,
       MealType.selinganSiang,
       MealType.makanMalam,
+      MealType.selinganMalam,
     ];
 
     final dailyTotals = calculateDailyTotals();
@@ -3306,11 +3314,10 @@ class _DailyInterpretationTable extends StatelessWidget {
 
                 // Meal rows
                 for (final meal in mealOrder)
-                  if (meal.dmCaloriePercentage > 0)
-                    _buildMealInterpretationRow(
-                      meal,
-                      entriesByMeal[meal] ?? [],
-                    ),
+                  _buildMealInterpretationRow(
+                    meal,
+                    entriesByMeal[meal] ?? [],
+                  ),
               ],
             ),
           ),
@@ -3381,9 +3388,7 @@ class _DailyInterpretationTable extends StatelessWidget {
           color: statusColor,
         ),
         _interpDataCell(
-          (dailyTotals['energi']! *
-                  (totalNeeds.karbohidrat / totalNeeds.energi))
-              .toStringAsFixed(1),
+          dailyTotals['karbohidrat']!.toStringAsFixed(1),
           isBold: true,
           color: statusColor,
         ),
