@@ -284,6 +284,35 @@ class AdminService {
     await batch.commit();
   }
 
+  /// Kirim notifikasi ke SEMUA user terdaftar
+  Future<void> sendBroadcastNotification({
+    required String title,
+    required String message,
+  }) async {
+    final usersSnapshot = await _users.get();
+    final now = DateTime.now();
+    final batch = _db.batch();
+
+    for (final doc in usersSnapshot.docs) {
+      final uid = doc.id;
+      final notifId = 'broadcast_\${now.millisecondsSinceEpoch}';
+      final notifRef = _users.doc(uid).collection('notifications').doc(notifId);
+
+      batch.set(notifRef, {
+        'id': notifId,
+        'title': title,
+        'message': message,
+        'typeKey': 'broadcast',
+        'source': 'admin',
+        'createdAt': FieldValue.serverTimestamp(),
+        'isRead': false,
+        'diseaseType': 'all',
+      });
+    }
+
+    await batch.commit();
+  }
+
   AdminHealthRecordSummary _mapHealthDoc(
     Map<String, dynamic> data,
     String uid,

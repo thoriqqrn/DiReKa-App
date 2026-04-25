@@ -2,9 +2,91 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/app_colors.dart';
 import '../../core/app_constants.dart';
+import '../../services/admin_service.dart';
 
 class AdminSettingsScreen extends StatelessWidget {
   const AdminSettingsScreen({super.key});
+
+  void _showBroadcastDialog(BuildContext context) {
+    final titleCtrl = TextEditingController(text: 'Pemberitahuan Admin');
+    final messageCtrl = TextEditingController();
+    bool isSending = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocalState) => AlertDialog(
+          title: const Text('Kirim Broadcast Notifikasi'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Pesan ini akan dikirimkan ke SELURUH pengguna terdaftar aplikasi DiReKa.',
+                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: titleCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Judul Notifikasi',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: messageCtrl,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Pesan',
+                    hintText: 'Ketik pesan broadcast di sini...',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: isSending ? null : () => Navigator.pop(ctx),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: isSending ? null : () async {
+                if (messageCtrl.text.trim().isEmpty) return;
+                
+                setLocalState(() => isSending = true);
+                try {
+                  await AdminService().sendBroadcastNotification(
+                    title: titleCtrl.text.trim(),
+                    message: messageCtrl.text.trim(),
+                  );
+                  if (ctx.mounted) {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Notifikasi broadcast berhasil dikirim!')),
+                    );
+                  }
+                } catch (e) {
+                  if (ctx.mounted) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      SnackBar(content: Text('Gagal mengirim: $e')),
+                    );
+                  }
+                } finally {
+                  if (ctx.mounted) setLocalState(() => isSending = false);
+                }
+              },
+              child: isSending 
+                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                : const Text('Kirim Sekarang'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,40 +156,7 @@ class AdminSettingsScreen extends StatelessWidget {
                   icon: Icons.campaign_outlined,
                   label: 'Kirim Notifikasi ke Semua User',
                   subtitle: 'Broadcast pesan ke seluruh pengguna aktif',
-                  isSoon: true,
-                  onTap: () => _showSoon(context),
-                ),
-                const Divider(height: 1),
-                _SettingsTile(
-                  icon: Icons.schedule_outlined,
-                  label: 'Jadwal Pengingat Kesehatan',
-                  subtitle: 'Atur notifikasi pengingat otomatis untuk user',
-                  isSoon: true,
-                  onTap: () => _showSoon(context),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // Keamanan
-            const _SectionLabel(label: 'Keamanan'),
-            const SizedBox(height: 10),
-            _SettingsCard(
-              children: [
-                _SettingsTile(
-                  icon: Icons.lock_reset_outlined,
-                  label: 'Ganti Password Admin',
-                  subtitle: 'Perbarui kredensial masuk admin',
-                  isSoon: true,
-                  onTap: () => _showSoon(context),
-                ),
-                const Divider(height: 1),
-                _SettingsTile(
-                  icon: Icons.history_outlined,
-                  label: 'Riwayat Login Admin',
-                  subtitle: 'Pantau aktivitas masuk ke panel admin',
-                  isSoon: true,
-                  onTap: () => _showSoon(context),
+                  onTap: () => _showBroadcastDialog(context),
                 ),
               ],
             ),
