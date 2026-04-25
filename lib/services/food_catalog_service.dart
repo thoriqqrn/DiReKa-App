@@ -27,6 +27,31 @@ class FoodCatalogService {
     await _catalog.doc(food.id).set(data, SetOptions(merge: true));
   }
 
+  /// Bulk upsert daftar [foods] ke Firestore menggunakan batched writes.
+  /// [onProgress] dipanggil setiap batch selesai dengan jumlah item yang sudah diproses.
+  Future<void> bulkUpsertFoods(
+    List<FoodItem> foods, {
+    bool markAsCustom = true,
+    void Function(int processed, int total)? onProgress,
+  }) async {
+    const batchSize = 400;
+    for (var i = 0; i < foods.length; i += batchSize) {
+      final batch = _db.batch();
+      final end = (i + batchSize).clamp(0, foods.length);
+      for (var j = i; j < end; j++) {
+        final data = foods[j].toJson();
+        if (markAsCustom) {
+          data['isCustom'] = true;
+          data['createdAt'] = FieldValue.serverTimestamp();
+        }
+        data['updatedAt'] = FieldValue.serverTimestamp();
+        batch.set(_catalog.doc(foods[j].id), data, SetOptions(merge: true));
+      }
+      await batch.commit();
+      onProgress?.call(end, foods.length);
+    }
+  }
+
   /// Hapus makanan dengan [foodId] dari Firestore.
   Future<void> deleteFood(String foodId) async {
     await _catalog.doc(foodId).delete();

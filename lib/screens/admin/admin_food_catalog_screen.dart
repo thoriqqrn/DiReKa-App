@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/app_colors.dart';
+import '../../data/seed_food_data.dart';
 import '../../models/food_item.dart';
 import '../../services/food_catalog_service.dart';
 import '../../services/food_database_service.dart';
@@ -810,6 +811,69 @@ class _AdminFoodCatalogScreenState extends State<AdminFoodCatalogScreen> {
     }
   }
 
+  Future<void> _seedAllFoods() async {
+    final existingIds = _foods.map((e) => e.id).toSet();
+    final newItems =
+        seedFoodItems.where((e) => !existingIds.contains(e.id)).toList();
+
+    if (newItems.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Semua data seed sudah ada di database.'),
+        ),
+      );
+      return;
+    }
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Seed Data Makanan'),
+        content: Text(
+          'Akan menambahkan ${newItems.length} makanan baru dari data seed '
+          '(${seedFoodItems.length} total, ${seedFoodItems.length - newItems.length} sudah ada).\n\n'
+          'Lanjutkan?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Seed Semua'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      await _catalogService.bulkUpsertFoods(newItems);
+      FoodDatabaseService.clearCache();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${newItems.length} makanan berhasil ditambahkan!'),
+        ),
+      );
+      await _loadData();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Gagal seed data: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final filteredFoods = _filteredFoods;
@@ -900,6 +964,20 @@ class _AdminFoodCatalogScreenState extends State<AdminFoodCatalogScreen> {
                                 style: _rowButtonStyle,
                                 icon: const Icon(Icons.add),
                                 label: const Text('Tambah Baru'),
+                              ),
+                              ElevatedButton.icon(
+                                onPressed: _seedAllFoods,
+                                style: ElevatedButton.styleFrom(
+                                  minimumSize: const Size(0, 48),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  backgroundColor: const Color(0xFF059669),
+                                  foregroundColor: Colors.white,
+                                ),
+                                icon: const Icon(Icons.cloud_upload_outlined),
+                                label: const Text('Seed Data TKPI'),
                               ),
                             ],
                           );

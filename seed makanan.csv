@@ -1,0 +1,141 @@
+,Kategori,Makanan,URT,Glikemik Indeks
+,Makanan pokok,Nasi,Centong A B Sendok D,98
+,Makanan pokok,Nasi merah,Centong A B Sendok D,68
+,Makanan pokok,Nasi jagung,Centong A B Sendok D,45
+,Makanan pokok,Mie basah (Kuning),piring,65
+,Makanan pokok,bihun,piring,35
+,Makanan pokok,Roti tawar putih,lembar,70
+,Makanan pokok,Singkong rebus,AB,46
+,Makanan pokok,Kentang,ABC,93
+,Makanan pokok,Ubi jalar ungu,ABC,54
+,Makanan pokok,Ubi jalar kuning,ABC,63
+,,,,
+,,,,
+,Kacang kacangan,kacang tanah rebus,piring,13
+,Kacang kacangan,kacang tanah goreng,sdm,38
+,Kacang kacangan,susu kedelai,gls,34
+,Kacang kacangan,tahu goreng,"E,F ukuran",15
+,Kacang kacangan,tahu rebus,ptg A B C D bh E F,15
+,Kacang kacangan,tempe goreng ,bh A ptg B C,50
+,,,,
+,Sayuran,bayam,Sds A Mgk B sdm C,15
+,Sayuran,buncis,Sdm A bh B,28
+,Sayuran,wortel,sdm A ptg B C,49
+,Sayuran,kangkung,sdm A prg B,15
+,Sayuran,kelor,sdm,15
+,Sayuran,labu siam,bh,15
+,Sayuran,gambas,sdm A ptg B,15
+,Sayuran,kacang panjang,sdm A prg B,25
+,Sayuran,ketimun,bh A ptg B,10
+,Sayuran,kembang kol,bh,15
+,Sayuran,labu kuning,bh ptg,65
+,Sayuran,pepaya muda,bh ptg,25
+,Sayuran,sawi putih,bh ,15
+,Sayuran,sawi hijau,bh,15
+,Sayuran,selada,lembar,10
+,Sayuran,seledri,btg,15
+,Sayuran,tauge,porsi A sdm B,20
+,Sayuran,terong,bh,20
+,Sayuran,tomat merah ,bh,20
+,Sayuran,katuk,mgk,15
+,Sayuran,daun singkong,mgk,20
+,Sayuran,sayur asem,sds A mgk B,40
+,Sayuran,sayur sop,mgk A sds B,50
+,,,,
+,Buah ,alpukat,"Bh A,B, ptg",15
+,Buah ,apel,ptg,38
+,Buah ,buah naga merah,Ptg,50
+,Buah ,jambu biji,"Bh A,B",20
+,Buah ,jeruk manis,"Bh A,B",48
+,Buah ,semangka, ptg,72
+,Buah ,mangga,"A,B,C,D",51
+,Buah ,melon,"ptg bsr, ptg dadu",65
+,Buah ,pisang ambon,bh,55
+,Buah ,pisang mas,bh,51
+,Buah ,pepaya,"ptg bsr, ptg dadu",59
+,,,,
+,Daging dan olahan,daging sapi ,ptg piring,0
+,Daging dan olahan,daging ayam,ptg piring,0
+,Daging dan olahan,hati ayam,bh,0
+,Daging dan olahan,daging bebek,ptg piring,0
+,Daging dan olahan,daging kambing,ptg piring,0
+,Daging dan olahan,ampela ayam goreng,bh ,3
+,Daging dan olahan,usus ayam goreng,tusuk prg mgk,3
+,Daging dan olahan,daging bebek goreng,piring,3
+,Daging dan olahan,abon sapi,sdm,35
+,Daging dan olahan,dendeng sapi,ptg,50
+,Daging dan olahan,kornet,sdm,5
+,Daging dan olahan,sosis sapi,bh,25
+,Daging dan olahan,ayam goreng Kentucky dada,ptg,55
+,Daging dan olahan,ayam goreng Kentucky paha,ptg,55
+,Daging dan olahan,ayam goreng Kentucky sayap,ptg,55
+,Daging dan olahan,gulai kambing,piring,50
+,Daging dan olahan,rawon,mgk,35
+,Daging dan olahan,rendang daging,"potong A,B",45
+,Daging dan olahan,sop daging sapi,"mangkok, sds",35
+,Daging dan olahan,soto sapi,mangkok,40
+,Daging dan olahan,soto ayam,mangkok,40
+,,,,
+,Seafood dan olahan,ikan bawal,A B,0
+,Seafood dan olahan,ikan gabus,ekor,0
+,Seafood dan olahan,ikan mas,ekor,0
+,Seafood dan olahan,ikan patin,ekor,0
+,Seafood dan olahan,ikan kembung,ekor,0
+,Seafood dan olahan,ikan tongkol,ekor,0
+,Seafood dan olahan,kepiting,ekor,0
+,Seafood dan olahan,udang,ekor,0
+,Seafood dan olahan,cumi-cumi goreng,ptg ekor,25
+,Seafood dan olahan,ikan asin kering,bh,3
+,Seafood dan olahan,ikan bandeng presto,"kepala, ekor, 1 utuh",8
+,Seafood dan olahan,ikan cakalang asap,ekor,4
+,Seafood dan olahan,ikan mas pepes,"1 ekor A,B",8
+,Seafood dan olahan,ikan mujair goreng,"1 ekor A, B",30
+,Seafood dan olahan,ikan teri kering,sdm,3
+,Seafood dan olahan,sarden kaleng,"A,B",5
+,Seafood dan olahan,ikan kuah santan,ekor,40
+,,,,
+,Telur,telur ayam ras rebus,Btr,0
+,,telur ayam kampung rebus,Btr,0
+,,telur bebek rebus,Btr,0
+,,telur puyuh rebus,Btr,0
+,,telur ayam dadar,Bh,2
+,,telur asin,Btr,4
+,,,,
+,Susu dan olahan,susu sapi,URT gelas,35
+,,susu kambing,URT gelas,35
+,,susu bubuk,sdm,61
+,,susu full cream ,"URT gelas, kotak",27
+,,susu skim bubuk,sdm,32
+,,,,
+,minyak dan lemak,minyak goreng,sdm,0
+,,minyak kelapa murni,sdm,0
+,,margarin ,sdm,0
+,,mentega ,sdm,0
+,,santan,sdm,97
+,,minyak zaitun,,0
+,,,,
+,serba serbi ,coklat batang,bh,45
+,,coklat bubuk ,sdm,22
+,,gula merah,bh,55
+,,gula pasir,sdm,68
+,,kopi bubuk,sdm sachet,0
+,,madu,sdm,55
+,,,,
+,bumbu,kecap,sdm,70
+,,saus tomat,sdm,65
+,,terasi,bks kecil,0
+,,,,
+,olahan lain,Mie ayam,porsi,60
+,,Mie Bakso,porsi,55
+,,Mie instan,bungkus,70
+,,Spaghetti ,bungkus,45
+,,ketoprak ,piring,60
+,,martabak telur,ptg,50
+,,onde onde,bh,75
+,,pastel,bh,60
+,,keripik singkong,genggam,85
+,,keripik kentang,genggam,90
+,,keripik tempe,genggam,55
+,,rempeyek kacang tanah ,1 bh,55
+,,,,
+,cairan,air putih,gls,0
