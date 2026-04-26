@@ -1061,9 +1061,9 @@ class _NutrientRow extends StatelessWidget {
   const _NutrientRow({required this.data});
 
   Color get _barColor {
-    if (data.exceeded) return AppColors.error;
-    if (data.ratio >= 0.8) return AppColors.warning;
-    return AppColors.success; // Ganti dari primary (biru) ke success (hijau)
+    if (data.exceeded) return AppColors.error; // Merah jika > 100%
+    if (data.ratio >= 0.8) return AppColors.success; // Hijau jika >= 80%
+    return AppColors.warning; // Kuning jika < 80%
   }
 
   @override
@@ -2836,13 +2836,9 @@ class _DMDailyMealTable extends StatelessWidget {
   }
 
   Color _getStatusColor(double percentage) {
-    if (percentage >= 0.9 && percentage <= 1.1) {
-      return const Color(0xFF4CAF50); // Green - ideal
-    } else if (percentage >= 0.8 && percentage <= 1.2) {
-      return const Color(0xFFFFC107); // Amber - acceptable
-    } else {
-      return const Color(0xFFF44336); // Red - warning
-    }
+    if (percentage > 1.0) return AppColors.error; // Merah jika berlebih (>100%)
+    if (percentage >= 0.8) return AppColors.success; // Hijau jika sudah >= 80%
+    return AppColors.warning; // Kuning jika masih kurang (<80%)
   }
 
   String _formatPercentage(double percentage) {
@@ -2897,11 +2893,8 @@ class _MealTableSection extends StatelessWidget {
     required this.calculateMealTotals,
   });
 
-  @override
-  Widget build(BuildContext context) {
+  void _showEnlargedMealTable(BuildContext context) {
     final percentage = mealType.dmCaloriePercentage;
-    // Note: Selingan malam might be 0.0 but we still want to show it if requested
-    
     final targetEnergi = totalNeeds.energi * percentage;
     final targetProtein = totalNeeds.protein * percentage;
     final targetLemak = totalNeeds.lemak * percentage;
@@ -2918,6 +2911,256 @@ class _MealTableSection extends StatelessWidget {
     final energiRatio = targetEnergi > 0 ? actualEnergi / targetEnergi : 0.0;
     final statusColor = getStatusColor(energiRatio);
 
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog.fullscreen(
+        child: Scaffold(
+          backgroundColor: AppColors.background,
+          appBar: AppBar(
+            title: Text('Rincian ${mealType.label}'),
+            backgroundColor: AppColors.background,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.close, color: AppColors.textPrimary),
+              onPressed: () => Navigator.pop(ctx),
+            ),
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildMealHeader(context, energiRatio, statusColor, isEnlarged: true),
+                const SizedBox(height: 32),
+                const Text('Daftar Makanan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                const SizedBox(height: 12),
+                _buildFoodTable(isEnlarged: true),
+                const SizedBox(height: 32),
+                const Text('Ringkasan Gizi Harian', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                const SizedBox(height: 12),
+                _buildTotalsTable(
+                  actualEnergi, actualProtein, actualLemak, actualKarbo, actualSerat,
+                  targetEnergi, targetProtein, targetLemak, targetKarbo, targetSerat,
+                  percentage, statusColor,
+                  isEnlarged: true,
+                ),
+                const SizedBox(height: 60),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMealHeader(BuildContext context, double ratio, Color statusColor, {bool isEnlarged = false}) {
+    return Container(
+      padding: EdgeInsets.all(isEnlarged ? 16 : 12),
+      decoration: BoxDecoration(
+        color: statusColor.withValues(alpha: 0.1),
+        borderRadius: isEnlarged 
+          ? BorderRadius.circular(16)
+          : const BorderRadius.only(topLeft: Radius.circular(12), topRight: Radius.circular(12)),
+      ),
+      child: Row(
+        children: [
+          Text(mealType.emoji, style: TextStyle(fontSize: isEnlarged ? 28 : 20)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  mealType.label,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: isEnlarged ? 18 : 14,
+                  ),
+                ),
+                Text(
+                  '${(mealType.dmCaloriePercentage * 100).toStringAsFixed(0)}% dari kebutuhan harian',
+                  style: TextStyle(
+                    fontSize: isEnlarged ? 14 : 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (!isEnlarged) ...[
+            IconButton(
+              icon: const Icon(Icons.fullscreen, size: 24, color: AppColors.primary),
+              onPressed: () => _showEnlargedMealTable(context),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFoodTable({bool isEnlarged = false}) {
+    final colWidths = {
+      0: FlexColumnWidth(isEnlarged ? 2.5 : 2),
+      1: const FlexColumnWidth(1),
+      2: const FlexColumnWidth(1),
+      3: const FlexColumnWidth(1),
+      4: const FlexColumnWidth(1),
+      5: const FlexColumnWidth(1),
+      6: const FlexColumnWidth(1),
+    };
+
+    return Column(
+      children: [
+        Table(
+          columnWidths: colWidths,
+          children: [
+            TableRow(
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              children: [
+                _tableHeaderCell('Menu', isEnlarged: isEnlarged),
+                _tableHeaderCell('Energi', isEnlarged: isEnlarged),
+                _tableHeaderCell('Prot', isEnlarged: isEnlarged),
+                _tableHeaderCell('Lemak', isEnlarged: isEnlarged),
+                _tableHeaderCell('Karbo', isEnlarged: isEnlarged),
+                _tableHeaderCell('Serat', isEnlarged: isEnlarged),
+                _tableHeaderCell('Berat', isEnlarged: isEnlarged),
+              ],
+            ),
+          ],
+        ),
+        if (entries.isEmpty)
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Text('Belum ada makanan', style: TextStyle(fontSize: isEnlarged ? 14 : 12, color: Colors.grey.shade500, fontStyle: FontStyle.italic)),
+          )
+        else
+          Table(
+            columnWidths: colWidths,
+            children: [
+              for (final entry in entries)
+                TableRow(
+                  children: [
+                    _tableDataCell(entry.foodName, isBold: false, isEnlarged: isEnlarged),
+                    _tableDataCell(entry.energi.toStringAsFixed(0), isEnlarged: isEnlarged),
+                    _tableDataCell(entry.protein.toStringAsFixed(1), isEnlarged: isEnlarged),
+                    _tableDataCell(entry.lemak.toStringAsFixed(1), isEnlarged: isEnlarged),
+                    _tableDataCell(entry.karbohidrat.toStringAsFixed(1), isEnlarged: isEnlarged),
+                    _tableDataCell(entry.serat.toStringAsFixed(1), isEnlarged: isEnlarged),
+                    _tableDataCell(entry.grams.toStringAsFixed(0), isEnlarged: isEnlarged),
+                  ],
+                ),
+            ],
+          ),
+      ],
+    );
+  }
+
+  Widget _buildTotalsTable(
+    double actualEnergi, double actualProtein, double actualLemak, double actualKarbo, double actualSerat,
+    double targetEnergi, double targetProtein, double targetLemak, double targetKarbo, double targetSerat,
+    double percentage, Color statusColor,
+    {bool isEnlarged = false, double fulfillmentRatio = 0.0}
+  ) {
+    return Column(
+      children: [
+        Table(
+          columnWidths: {
+            0: FlexColumnWidth(isEnlarged ? 2.5 : 2),
+            1: const FlexColumnWidth(1),
+            2: const FlexColumnWidth(1),
+            3: const FlexColumnWidth(1),
+            4: const FlexColumnWidth(1),
+            5: const FlexColumnWidth(1),
+            6: const FlexColumnWidth(1),
+          },
+          children: [
+            TableRow(
+              decoration: BoxDecoration(color: Colors.grey.shade50),
+              children: [
+                _tableDataCell('Total Asupan', isBold: true, isEnlarged: isEnlarged),
+                _tableDataCell(actualEnergi.toStringAsFixed(0), isBold: true, isEnlarged: isEnlarged),
+                _tableDataCell(actualProtein.toStringAsFixed(1), isBold: true, isEnlarged: isEnlarged),
+                _tableDataCell(actualLemak.toStringAsFixed(1), isBold: true, isEnlarged: isEnlarged),
+                _tableDataCell(actualKarbo.toStringAsFixed(1), isBold: true, isEnlarged: isEnlarged),
+                _tableDataCell(actualSerat.toStringAsFixed(1), isBold: true, isEnlarged: isEnlarged),
+                _tableDataCell('', isBold: true, isEnlarged: isEnlarged),
+              ],
+            ),
+            TableRow(
+              decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.05)),
+              children: [
+                _tableDataCell('Total Kebutuhan', isBold: true, color: statusColor, isEnlarged: isEnlarged),
+                _tableDataCell(targetEnergi.toStringAsFixed(0), isBold: true, color: statusColor, isEnlarged: isEnlarged),
+                _tableDataCell(targetProtein.toStringAsFixed(1), isBold: true, color: statusColor, isEnlarged: isEnlarged),
+                _tableDataCell(targetLemak.toStringAsFixed(1), isBold: true, color: statusColor, isEnlarged: isEnlarged),
+                _tableDataCell(targetKarbo.toStringAsFixed(1), isBold: true, color: statusColor, isEnlarged: isEnlarged),
+                _tableDataCell(targetSerat.toStringAsFixed(1), isBold: true, color: statusColor, isEnlarged: isEnlarged),
+                _tableDataCell('', isBold: true, isEnlarged: isEnlarged),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // FOOTER PERCENTAGE INDICATOR - DYNAMIC LABEL
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+          decoration: BoxDecoration(
+            color: statusColor,
+            borderRadius: isEnlarged 
+              ? BorderRadius.circular(12)
+              : const BorderRadius.only(bottomLeft: Radius.circular(12), bottomRight: Radius.circular(12)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  'Status Ketercapaian Kebutuhan ${mealType.label}:',
+                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                formatPercentage(fulfillmentRatio),
+                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final percentage = mealType.dmCaloriePercentage;
+    final targetEnergi = totalNeeds.energi * percentage;
+    final targetProtein = totalNeeds.protein * percentage;
+    final targetLemak = totalNeeds.lemak * percentage;
+    final targetKarbo = totalNeeds.karbohidrat * percentage;
+    final targetSerat = totalNeeds.serat * percentage;
+
+    final totals = calculateMealTotals(entries);
+    final actualEnergi = totals['energi']!;
+    final actualProtein = totals['protein']!;
+    final actualLemak = totals['lemak']!;
+    final actualKarbo = totals['karbohidrat']!;
+    final actualSerat = totals['serat']!;
+
+    // Hitung rasio rata-rata ketercapaian gizi utama (E, P, L, K)
+    final rE = targetEnergi > 0 ? actualEnergi / targetEnergi : 0.0;
+    final rP = targetProtein > 0 ? actualProtein / targetProtein : 0.0;
+    final rL = targetLemak > 0 ? actualLemak / targetLemak : 0.0;
+    final rK = targetKarbo > 0 ? actualKarbo / targetKarbo : 0.0;
+    
+    // Rata-rata ketercapaian untuk status total waktu makan
+    final totalFulfillmentRatio = (rE + rP + rL + rK) / 4.0;
+    final statusColor = getStatusColor(totalFulfillmentRatio);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -2927,221 +3170,19 @@ class _MealTableSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Meal header
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: statusColor.withValues(alpha: 0.1),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-              ),
-            ),
-            child: Row(
-              children: [
-                Text(mealType.emoji, style: const TextStyle(fontSize: 20)),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        mealType.label,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                      Text(
-                        '${(percentage * 100).toStringAsFixed(0)}% dari kebutuhan',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: statusColor,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    formatPercentage(energiRatio),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Food items table header
+          _buildMealHeader(context, totalFulfillmentRatio, statusColor),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-            child: Table(
-              columnWidths: const {
-                0: FlexColumnWidth(2),
-                1: FlexColumnWidth(1),
-                2: FlexColumnWidth(1),
-                3: FlexColumnWidth(1),
-                4: FlexColumnWidth(1),
-                5: FlexColumnWidth(1),
-                6: FlexColumnWidth(1),
-              },
-              children: [
-                TableRow(
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  children: [
-                    _tableHeaderCell('Menu'),
-                    _tableHeaderCell('Energi'),
-                    _tableHeaderCell('Protein'),
-                    _tableHeaderCell('Lemak'),
-                    _tableHeaderCell('Karbo'),
-                    _tableHeaderCell('Serat'),
-                    _tableHeaderCell('Berat(g)'),
-                  ],
-                ),
-              ],
-            ),
+            child: _buildFoodTable(),
           ),
-
-          // Food items rows
-          if (entries.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Text(
-                'Belum ada makanan',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade500,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            )
-          else
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Table(
-                columnWidths: const {
-                  0: FlexColumnWidth(2),
-                  1: FlexColumnWidth(1),
-                  2: FlexColumnWidth(1),
-                  3: FlexColumnWidth(1),
-                  4: FlexColumnWidth(1),
-                  5: FlexColumnWidth(1),
-                  6: FlexColumnWidth(1),
-                },
-                children: [
-                  for (final entry in entries)
-                    TableRow(
-                      children: [
-                        _tableDataCell(entry.foodName, isBold: false),
-                        _tableDataCell(entry.energi.toStringAsFixed(0)),
-                        _tableDataCell(entry.protein.toStringAsFixed(1)),
-                        _tableDataCell(entry.lemak.toStringAsFixed(1)),
-                        _tableDataCell(entry.karbohidrat.toStringAsFixed(1)),
-                        _tableDataCell(entry.serat.toStringAsFixed(1)),
-                        _tableDataCell(entry.grams.toStringAsFixed(0)),
-                      ],
-                    ),
-                ],
-              ),
-            ),
-
           const Divider(height: 1),
-
-          // Total asupan row
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Table(
-              columnWidths: const {
-                0: FlexColumnWidth(2),
-                1: FlexColumnWidth(1),
-                2: FlexColumnWidth(1),
-                3: FlexColumnWidth(1),
-                4: FlexColumnWidth(1),
-                5: FlexColumnWidth(1),
-                6: FlexColumnWidth(1),
-              },
-              children: [
-                TableRow(
-                  decoration: BoxDecoration(color: Colors.grey.shade50),
-                  children: [
-                    _tableDataCell('Total Asupan', isBold: true),
-                    _tableDataCell(
-                      actualEnergi.toStringAsFixed(0),
-                      isBold: true,
-                    ),
-                    _tableDataCell(
-                      actualProtein.toStringAsFixed(1),
-                      isBold: true,
-                    ),
-                    _tableDataCell(
-                      actualLemak.toStringAsFixed(1),
-                      isBold: true,
-                    ),
-                    _tableDataCell(
-                      actualKarbo.toStringAsFixed(1),
-                      isBold: true,
-                    ),
-                    _tableDataCell(
-                      actualSerat.toStringAsFixed(1),
-                      isBold: true,
-                    ),
-                    _tableDataCell('', isBold: true),
-                  ],
-                ),
-                TableRow(
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.05),
-                  ),
-                  children: [
-                    _tableDataCell(
-                      'Total ${(percentage * 100).toStringAsFixed(0)}% Kebutuhan',
-                      isBold: true,
-                      color: statusColor,
-                    ),
-                    _tableDataCell(
-                      targetEnergi.toStringAsFixed(0),
-                      isBold: true,
-                      color: statusColor,
-                    ),
-                    _tableDataCell(
-                      targetProtein.toStringAsFixed(1),
-                      isBold: true,
-                      color: statusColor,
-                    ),
-                    _tableDataCell(
-                      targetLemak.toStringAsFixed(1),
-                      isBold: true,
-                      color: statusColor,
-                    ),
-                    _tableDataCell(
-                      targetKarbo.toStringAsFixed(1),
-                      isBold: true,
-                      color: statusColor,
-                    ),
-                    _tableDataCell(
-                      targetSerat.toStringAsFixed(1),
-                      isBold: true,
-                      color: statusColor,
-                    ),
-                    _tableDataCell('', isBold: true),
-                  ],
-                ),
-              ],
+            child: _buildTotalsTable(
+              actualEnergi, actualProtein, actualLemak, actualKarbo, actualSerat,
+              targetEnergi, targetProtein, targetLemak, targetKarbo, targetSerat,
+              percentage, statusColor,
+              fulfillmentRatio: totalFulfillmentRatio,
             ),
           ),
         ],
@@ -3149,32 +3190,34 @@ class _MealTableSection extends StatelessWidget {
     );
   }
 
-  Widget _tableHeaderCell(String text) {
+  Widget _tableHeaderCell(String text, {bool isEnlarged = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           fontWeight: FontWeight.bold,
-          fontSize: 11,
-          color: Colors.grey,
+          fontSize: isEnlarged ? 12 : 9,
+          color: Colors.grey.shade700,
         ),
+        textAlign: TextAlign.center,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
     );
   }
 
-  Widget _tableDataCell(String text, {bool isBold = true, Color? color}) {
+  Widget _tableDataCell(String text, {bool isBold = false, Color? color, bool isEnlarged = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
       child: Text(
         text,
         style: TextStyle(
-          fontWeight: isBold ? FontWeight.w600 : FontWeight.normal,
-          fontSize: 11,
-          color: color ?? Colors.black87,
+          fontSize: isEnlarged ? 13 : 10,
+          fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+          color: color ?? AppColors.textPrimary,
         ),
+        textAlign: TextAlign.center,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
@@ -3290,35 +3333,47 @@ class _DailyInterpretationTable extends StatelessWidget {
           // Meals interpretation rows
           Padding(
             padding: const EdgeInsets.all(12),
-            child: Table(
-              columnWidths: const {
-                0: FlexColumnWidth(2),
-                1: FlexColumnWidth(1),
-                2: FlexColumnWidth(1),
-                3: FlexColumnWidth(1),
-              },
-              children: [
-                // Header row
-                TableRow(
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minWidth: 500), // Memberikan ruang cukup untuk kolom-kolom
+                child: Table(
+                  columnWidths: const {
+                    0: FlexColumnWidth(2), // Waktu Makan
+                    1: FlexColumnWidth(1.2), // Energi
+                    2: FlexColumnWidth(1.2), // Protein
+                    3: FlexColumnWidth(1.2), // Lemak
+                    4: FlexColumnWidth(1.2), // Karbo
+                    5: FlexColumnWidth(1.2), // Serat
+                    6: FlexColumnWidth(1),   // %
+                  },
                   children: [
-                    _interpHeaderCell('Waktu Makan'),
-                    _interpHeaderCell('Target'),
-                    _interpHeaderCell('Aktual'),
-                    _interpHeaderCell('%'),
+                    // Header row
+                    TableRow(
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      children: [
+                        _interpHeaderCell('Waktu Makan'),
+                        _interpHeaderCell('Energi'),
+                        _interpHeaderCell('Prot'),
+                        _interpHeaderCell('Lemak'),
+                        _interpHeaderCell('Karbo'),
+                        _interpHeaderCell('Serat'),
+                        _interpHeaderCell('%'),
+                      ],
+                    ),
+
+                    // Meal rows
+                    for (final meal in mealOrder)
+                      _buildMealInterpretationRow(
+                        meal,
+                        entriesByMeal[meal] ?? [],
+                      ),
                   ],
                 ),
-
-                // Meal rows
-                for (final meal in mealOrder)
-                  _buildMealInterpretationRow(
-                    meal,
-                    entriesByMeal[meal] ?? [],
-                  ),
-              ],
+              ),
             ),
           ),
         ],
@@ -3332,31 +3387,50 @@ class _DailyInterpretationTable extends StatelessWidget {
   ) {
     final percentage = meal.dmCaloriePercentage;
     final targetEnergi = totalNeeds.energi * percentage;
+    final targetProt = totalNeeds.protein * percentage;
+    final targetLemak = totalNeeds.lemak * percentage;
+    final targetKarbo = totalNeeds.karbohidrat * percentage;
+    final targetSerat = totalNeeds.serat * percentage;
+
     final actualEnergi = entries.fold(0.0, (sum, e) => sum + e.energi);
-    final ratio = targetEnergi > 0 ? actualEnergi / targetEnergi : 0.0;
-    final statusColor = getStatusColor(ratio);
+    final actualProt = entries.fold(0.0, (sum, e) => sum + e.protein);
+    final actualLemak = entries.fold(0.0, (sum, e) => sum + e.lemak);
+    final actualKarbo = entries.fold(0.0, (sum, e) => sum + e.karbohidrat);
+    final actualSerat = entries.fold(0.0, (sum, e) => sum + e.serat);
+
+    // Hitung rasio rata-rata ketercapaian gizi utama (E, P, L, K)
+    final rE = targetEnergi > 0 ? actualEnergi / targetEnergi : 0.0;
+    final rP = targetProt > 0 ? actualProt / targetProt : 0.0;
+    final rL = targetLemak > 0 ? actualLemak / targetLemak : 0.0;
+    final rK = targetKarbo > 0 ? actualKarbo / targetKarbo : 0.0;
+    
+    final totalRatio = (rE + rP + rL + rK) / 4.0;
+    final statusColor = getStatusColor(totalRatio);
 
     return TableRow(
       decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.05)),
       children: [
         _interpDataCell('${meal.emoji} ${meal.label}'),
-        _interpDataCell(targetEnergi.toStringAsFixed(0)),
-        _interpDataCell(actualEnergi.toStringAsFixed(0)),
+        _interpDataCell('${actualEnergi.toInt()} / ${targetEnergi.toInt()}'),
+        _interpDataCell('${actualProt.toStringAsFixed(1)} / ${targetProt.toStringAsFixed(1)}'),
+        _interpDataCell('${actualLemak.toStringAsFixed(1)} / ${targetLemak.toStringAsFixed(1)}'),
+        _interpDataCell('${actualKarbo.toStringAsFixed(1)} / ${targetKarbo.toStringAsFixed(1)}'),
+        _interpDataCell('${actualSerat.toStringAsFixed(1)} / ${targetSerat.toStringAsFixed(1)}'),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
           child: Container(
             alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
             decoration: BoxDecoration(
               color: statusColor,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
-              formatPercentage(ratio),
+              formatPercentage(totalRatio),
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
-                fontSize: 11,
+                fontSize: 10,
               ),
             ),
           ),

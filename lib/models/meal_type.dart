@@ -103,15 +103,15 @@ extension MealTypeExtension on MealType {
       case MealType.sarapan:
         return 0.20; // 20%
       case MealType.selinganPagi:
-        return 0.15; // 15%
+        return 0.10; // 10%
       case MealType.makanSiang:
-        return 0.30; // 30%
+        return 0.25; // 25%
       case MealType.selinganSiang:
         return 0.10; // 10%
       case MealType.makanMalam:
         return 0.25; // 25%
       case MealType.selinganMalam:
-        return 0.0; // Not included for DM
+        return 0.10; // 10%
     }
   }
 }

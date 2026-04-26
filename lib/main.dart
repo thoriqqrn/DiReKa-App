@@ -3,12 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
+import 'package:workmanager/workmanager.dart';
+
 import 'firebase_options.dart';
 import 'core/app_constants.dart';
 import 'core/app_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/disease_provider.dart';
 import 'services/app_notification_service.dart';
+import 'services/user_service.dart';
 import 'screens/admin/admin_screen.dart';
 import 'screens/admin/admin_settings_screen.dart';
 import 'screens/admin/admin_food_catalog_screen.dart';
@@ -22,10 +26,40 @@ import 'screens/auth/register_screen.dart';
 import 'screens/profile/settings_screen.dart';
 import 'screens/splash_screen.dart';
 
+@pragma('vm:entry-point')
+void callbackDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+    try {
+      await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+      
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final userService = UserService();
+        final userModel = await userService.getUser(user.uid);
+        if (userModel != null) {
+          await AppNotificationService.refreshForUser(userModel);
+        }
+      }
+      return Future.value(true);
+    } catch (e) {
+      return Future.value(false);
+    }
+  });
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await AppNotificationService.init();
+  
+  await Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
+  await Workmanager().registerPeriodicTask(
+    "health_check_task",
+    "periodic_health_notification_check",
+    frequency: const Duration(minutes: 30),
+    constraints: Constraints(networkType: NetworkType.connected),
+  );
+
   runApp(const DiRekaApp());
 }
 
