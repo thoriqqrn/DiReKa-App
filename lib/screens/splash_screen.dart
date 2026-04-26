@@ -175,11 +175,11 @@ class _SplashScreenState extends State<SplashScreen>
                                 ),
                               ],
                             ),
-                            child: const Center(
-                              child: Icon(
-                                Icons.favorite_rounded,
-                                color: AppColors.primary,
-                                size: 64,
+                            child: Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: Image.asset(
+                                'assets/images/logodireka.png',
+                                fit: BoxFit.contain,
                               ),
                             ),
                           ),

@@ -3251,11 +3251,6 @@ class _DailyInterpretationTable extends StatelessWidget {
       MealType.selinganMalam,
     ];
 
-    final dailyTotals = calculateDailyTotals();
-    final dailyEnergiRatio = totalNeeds.energi > 0
-        ? dailyTotals['energi']! / totalNeeds.energi
-        : 0.0;
-
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey.shade300, width: 1),
@@ -3264,7 +3259,7 @@ class _DailyInterpretationTable extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
+          // Meals interpretation header
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -3273,56 +3268,6 @@ class _DailyInterpretationTable extends StatelessWidget {
                 topLeft: Radius.circular(12),
                 topRight: Radius.circular(12),
               ),
-            ),
-            child: const Text(
-              'Interpretasi Hasil (%)',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-            ),
-          ),
-
-          // Daily summary table
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Table(
-              columnWidths: const {
-                0: FlexColumnWidth(2),
-                1: FlexColumnWidth(1),
-                2: FlexColumnWidth(1),
-                3: FlexColumnWidth(1),
-                4: FlexColumnWidth(1),
-                5: FlexColumnWidth(1),
-              },
-              children: [
-                // Header row
-                TableRow(
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  children: [
-                    _interpHeaderCell('Energi'),
-                    _interpHeaderCell('Protein'),
-                    _interpHeaderCell('Lemak'),
-                    _interpHeaderCell('Karbo'),
-                    _interpHeaderCell('Serat'),
-                    _interpHeaderCell('%'),
-                  ],
-                ),
-
-                // Daily total row
-                _buildDailySummaryRow(dailyEnergiRatio),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // Meals interpretation header
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.blue.shade50,
-              borderRadius: BorderRadius.circular(12),
             ),
             child: const Text(
               'Ringkasan Per Waktu Makan',
@@ -3336,7 +3281,7 @@ class _DailyInterpretationTable extends StatelessWidget {
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: ConstrainedBox(
-                constraints: const BoxConstraints(minWidth: 500), // Memberikan ruang cukup untuk kolom-kolom
+                constraints: const BoxConstraints(minWidth: 500),
                 child: Table(
                   columnWidths: const {
                     0: FlexColumnWidth(2), // Waktu Makan
@@ -3345,7 +3290,6 @@ class _DailyInterpretationTable extends StatelessWidget {
                     3: FlexColumnWidth(1.2), // Lemak
                     4: FlexColumnWidth(1.2), // Karbo
                     5: FlexColumnWidth(1.2), // Serat
-                    6: FlexColumnWidth(1),   // %
                   },
                   children: [
                     // Header row
@@ -3361,13 +3305,71 @@ class _DailyInterpretationTable extends StatelessWidget {
                         _interpHeaderCell('Lemak'),
                         _interpHeaderCell('Karbo'),
                         _interpHeaderCell('Serat'),
-                        _interpHeaderCell('%'),
                       ],
                     ),
 
                     // Meal rows
                     for (final meal in mealOrder)
                       _buildMealInterpretationRow(
+                        meal,
+                        entriesByMeal[meal] ?? [],
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          const Divider(height: 1),
+
+          // NEW: Persentase Ketercapaian Gizi header
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.green.shade50,
+            ),
+            child: const Text(
+              'Persentase Ketercapaian Gizi',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+          ),
+
+          // NEW: Persentase rows
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minWidth: 500),
+                child: Table(
+                  columnWidths: const {
+                    0: FlexColumnWidth(2), // Waktu Makan
+                    1: FlexColumnWidth(1.2), // % Energi
+                    2: FlexColumnWidth(1.2), // % Protein
+                    3: FlexColumnWidth(1.2), // % Lemak
+                    4: FlexColumnWidth(1.2), // % Karbo
+                    5: FlexColumnWidth(1.2), // % Serat
+                  },
+                  children: [
+                    // Header row
+                    TableRow(
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      children: [
+                        _interpHeaderCell('Waktu Makan'),
+                        _interpHeaderCell('% Energi'),
+                        _interpHeaderCell('% Prot'),
+                        _interpHeaderCell('% Lemak'),
+                        _interpHeaderCell('% Karbo'),
+                        _interpHeaderCell('% Serat'),
+                      ],
+                    ),
+
+                    // Meal percentage rows
+                    for (final meal in mealOrder)
+                      _buildMealPercentageRow(
                         meal,
                         entriesByMeal[meal] ?? [],
                       ),
@@ -3416,81 +3418,69 @@ class _DailyInterpretationTable extends StatelessWidget {
         _interpDataCell('${actualLemak.toStringAsFixed(1)} / ${targetLemak.toStringAsFixed(1)}'),
         _interpDataCell('${actualKarbo.toStringAsFixed(1)} / ${targetKarbo.toStringAsFixed(1)}'),
         _interpDataCell('${actualSerat.toStringAsFixed(1)} / ${targetSerat.toStringAsFixed(1)}'),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-          child: Container(
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-            decoration: BoxDecoration(
-              color: statusColor,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Text(
-              formatPercentage(totalRatio),
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 10,
-              ),
-            ),
-          ),
-        ),
       ],
     );
   }
 
-  TableRow _buildDailySummaryRow(double dailyRatio) {
-    final statusColor = getStatusColor(dailyRatio);
-    final dailyTotals = calculateDailyTotals();
+  TableRow _buildMealPercentageRow(
+    MealType meal,
+    List<FoodLogEntry> entries,
+  ) {
+    final percentage = meal.dmCaloriePercentage;
+    final targetEnergi = totalNeeds.energi * percentage;
+    final targetProt = totalNeeds.protein * percentage;
+    final targetLemak = totalNeeds.lemak * percentage;
+    final targetKarbo = totalNeeds.karbohidrat * percentage;
+    final targetSerat = totalNeeds.serat * percentage;
+
+    final actualEnergi = entries.fold(0.0, (sum, e) => sum + e.energi);
+    final actualProt = entries.fold(0.0, (sum, e) => sum + e.protein);
+    final actualLemak = entries.fold(0.0, (sum, e) => sum + e.lemak);
+    final actualKarbo = entries.fold(0.0, (sum, e) => sum + e.karbohidrat);
+    final actualSerat = entries.fold(0.0, (sum, e) => sum + e.serat);
+
+    final pE = targetEnergi > 0 ? actualEnergi / targetEnergi : 0.0;
+    final pP = targetProt > 0 ? actualProt / targetProt : 0.0;
+    final pL = targetLemak > 0 ? actualLemak / targetLemak : 0.0;
+    final pK = targetKarbo > 0 ? actualKarbo / targetKarbo : 0.0;
+    final pS = targetSerat > 0 ? actualSerat / targetSerat : 0.0;
+
+    final totalRatio = (pE + pP + pL + pK) / 4.0;
+    final statusColor = getStatusColor(totalRatio);
 
     return TableRow(
-      decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1)),
+      decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.05)),
       children: [
-        _interpDataCell(
-          dailyTotals['energi']!.toStringAsFixed(0),
-          isBold: true,
+        _interpDataCell('${meal.emoji} ${meal.label}'),
+        _interpPercentageCell(pE),
+        _interpPercentageCell(pP),
+        _interpPercentageCell(pL),
+        _interpPercentageCell(pK),
+        _interpPercentageCell(pS),
+      ],
+    );
+  }
+
+  Widget _interpPercentageCell(double ratio) {
+    final statusColor = getStatusColor(ratio);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      child: Container(
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        decoration: BoxDecoration(
           color: statusColor,
+          borderRadius: BorderRadius.circular(16),
         ),
-        _interpDataCell(
-          dailyTotals['protein']!.toStringAsFixed(1),
-          isBold: true,
-          color: statusColor,
-        ),
-        _interpDataCell(
-          dailyTotals['lemak']!.toStringAsFixed(1),
-          isBold: true,
-          color: statusColor,
-        ),
-        _interpDataCell(
-          dailyTotals['karbohidrat']!.toStringAsFixed(1),
-          isBold: true,
-          color: statusColor,
-        ),
-        _interpDataCell(
-          dailyTotals['serat']!.toStringAsFixed(1),
-          isBold: true,
-          color: statusColor,
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-          child: Container(
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: statusColor,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Text(
-              formatPercentage(dailyRatio),
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
-            ),
+        child: Text(
+          formatPercentage(ratio),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 10,
           ),
         ),
-      ],
+      ),
     );
   }
 
@@ -3505,6 +3495,8 @@ class _DailyInterpretationTable extends StatelessWidget {
           color: Colors.grey,
         ),
         textAlign: TextAlign.center,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }

@@ -129,6 +129,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Center(
+                    child: _AnimatedPulseIcon(),
+                  ),
+                  const SizedBox(height: 24),
                   const Text(
                     'Buat Akun Baru',
                     style: TextStyle(
@@ -1087,6 +1091,54 @@ class _ActivityLevelSelector extends StatelessWidget {
           ),
         );
       }).toList(),
+    );
+  }
+}
+
+class _AnimatedPulseIcon extends StatefulWidget {
+  @override
+  State<_AnimatedPulseIcon> createState() => _AnimatedPulseIconState();
+}
+
+class _AnimatedPulseIconState extends State<_AnimatedPulseIcon> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    )..repeat(reverse: true);
+    _animation = Tween<double>(begin: 1.0, end: 1.2).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ScaleTransition(
+      scale: _animation,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withValues(alpha: 0.1),
+          shape: BoxShape.circle,
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 2),
+        ),
+        child: const Icon(
+          Icons.monitor_heart_rounded,
+          size: 40,
+          color: AppColors.primary,
+        ),
+      ),
     );
   }
 }
