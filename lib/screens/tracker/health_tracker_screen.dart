@@ -204,6 +204,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     if (!_canSubmitHealthInput()) return;
     try {
       await KidneyHealthService.addRecord(_uid, record);
+      if (mounted) {
+        context.read<AuthProvider>().updateActivityStreak();
+      }
       await _loadRecords();
     } catch (_) {
       if (!mounted) return;
@@ -294,6 +297,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     if (!_canSubmitHealthInput()) return;
     try {
       await HeartHealthService.addRecord(_uid, record);
+      if (mounted) {
+        context.read<AuthProvider>().updateActivityStreak();
+      }
       await _loadHeartRecords();
     } catch (_) {
       if (!mounted) return;
@@ -385,6 +391,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     if (!_canSubmitHealthInput()) return;
     try {
       await DiabetesHealthService.addRecord(_uid, record);
+      if (mounted) {
+        context.read<AuthProvider>().updateActivityStreak();
+      }
       await _loadDmRecords();
     } catch (_) {
       if (!mounted) return;
@@ -5763,7 +5772,7 @@ const List<_ExamReference> _examReferenceCatalog = [
     name: 'Berat Badan',
     unit: 'kg',
     normal: '-',
-    forKidney: true,
+    forKidney: false,
     forHeart: true,
     forDiabetes: true,
   ),

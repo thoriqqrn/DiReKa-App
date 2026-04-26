@@ -387,7 +387,10 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
             mealType: _selectedMealType!,
           );
           await FoodLogService.addEntry(uid, _selectedDate, entry);
-          if (mounted) _loadEntries();
+          if (mounted) {
+            context.read<AuthProvider>().updateActivityStreak();
+            _loadEntries();
+          }
         },
       ),
     );
@@ -853,7 +856,7 @@ class _NutritionSummaryCard extends StatelessWidget {
                   .map(
                     (n) => Padding(
                       padding: const EdgeInsets.only(bottom: 14),
-                      child: _NutrientRow(data: n),
+                      child: _NutrientRow(data: n, diseaseType: diseaseType),
                     ),
                   )
                   .toList(),
@@ -864,7 +867,13 @@ class _NutritionSummaryCard extends StatelessWidget {
     );
   }
 
-  static Color _progressColor(double ratio) {
+  Color _progressColor(double ratio) {
+    if (diseaseType == DiseaseType.chronicKidneyDisease) {
+      if (ratio >= 1.1) return AppColors.error; // Merah >= 110%
+      if (ratio >= 0.9) return AppColors.success; // Hijau 90% - 110%
+      return AppColors.warning; // Kuning < 90%
+    }
+    // Default/DM logic
     if (ratio >= 1.0) return AppColors.error;
     if (ratio >= 0.8) return AppColors.warning;
     return AppColors.success;
@@ -908,11 +917,12 @@ class _WeeklyFluidChart extends StatelessWidget {
                 day.date.year == DateTime.now().year &&
                 day.date.month == DateTime.now().month &&
                 day.date.day == DateTime.now().day;
-            final color = day.cairan > target
-                ? AppColors.error
-                : day.cairan >= target * 0.8
-                ? AppColors.primary
-                : AppColors.textHint;
+            final targetRatio = day.cairan / (target > 0 ? target : 1.0);
+            final color = targetRatio >= 1.1
+                ? AppColors.error // Merah >= 110%
+                : targetRatio >= 0.9
+                ? AppColors.success // Hijau 90% - 110%
+                : AppColors.warning; // Kuning < 90%
             
             final dayOfWeek = [
               'Min',
@@ -1058,12 +1068,25 @@ class _NutrientData {
 
 class _NutrientRow extends StatelessWidget {
   final _NutrientData data;
-  const _NutrientRow({required this.data});
+  final DiseaseType? diseaseType;
+  const _NutrientRow({required this.data, this.diseaseType});
 
   Color get _barColor {
+    if (diseaseType == DiseaseType.chronicKidneyDisease) {
+      if (data.ratio >= 1.1) return AppColors.error;
+      if (data.ratio >= 0.9) return AppColors.success;
+      return AppColors.warning;
+    }
     if (data.exceeded) return AppColors.error; // Merah jika > 100%
     if (data.ratio >= 0.8) return AppColors.success; // Hijau jika >= 80%
     return AppColors.warning; // Kuning jika < 80%
+  }
+
+  bool get _isExceeded {
+    if (diseaseType == DiseaseType.chronicKidneyDisease) {
+      return data.ratio >= 1.1;
+    }
+    return data.exceeded;
   }
 
   @override
@@ -1084,7 +1107,7 @@ class _NutrientRow extends StatelessWidget {
               ),
             ),
             const Spacer(),
-            if (data.exceeded)
+            if (_isExceeded)
               Container(
                 margin: const EdgeInsets.only(right: 6),
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
@@ -1147,10 +1170,9 @@ class _KidneyFluidGauge extends StatelessWidget {
   double get _excess => (intake - target).clamp(0, double.infinity);
 
   Color get _gaugeColor {
-    if (_exceeded) return AppColors.error;
-    if (_ratio >= 0.8) return AppColors.warning;
-    if (_ratio >= 0.5) return AppColors.primary;
-    return AppColors.success;
+    if (_ratio >= 1.1) return AppColors.error; // Merah >= 110%
+    if (_ratio >= 0.9) return AppColors.success; // Hijau 90% - 110%
+    return AppColors.warning; // Kuning < 90%
   }
 
   @override

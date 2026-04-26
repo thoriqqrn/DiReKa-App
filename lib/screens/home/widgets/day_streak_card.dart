@@ -166,7 +166,7 @@ class DayStreakCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   const Text(
-                    'Login',
+                    'Aktif',
                     style: TextStyle(fontSize: 10, color: Colors.white),
                   ),
                 ],

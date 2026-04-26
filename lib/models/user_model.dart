@@ -170,6 +170,10 @@ class UserModel {
       'bmi': double.parse(bmi.toStringAsFixed(2)),
       'bbi': double.parse(bbi.toStringAsFixed(2)),
       'createdAt': Timestamp.fromDate(createdAt),
+      'currentStreak': currentStreak,
+      'longestStreak': longestStreak,
+      'lastLoginDate': lastLoginDate != null ? Timestamp.fromDate(lastLoginDate!) : null,
+      'loginDates': loginDates.map((d) => Timestamp.fromDate(d)).toList(),
       'primaryUserUid': primaryUserUid,
     };
   }

@@ -50,8 +50,8 @@ class AuthProvider extends ChangeNotifier {
             await _authService.syncLinkedFamilyAllData(_userModel!);
           }
           _status = AuthStatus.authenticated;
-          // Update day streak saat user login
-          await _updateDayStreak();
+          // Cek apakah streak harus di-reset karena kemarin tidak ada aktivitas
+          await checkStreakReset();
         } else {
           await _userModelSubscription?.cancel();
           _userModelSubscription = null;
@@ -93,36 +93,68 @@ class AuthProvider extends ChangeNotifier {
     });
   }
 
-  /// Update day streak: increment jika login hari ini, reset jika kemarin tidak login
-  Future<void> _updateDayStreak() async {
+  /// Memeriksa apakah streak harus di-reset karena user melewatkan hari kemarin.
+  /// Dipanggil saat login/buka aplikasi.
+  Future<void> checkStreakReset() async {
     if (_userModel == null) return;
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final lastLogin = _userModel!.lastLoginDate;
+    final lastActivity = _userModel!.lastLoginDate; // Kita gunakan field ini sebagai lastActivityDate
+    final yesterday = today.subtract(const Duration(days: 1));
+
+    if (lastActivity == null) return;
+
+    final isLastActivityToday = 
+        lastActivity.year == today.year &&
+        lastActivity.month == today.month &&
+        lastActivity.day == today.day;
+    
+    final isLastActivityYesterday = 
+        lastActivity.year == yesterday.year &&
+        lastActivity.month == yesterday.month &&
+        lastActivity.day == yesterday.day;
+
+    // Jika aktivitas terakhir bukan hari ini DAN bukan kemarin, maka streak putus (reset ke 0)
+    if (!isLastActivityToday && !isLastActivityYesterday) {
+      final updated = _userModel!.copyWith(currentStreak: 0);
+      await _userService.updateUser(updated);
+      _userModel = updated;
+      notifyListeners();
+    }
+  }
+
+  /// Mencatat aktivitas baru (input makanan/kesehatan) dan memperbarui streak.
+  /// Dipanggil setiap kali user menyimpan input.
+  Future<void> updateActivityStreak() async {
+    if (_userModel == null) return;
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final lastActivity = _userModel!.lastLoginDate;
     final yesterday = today.subtract(const Duration(days: 1));
 
     int newStreak = _userModel!.currentStreak;
     int newLongest = _userModel!.longestStreak;
     List<DateTime> updatedLogins = [..._userModel!.loginDates];
 
-    // Cek apakah sudah login hari ini
-    final hasLoginToday =
-        lastLogin != null &&
-        lastLogin.year == today.year &&
-        lastLogin.month == today.month &&
-        lastLogin.day == today.day;
+    // Cek apakah sudah ada aktivitas hari ini
+    final hasActivityToday =
+        lastActivity != null &&
+        lastActivity.year == today.year &&
+        lastActivity.month == today.month &&
+        lastActivity.day == today.day;
 
-    if (!hasLoginToday) {
-      // Belum login hari ini
-      if (lastLogin != null &&
-          lastLogin.year == yesterday.year &&
-          lastLogin.month == yesterday.month &&
-          lastLogin.day == yesterday.day) {
-        // Login kemarin → increment streak
+    if (!hasActivityToday) {
+      // Belum ada aktivitas hari ini, cek apakah kemarin ada aktivitas
+      if (lastActivity != null &&
+          lastActivity.year == yesterday.year &&
+          lastActivity.month == yesterday.month &&
+          lastActivity.day == yesterday.day) {
+        // Aktivitas kemarin ada → increment streak
         newStreak++;
       } else {
-        // Tidak login kemarin atau pertama kali → reset streak ke 1
+        // Tidak ada aktivitas kemarin → reset streak mulai dari 1 (hari ini)
         newStreak = 1;
       }
 
@@ -131,8 +163,10 @@ class AuthProvider extends ChangeNotifier {
         newLongest = newStreak;
       }
 
-      // Tambah hari ini ke loginDates
-      updatedLogins.add(today);
+      // Tambah hari ini ke riwayat aktivitas (loginDates digunakan sebagai activityDates)
+      if (!updatedLogins.any((d) => d.year == today.year && d.month == today.month && d.day == today.day)) {
+        updatedLogins.add(today);
+      }
 
       // Update userModel
       final updated = _userModel!.copyWith(
