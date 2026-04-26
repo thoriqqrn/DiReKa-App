@@ -1,7 +1,10 @@
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import '../models/food_item.dart';
 
-/// Service untuk membaca dan mencari data makanan HANYA dari Firebase.
+/// Service untuk membaca dan mencari data makanan dari Firebase atau Asset lokal.
 /// Data kustom dikelola admin di koleksi 'food_catalog'.
 class FoodDatabaseService {
   static List<FoodItem>? _cache;
@@ -34,7 +37,7 @@ class FoodDatabaseService {
   );
 
   /// Load semua makanan khusus dari Firebase food_catalog.
-  /// Di-cache dengan TTL 5 menit.
+  /// Berfungsi untuk User Login maupun Guest (Unauthenticated).
   static Future<List<FoodItem>> getAll() async {
     final now = DateTime.now();
     if (_cache != null &&
@@ -43,27 +46,29 @@ class FoodDatabaseService {
       return _cache!;
     }
 
+    final items = <FoodItem>[];
+
     try {
+      // Ambil data langsung dari Firestore tanpa pengecekan auth di sisi kode
       final snapshot = await FirebaseFirestore.instance
           .collection('food_catalog')
           .get();
       
-      final items = <FoodItem>[];
       for (final doc in snapshot.docs) {
         items.add(FoodItem.fromJson(doc.data()));
       }
-
-      // Tempatkan Air Putih di posisi pertama jika belum ada
-      items.removeWhere((f) => f.id == waterItem.id || f.nama.toLowerCase() == 'air putih');
-      items.insert(0, waterItem);
-
-      _cache = items;
-      _cacheTime = now;
-      return _cache!;
-    } catch (_) {
-      // Jika offline/gagal, tampilkan air putih saja
-      return [waterItem];
+    } catch (e) {
+      // Jika gagal koneksi/permission, log error untuk debugging
+      debugPrint('Firestore Food Load Error: $e');
     }
+
+    // Selalu pastikan Air Putih ada dan di posisi pertama sebagai fallback utama
+    items.removeWhere((f) => f.id == waterItem.id || f.nama.toLowerCase() == 'air putih');
+    items.insert(0, waterItem);
+
+    _cache = items;
+    _cacheTime = now;
+    return _cache!;
   }
 
   /// Cari makanan berdasarkan nama (case-insensitive, partial match).
