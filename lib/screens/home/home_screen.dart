@@ -3,13 +3,32 @@ import 'package:provider/provider.dart';
 import '../../core/app_colors.dart';
 import '../../core/app_constants.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/app_notification_service.dart';
 import 'widgets/day_streak_card.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   final ValueChanged<int>? onNavigateToTab;
   final int currentTabIndex;
 
   const HomeScreen({super.key, this.onNavigateToTab, this.currentTabIndex = 0});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  bool _notificationsEnabled = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkNotifications();
+  }
+
+  Future<void> _checkNotifications() async {
+    final enabled = await AppNotificationService.checkPermissionStatus();
+    if (mounted) setState(() => _notificationsEnabled = enabled);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,19 +41,89 @@ class HomeScreen extends StatelessWidget {
         children: [
           _GreetingCard(auth: auth),
           const SizedBox(height: 20),
+
+          // Notification Alert Badge
+          if (auth.isAuthenticated && !_notificationsEnabled) ...[
+            _NotificationPrompt(onTap: () {
+              // Usually the app structure has a way to navigate to settings
+              // For DiReKa, settings is often reached from profile or a specific route
+              Navigator.pushNamed(context, AppConstants.routeSettings).then((_) => _checkNotifications());
+            }),
+            const SizedBox(height: 20),
+          ],
+
           if (auth.isAuthenticated && auth.currentUser != null) ...[
             DayStreakCard(user: auth.currentUser!),
             const SizedBox(height: 20),
           ],
           if (!auth.isAuthenticated) ...[
             _GuestInteractiveGuide(
-              onNavigateToTab: onNavigateToTab,
-              currentTabIndex: currentTabIndex,
+              onNavigateToTab: widget.onNavigateToTab,
+              currentTabIndex: widget.currentTabIndex,
             ),
             const SizedBox(height: 20),
             const _GuestPromptCard(),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _NotificationPrompt extends StatelessWidget {
+  final VoidCallback onTap;
+  const _NotificationPrompt({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.orange.shade50,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.orange.shade200),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: const BoxDecoration(
+                color: Colors.orange,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.notifications_none, color: Colors.white, size: 20),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Aktifkan Notifikasi',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Color(0xFFE65100), // Orange Deep
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Dapatkan notifikasi, pastikan Anda tahu saat ada pesan baru.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.black87,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: Colors.orange),
+          ],
+        ),
       ),
     );
   }

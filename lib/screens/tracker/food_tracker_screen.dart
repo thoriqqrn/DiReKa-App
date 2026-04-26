@@ -15,6 +15,7 @@ import '../../models/nutrition_needs.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/food_database_service.dart';
 import '../../services/food_log_service.dart';
+import '../../services/app_notification_service.dart';
 import '../../services/nutrition_history_service.dart';
 import '../../widgets/nutrition_line_chart.dart';
 
@@ -388,7 +389,11 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
           );
           await FoodLogService.addEntry(uid, _selectedDate, entry);
           if (mounted) {
-            context.read<AuthProvider>().updateActivityStreak();
+            final auth = context.read<AuthProvider>();
+            auth.updateActivityStreak();
+            if (auth.currentUser != null) {
+              AppNotificationService.refreshForUser(auth.currentUser!);
+            }
             _loadEntries();
           }
         },

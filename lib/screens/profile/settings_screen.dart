@@ -6,6 +6,7 @@ import '../../models/disease_type.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/disease_provider.dart';
 import '../../services/app_notification_service.dart';
+import '../notifications/notification_info_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -164,6 +165,18 @@ class SettingsScreen extends StatelessWidget {
                           const SnackBar(content: Text('Permintaan izin notifikasi dikirim.')),
                         );
                       }
+                    },
+                  ),
+                  const Divider(height: 1),
+                  _SettingsTile(
+                    icon: Icons.info_outline,
+                    label: 'Apa saja yang dinotifikasi?',
+                    subtitle: 'Lihat daftar peringatan kesehatan yang akan Anda terima',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const NotificationInfoScreen()),
+                      );
                     },
                   ),
                   const Divider(height: 1),

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -23,6 +24,10 @@ class AppNotificationService {
       FlutterLocalNotificationsPlugin();
   static bool _isInitialized = false;
 
+  // Stream controller to notify listeners about permission status changes
+  static final StreamController<bool> _permissionStreamController = StreamController<bool>.broadcast();
+  static Stream<bool> get onPermissionChanged => _permissionStreamController.stream;
+
   static Future<void> init() async {
     if (_isInitialized) return;
 
@@ -33,6 +38,10 @@ class AppNotificationService {
 
       final success = await _localNotifications.initialize(initSettings);
       _isInitialized = success ?? false;
+      
+      // Update initial status
+      final status = await checkPermissionStatus();
+      _permissionStreamController.add(status);
     } catch (e) {
       debugPrint('Notification Init Error: $e');
       _isInitialized = false;
@@ -48,8 +57,6 @@ class AppNotificationService {
       final allowed = await platform.areNotificationsEnabled();
       return allowed ?? false;
     }
-    // Untuk iOS, areNotificationsEnabled tidak langsung tersedia di plugin dasar dengan cara yang sama, 
-    // tapi kita bisa menganggap true jika sudah pernah diapprove.
     return _isInitialized;
   }
 
@@ -57,18 +64,22 @@ class AppNotificationService {
     if (!_isInitialized) await init();
     
     try {
+      bool? granted = false;
       final platform = _localNotifications.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
       if (platform != null) {
-        await platform.requestNotificationsPermission();
+        granted = await platform.requestNotificationsPermission();
       }
       
       final iosPlatform = _localNotifications.resolvePlatformSpecificImplementation<
           IOSFlutterLocalNotificationsPlugin>();
       if (iosPlatform != null) {
-        await iosPlatform.requestPermissions(alert: true, badge: true, sound: true);
+        granted = await iosPlatform.requestPermissions(alert: true, badge: true, sound: true);
       }
-      return true;
+      
+      final finalStatus = granted ?? false;
+      _permissionStreamController.add(finalStatus);
+      return finalStatus;
     } catch (e) {
       debugPrint('Request Permission Error: $e');
       return false;
@@ -323,6 +334,36 @@ class AppNotificationService {
           .where((record) => record.type == DiabetesInputType.pemeriksaan)
           .toList();
 
+      // NEW: Add individual checkup alerts for DM
+      for (final checkup in todayCheckups) {
+        if (!_isNormalCategory(checkup.payload['category'])) {
+          notifications.add(
+            AppNotification(
+              id: 'dm-checkup-${checkup.id}',
+              title: 'Hasil pemeriksaan memerlukan perhatian',
+              message: 'Hasil ${checkup.payload['exam'] ?? 'pemeriksaan'} Anda (${checkup.payload['result']}) berada di kategori ${checkup.payload['category']}.',
+              typeKey: 'dm_checkup_warning',
+              source: 'system',
+              createdAt: now,
+              diseaseType: user.diseaseType.value,
+            ),
+          );
+        }
+      }
+
+      // NEW: Add general nutrient threshold alerts for DM (especially for Carbs)
+      intakeMismatchCount += _addNutrientThresholdAlerts(
+        notifications: notifications,
+        now: now,
+        dateKey: dateKey,
+        disease: user.diseaseType,
+        totals: foodTotals,
+        thresholds: {
+          'karbohidrat': needs?.karbohidrat ?? 0,
+          'energi': needs?.energi ?? 0,
+        },
+      );
+
       // Warning Glycemic Load per makan
       final entriesByMeal = <MealType, List<FoodLogEntry>>{};
       for (var e in entriesToday) {
@@ -335,9 +376,9 @@ class AppNotificationService {
           intakeMismatchCount++;
           notifications.add(
             AppNotification(
-              id: 'dm-gl-$dateKey-\${mealType.value}',
-              title: 'Glycemic Load \${mealType.label} Tinggi',
-              message: 'Menu \${mealType.label} kamu memiliki beban glikemik tinggi (\${mealGL.toStringAsFixed(1)}).',
+              id: 'dm-gl-$dateKey-${mealType.value}',
+              title: 'Glycemic Load ${mealType.label} Tinggi',
+              message: 'Menu ${mealType.label} kamu memiliki beban glikemik tinggi (${mealGL.toStringAsFixed(1)}).',
               typeKey: 'dm_gl_warning',
               source: 'system',
               createdAt: now,
@@ -575,7 +616,11 @@ class AppNotificationService {
   static bool _isNormalCategory(dynamic value) {
     final text = (value ?? '').toString().trim().toLowerCase();
     if (text.isEmpty) return false;
-    return text == 'normal' || text == 'balance' || text == 'normal / aman';
+    return text == 'normal' || 
+           text == 'balance' || 
+           text == 'normal / aman' || 
+           text == 'aman' || 
+           text == 'sinkron';
   }
 
   static Map<String, double> _sumFoodEntries(List<FoodLogEntry> entries) {

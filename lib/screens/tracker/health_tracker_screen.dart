@@ -16,6 +16,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/disease_provider.dart';
 import '../../services/diabetes_health_service.dart';
 import '../../services/food_log_service.dart';
+import '../../services/app_notification_service.dart';
 import '../../services/heart_health_service.dart';
 import '../../services/kidney_health_service.dart';
 
@@ -205,7 +206,11 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     try {
       await KidneyHealthService.addRecord(_uid, record);
       if (mounted) {
-        context.read<AuthProvider>().updateActivityStreak();
+        final auth = context.read<AuthProvider>();
+        auth.updateActivityStreak();
+        if (auth.currentUser != null) {
+          AppNotificationService.refreshForUser(auth.currentUser!);
+        }
       }
       await _loadRecords();
     } catch (_) {
@@ -298,7 +303,11 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     try {
       await HeartHealthService.addRecord(_uid, record);
       if (mounted) {
-        context.read<AuthProvider>().updateActivityStreak();
+        final auth = context.read<AuthProvider>();
+        auth.updateActivityStreak();
+        if (auth.currentUser != null) {
+          AppNotificationService.refreshForUser(auth.currentUser!);
+        }
       }
       await _loadHeartRecords();
     } catch (_) {
@@ -392,7 +401,11 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     try {
       await DiabetesHealthService.addRecord(_uid, record);
       if (mounted) {
-        context.read<AuthProvider>().updateActivityStreak();
+        final auth = context.read<AuthProvider>();
+        auth.updateActivityStreak();
+        if (auth.currentUser != null) {
+          AppNotificationService.refreshForUser(auth.currentUser!);
+        }
       }
       await _loadDmRecords();
     } catch (_) {
