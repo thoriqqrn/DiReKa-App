@@ -28,6 +28,9 @@ class AppColors {
   static const Color diabetesColor = Color(0xFFFF8F00);
   static const Color heartColor = Color(0xFFEC407A);
 
+  // Splash
+  static const Color splashBackground = Color(0xFF000621);
+
   // Divider & border
   static const Color divider = Color(0xFFE8ECF0);
   static const Color border = Color(0xFFDDE3EA);

@@ -13,62 +13,108 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
-  late Animation<Offset> _slideAnimation;
-  late Animation<double> _loaderAnimation;
+    with TickerProviderStateMixin {
+  late AnimationController _logoController;
+  late AnimationController _textController;
+  
+  late Animation<double> _logoScale;
+  late Animation<double> _logoRotate;
+  late Animation<double> _logoFade;
+  late Animation<double> _glowAnimation;
+  
+  late Animation<double> _textFade;
+  late Animation<Offset> _textSlide;
+  late Animation<double> _loaderFade;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+    
+    // Logo Controller
+    _logoController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1800),
+      duration: const Duration(milliseconds: 2000),
     );
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+    // Text Controller
+    _textController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+
+    // Logo Animations
+    _logoScale = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeIn),
+        parent: _logoController,
+        curve: const Interval(0.0, 0.6, curve: Curves.elasticOut),
       ),
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.4, end: 1.0).animate(
+    _logoRotate = Tween<double>(begin: -0.2, end: 0.0).animate(
       CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.0, 0.7, curve: Curves.elasticOut),
+        parent: _logoController,
+        curve: const Interval(0.2, 0.8, curve: Curves.easeOutBack),
       ),
     );
 
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(
+    _logoFade = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.4, 0.8, curve: Curves.easeOutCubic),
+        parent: _logoController,
+        curve: const Interval(0.0, 0.4, curve: Curves.easeIn),
       ),
     );
 
-    _loaderAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+    _glowAnimation = Tween<double>(begin: 10.0, end: 40.0).animate(
       CurvedAnimation(
-        parent: _controller,
+        parent: _logoController,
+        curve: Curves.easeInOutSine,
+      ),
+    )..addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        _logoController.reverse();
+      } else if (status == AnimationStatus.dismissed) {
+        _logoController.forward();
+      }
+    });
+
+    // Text Animations
+    _textFade = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _textController,
+        curve: const Interval(0.0, 0.7, curve: Curves.easeIn),
+      ),
+    );
+
+    _textSlide = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+      CurvedAnimation(
+        parent: _textController,
+        curve: const Interval(0.2, 1.0, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    _loaderFade = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _textController,
         curve: const Interval(0.8, 1.0, curve: Curves.easeIn),
       ),
     );
 
-    _controller.forward();
+    _logoController.forward().then((_) {
+      _textController.forward();
+    });
+    
     _navigate();
   }
 
   Future<void> _navigate() async {
-    // Beri waktu animasi berjalan lebih lama agar terlihat
-    await Future.delayed(const Duration(milliseconds: 2500));
+    // Beri waktu animasi berjalan
+    await Future.delayed(const Duration(milliseconds: 3500));
     if (!mounted) return;
 
     final authProvider = context.read<AuthProvider>();
     final diseaseProvider = context.read<DiseaseProvider>();
 
-    // Tunggu auth state selesai (initial = belum ada info, loading = sedang fetch Firestore)
+    // Tunggu auth state selesai
     await Future.doWhile(() async {
       await Future.delayed(const Duration(milliseconds: 100));
       return authProvider.status == AuthStatus.initial ||
@@ -78,177 +124,152 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     if (authProvider.isAuthenticated) {
-      // User sudah login: langsung ke main, disease diambil dari Firestore
       Navigator.pushReplacementNamed(context, AppConstants.routeMain);
     } else if (diseaseProvider.selectedDisease == null) {
-      // Guest dan belum pilih penyakit: ke halaman pilih penyakit
       Navigator.pushReplacementNamed(
         context,
         AppConstants.routeDiseaseSelection,
       );
     } else {
-      // Guest dengan penyakit sudah dipilih: langsung ke main
       Navigator.pushReplacementNamed(context, AppConstants.routeMain);
     }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _logoController.dispose();
+    _textController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.accent,
-              AppColors.primary,
-              AppColors.primaryDark,
-            ],
-            stops: [0.0, 0.5, 1.0],
+      backgroundColor: AppColors.splashBackground,
+      body: Stack(
+        children: [
+          // Background subtle gradients
+          Positioned(
+            top: -50,
+            right: -50,
+            child: _buildOrnamen(300, Colors.blue.withValues(alpha: 0.08)),
           ),
-        ),
-        child: Center(
-          child: AnimatedBuilder(
-            animation: _controller,
-            builder: (context, child) {
-              return Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Latar belakang ornamen dekoratif
-                  Positioned(
-                    top: -100,
-                    right: -100,
-                    child: Container(
-                      width: 300,
-                      height: 300,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.1),
+          Positioned(
+            bottom: -100,
+            left: -100,
+            child: _buildOrnamen(400, Colors.purple.withValues(alpha: 0.05)),
+          ),
+          
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Logo with Glow
+                AnimatedBuilder(
+                  animation: _logoController,
+                  builder: (context, child) {
+                    return Opacity(
+                      opacity: _logoFade.value,
+                      child: Transform.scale(
+                        scale: _logoScale.value,
+                        child: Transform.rotate(
+                          angle: _logoRotate.value,
+                          child: Center(
+                            child: Container(
+                              width: 160,
+                              height: 160,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF00BCD4).withValues(alpha: 0.15),
+                                    blurRadius: _glowAnimation.value,
+                                    spreadRadius: 1,
+                                  ),
+                                ],
+                              ),
+                              child: ClipOval(
+                                child: Image.asset(
+                                  'assets/images/logodireka.png',
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: -150,
-                    left: -100,
-                    child: Container(
-                      width: 400,
-                      height: 400,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.05),
-                      ),
-                    ),
-                  ),
-                  
-                  // Konten utama
-                  Opacity(
-                    opacity: _fadeAnimation.value,
+                    );
+                  },
+                ),
+                
+                const SizedBox(height: 40),
+                
+                // Animated Text
+                FadeTransition(
+                  opacity: _textFade,
+                  child: SlideTransition(
+                    position: _textSlide,
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Transform.scale(
-                          scale: _scaleAnimation.value,
-                          child: Container(
-                            width: 130,
-                            height: 130,
-                            decoration: BoxDecoration(
+                        ShaderMask(
+                          shaderCallback: (bounds) => const LinearGradient(
+                            colors: [Colors.white, Color(0xFF00BCD4)],
+                          ).createShader(bounds),
+                          child: const Text(
+                            'DiReKa',
+                            style: TextStyle(
                               color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.primaryDark.withValues(alpha: 0.5),
-                                  blurRadius: 30,
-                                  spreadRadius: 5,
-                                  offset: const Offset(0, 15),
-                                ),
-                                BoxShadow(
-                                  color: Colors.white.withValues(alpha: 0.3),
-                                  blurRadius: 10,
-                                  spreadRadius: -5,
-                                ),
-                              ],
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(20),
-                              child: Image.asset(
-                                'assets/images/logodireka.png',
-                                fit: BoxFit.contain,
-                              ),
+                              fontSize: 50,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 6,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 36),
-                        SlideTransition(
-                          position: _slideAnimation,
-                          child: Column(
-                            children: [
-                              const Text(
-                                'DiReKa',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 44,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 4,
-                                  shadows: [
-                                    Shadow(
-                                      color: Colors.black26,
-                                      blurRadius: 12,
-                                      offset: Offset(0, 6),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(30),
-                                  border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.3),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: const Text(
-                                  'Pantau Kesehatan Anda',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    letterSpacing: 1.2,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 80),
-                        Opacity(
-                          opacity: _loaderAnimation.value,
-                          child: const SizedBox(
-                            width: 44,
-                            height: 44,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 3.5,
-                              strokeCap: StrokeCap.round,
-                            ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Terintegrasi • Terpantau • Terjaga',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.7),
+                            fontSize: 14,
+                            letterSpacing: 1.5,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
                     ),
                   ),
-                ],
-              );
-            },
+                ),
+                
+                const SizedBox(height: 80),
+                
+                // Bottom Loader
+                FadeTransition(
+                  opacity: _loaderFade,
+                  child: const SizedBox(
+                    width: 30,
+                    height: 30,
+                    child: CircularProgressIndicator(
+                      color: Color(0xFF00BCD4),
+                      strokeWidth: 2,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOrnamen(double size, Color color) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [color, Colors.transparent],
         ),
       ),
     );

@@ -73,7 +73,7 @@ flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
   image_path: "assets/images/logodireka.png"
-  adaptive_icon_background: "#ffffff"
+  adaptive_icon_background: "#000621"
   adaptive_icon_foreground: "assets/images/logodireka.png"
 
   # The "flutter_lints" package below contains a set of recommended lints to
