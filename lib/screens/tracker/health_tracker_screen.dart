@@ -35,6 +35,10 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     'Bersepeda',
     'Berenang',
     'Jogging/Lari',
+    'Memasak',
+    'Pekerjaan rumah tangga',
+    'Berkebun',
+    'Lainnya',
   ];
   static const List<String> _activityComplaintOptions = [
     'Normal',
@@ -2041,8 +2045,17 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   }) {
     final payload = existingPayload ?? {};
     DateTime date = existingDate ?? DateTime.now();
+    
     String activity = (payload['activityName'] ?? _activityOptions.first).toString();
+    // Ensure the initial value exists in options to prevent DropdownButton error
+    if (!_activityOptions.contains(activity)) {
+      activity = 'Lainnya';
+    }
+
     String complaint = (payload['complaint'] ?? _activityComplaintOptions.first).toString();
+    if (!_activityComplaintOptions.contains(complaint)) {
+      complaint = _activityComplaintOptions.first;
+    }
     
     final durationCtrl = TextEditingController(
       text: (payload['duration'] ?? '').toString(),
@@ -2077,11 +2090,11 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     ),
                     const SizedBox(height: 10),
                     DropdownButtonFormField<String>(
-                      value: activity,
+                      value: _activityOptions.contains(activity) ? activity : _activityOptions.first,
                       decoration: const InputDecoration(labelText: 'Jenis aktivitas'),
-                      items: _activityOptions
-                          .map((v) => DropdownMenuItem(value: v, child: Text(v)))
-                          .toList(),
+                      items: _activityOptions.toSet().map((v) {
+                        return DropdownMenuItem(value: v, child: Text(v));
+                      }).toList(),
                       onChanged: (v) {
                         if (v == null) return;
                         setLocalState(() => activity = v);
@@ -2099,33 +2112,29 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     ),
                     const SizedBox(height: 14),
                     DropdownButtonFormField<String>(
-                      value: complaint,
+                      value: _activityComplaintOptions.contains(complaint) ? complaint : _activityComplaintOptions.first,
                       isExpanded: true,
                       decoration: const InputDecoration(labelText: 'Status Keluhan'),
-                      items: _activityComplaintOptions
-                          .map(
-                            (v) => DropdownMenuItem(
-                              value: v,
-                              child: Text(
-                                v,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          )
-                          .toList(),
+                      items: _activityComplaintOptions.toSet().map((v) {
+                        return DropdownMenuItem(
+                          value: v,
+                          child: Text(
+                            v,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        );
+                      }).toList(),
                       selectedItemBuilder: (context) {
-                        return _activityComplaintOptions
-                            .map(
-                              (v) => Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  v,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            )
-                            .toList();
+                        return _activityComplaintOptions.toSet().map((v) {
+                          return Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              v,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }).toList();
                       },
                       onChanged: (v) {
                         if (v == null) return;
@@ -3300,11 +3309,14 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     // Activity Gauge for Heart
                     () {
                       final now = DateTime.now();
-                      final todayRecords = _heartActivityRecords.where((r) =>
-                          r.date.year == now.year &&
-                          r.date.month == now.month &&
-                          r.date.day == now.day);
-                      final totalDuration = todayRecords.fold<double>(
+                      final today = DateTime(now.year, now.month, now.day);
+                      final sevenDaysAgo = today.subtract(const Duration(days: 6));
+                      
+                      final weeklyRecords = _heartActivityRecords.where((r) =>
+                          r.date.isAfter(sevenDaysAgo.subtract(const Duration(seconds: 1))) &&
+                          r.date.isBefore(today.add(const Duration(days: 1))));
+
+                      final totalDuration = weeklyRecords.fold<double>(
                           0,
                           (sum, r) =>
                               sum +
@@ -3312,7 +3324,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                                   0));
                       return _ActivityGauge(
                         totalDuration: totalDuration,
+                        target: 150.0,
                         themeColor: AppColors.primary,
+                        isWeekly: true,
                       );
                     }(),
                     const SizedBox(height: 16),
@@ -3420,11 +3434,14 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     // Activity Gauge for Diabetes
                     () {
                       final now = DateTime.now();
-                      final todayRecords = _dmActivityRecords.where((r) =>
-                          r.date.year == now.year &&
-                          r.date.month == now.month &&
-                          r.date.day == now.day);
-                      final totalDuration = todayRecords.fold<double>(
+                      final today = DateTime(now.year, now.month, now.day);
+                      final sevenDaysAgo = today.subtract(const Duration(days: 6));
+
+                      final weeklyRecords = _dmActivityRecords.where((r) =>
+                          r.date.isAfter(sevenDaysAgo.subtract(const Duration(seconds: 1))) &&
+                          r.date.isBefore(today.add(const Duration(days: 1))));
+                      
+                      final totalDuration = weeklyRecords.fold<double>(
                           0,
                           (sum, r) =>
                               sum +
@@ -3432,7 +3449,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                                   0));
                       return _ActivityGauge(
                         totalDuration: totalDuration,
+                        target: 150.0,
                         themeColor: Colors.orange.shade700,
+                        isWeekly: true,
                       );
                     }(),
                     const SizedBox(height: 16),
@@ -5161,7 +5180,7 @@ class _DiabetesInsulinSummaryTableState extends State<_DiabetesInsulinSummaryTab
                           ),
                         ),
                         child: const Text(
-                          'Baris warna kuning: perlu mengisi lewat form input analisis insulin.',
+                          'Keterangan: Biru (belum input), Kuning (perlu update), Hijau (sinkron/aman).',
                           style: TextStyle(
                             fontSize: 11,
                             color: AppColors.textSecondary,
@@ -5220,9 +5239,9 @@ class _DiabetesInsulinSummaryTableState extends State<_DiabetesInsulinSummaryTab
                           color: (statusText == 'Perlu update' ||
                                   statusText == 'Belum input')
                               ? MaterialStatePropertyAll<Color?>(
-                                  AppColors.warning.withValues(
-                                    alpha: statusText == 'Belum input' ? 0.22 : 0.14,
-                                  ),
+                                  statusText == 'Belum input' 
+                                    ? Colors.blue.withValues(alpha: 0.12)
+                                    : AppColors.warning.withValues(alpha: 0.14),
                                 )
                               : null,
                           cells: [
@@ -6061,7 +6080,13 @@ class _TableCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          child,
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 300),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.vertical,
+              child: child,
+            ),
+          ),
           const SizedBox(height: 8),
         ],
       ),
@@ -6146,11 +6171,13 @@ class _ActivityGauge extends StatelessWidget {
   final double totalDuration;
   final double target;
   final Color themeColor;
+  final bool isWeekly;
 
   const _ActivityGauge({
     required this.totalDuration,
-    this.target = 30.0, // Default 30 menit per hari
+    this.target = 150.0, // Default 150 menit per minggu
     required this.themeColor,
+    this.isWeekly = true,
   });
 
   double get _ratio => target > 0 ? totalDuration / target : 0;
@@ -6177,10 +6204,10 @@ class _ActivityGauge extends StatelessWidget {
             children: [
               Icon(Icons.directions_run_outlined, color: themeColor, size: 20),
               const SizedBox(width: 8),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Progres Aktivitas Harian',
-                  style: TextStyle(
+                  isWeekly ? 'Progres Aktivitas Mingguan' : 'Progres Aktivitas Harian',
+                  style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
                     color: AppColors.textPrimary,

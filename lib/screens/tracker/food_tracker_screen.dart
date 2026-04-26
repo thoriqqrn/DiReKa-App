@@ -2840,6 +2840,7 @@ class _DMDailyMealTable extends StatelessWidget {
   }
 
   Color _getStatusColor(double percentage) {
+    if (percentage <= 0) return Colors.blue; // Biru jika belum ada data
     if (percentage > 1.0) return AppColors.error; // Merah jika berlebih (>100%)
     if (percentage >= 0.8) return AppColors.success; // Hijau jika sudah >= 80%
     return AppColors.warning; // Kuning jika masih kurang (<80%)
