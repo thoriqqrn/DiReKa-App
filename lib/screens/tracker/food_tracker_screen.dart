@@ -2809,6 +2809,7 @@ class _DMDailyMealTable extends StatelessWidget {
       'lemak': entries.fold(0.0, (sum, e) => sum + e.lemak),
       'karbohidrat': entries.fold(0.0, (sum, e) => sum + e.karbohidrat),
       'serat': entries.fold(0.0, (sum, e) => sum + e.serat),
+      'gl': entries.fold(0.0, (sum, e) => sum + e.glycemicLoad),
     };
   }
 
@@ -2817,7 +2818,8 @@ class _DMDailyMealTable extends StatelessWidget {
         totalProtein = 0,
         totalLemak = 0,
         totalCarb = 0,
-        totalSerat = 0;
+        totalSerat = 0,
+        totalGL = 0;
     for (final meal in entriesByMeal.values) {
       final totals = _calculateMealTotals(meal);
       totalEnergi += totals['energi']!;
@@ -2825,6 +2827,7 @@ class _DMDailyMealTable extends StatelessWidget {
       totalLemak += totals['lemak']!;
       totalCarb += totals['karbohidrat']!;
       totalSerat += totals['serat']!;
+      totalGL += totals['gl']!;
     }
     return {
       'energi': totalEnergi,
@@ -2832,6 +2835,7 @@ class _DMDailyMealTable extends StatelessWidget {
       'lemak': totalLemak,
       'karbohidrat': totalCarb,
       'serat': totalSerat,
+      'gl': totalGL,
     };
   }
 
@@ -3240,6 +3244,87 @@ class _DailyInterpretationTable extends StatelessWidget {
     required this.formatPercentage,
   });
 
+  void _showEnlargedInterpretationTable(BuildContext context) {
+    const mealOrder = [
+      MealType.sarapan,
+      MealType.selinganPagi,
+      MealType.makanSiang,
+      MealType.selinganSiang,
+      MealType.makanMalam,
+      MealType.selinganMalam,
+    ];
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog.fullscreen(
+        child: Scaffold(
+          backgroundColor: AppColors.background,
+          appBar: AppBar(
+            title: const Text('Rincian Ketercapaian Harian'),
+            backgroundColor: AppColors.background,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.close, color: AppColors.textPrimary),
+              onPressed: () => Navigator.pop(ctx),
+            ),
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Ringkasan Per Waktu Makan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                const SizedBox(height: 12),
+                _buildBaseTable(mealOrder, isPercentage: false),
+                const SizedBox(height: 32),
+                const Text('Persentase Ketercapaian Gizi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                const SizedBox(height: 12),
+                _buildBaseTable(mealOrder, isPercentage: true),
+                const SizedBox(height: 60),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBaseTable(List<MealType> mealOrder, {required bool isPercentage}) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: 600),
+        child: Table(
+          columnWidths: const {
+            0: FlexColumnWidth(2),
+            1: FlexColumnWidth(1.2),
+            2: FlexColumnWidth(1.2),
+            3: FlexColumnWidth(1.2),
+            4: FlexColumnWidth(1.2),
+            5: FlexColumnWidth(1.2),
+          },
+          children: [
+            TableRow(
+              decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+              children: [
+                _interpHeaderCell('Waktu Makan', isEnlarged: true),
+                _interpHeaderCell(isPercentage ? '% Energi' : 'Energi', isEnlarged: true),
+                _interpHeaderCell(isPercentage ? '% Prot' : 'Prot', isEnlarged: true),
+                _interpHeaderCell(isPercentage ? '% Lemak' : 'Lemak', isEnlarged: true),
+                _interpHeaderCell(isPercentage ? '% Karbo' : 'Karbo', isEnlarged: true),
+                _interpHeaderCell(isPercentage ? '% Serat' : 'Serat', isEnlarged: true),
+              ],
+            ),
+            for (final meal in mealOrder)
+              isPercentage 
+                ? _buildMealPercentageRow(meal, entriesByMeal[meal] ?? [], isEnlarged: true)
+                : _buildMealInterpretationRow(meal, entriesByMeal[meal] ?? [], isEnlarged: true),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     const mealOrder = [
@@ -3251,6 +3336,13 @@ class _DailyInterpretationTable extends StatelessWidget {
       MealType.selinganMalam,
     ];
 
+    final dailyTotals = calculateDailyTotals();
+    final pE = totalNeeds.energi > 0 ? dailyTotals['energi']! / totalNeeds.energi : 0.0;
+    final pP = totalNeeds.protein > 0 ? dailyTotals['protein']! / totalNeeds.protein : 0.0;
+    final pL = totalNeeds.lemak > 0 ? dailyTotals['lemak']! / totalNeeds.lemak : 0.0;
+    final pK = totalNeeds.karbohidrat > 0 ? dailyTotals['karbohidrat']! / totalNeeds.karbohidrat : 0.0;
+    final pS = totalNeeds.serat > 0 ? dailyTotals['serat']! / totalNeeds.serat : 0.0;
+
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey.shade300, width: 1),
@@ -3261,7 +3353,7 @@ class _DailyInterpretationTable extends StatelessWidget {
         children: [
           // Meals interpretation header
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
               color: Colors.blue.shade50,
               borderRadius: const BorderRadius.only(
@@ -3269,9 +3361,18 @@ class _DailyInterpretationTable extends StatelessWidget {
                 topRight: Radius.circular(12),
               ),
             ),
-            child: const Text(
-              'Ringkasan Per Waktu Makan',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Ringkasan Per Waktu Makan',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.fullscreen, size: 20, color: AppColors.primary),
+                  onPressed: () => _showEnlargedInterpretationTable(context),
+                ),
+              ],
             ),
           ),
 
@@ -3314,65 +3415,22 @@ class _DailyInterpretationTable extends StatelessWidget {
                         meal,
                         entriesByMeal[meal] ?? [],
                       ),
-                  ],
-                ),
-              ),
-            ),
-          ),
 
-          const Divider(height: 1),
-
-          // NEW: Persentase Ketercapaian Gizi header
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.green.shade50,
-            ),
-            child: const Text(
-              'Persentase Ketercapaian Gizi',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-            ),
-          ),
-
-          // NEW: Persentase rows
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minWidth: 500),
-                child: Table(
-                  columnWidths: const {
-                    0: FlexColumnWidth(2), // Waktu Makan
-                    1: FlexColumnWidth(1.2), // % Energi
-                    2: FlexColumnWidth(1.2), // % Protein
-                    3: FlexColumnWidth(1.2), // % Lemak
-                    4: FlexColumnWidth(1.2), // % Karbo
-                    5: FlexColumnWidth(1.2), // % Serat
-                  },
-                  children: [
-                    // Header row
+                    // Summary row (Daily percentage)
                     TableRow(
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(6),
+                        color: Colors.green.shade50,
+                        border: Border(top: BorderSide(color: Colors.grey.shade300, width: 2)),
                       ),
                       children: [
-                        _interpHeaderCell('Waktu Makan'),
-                        _interpHeaderCell('% Energi'),
-                        _interpHeaderCell('% Prot'),
-                        _interpHeaderCell('% Lemak'),
-                        _interpHeaderCell('% Karbo'),
-                        _interpHeaderCell('% Serat'),
+                        _interpDataCell('Total Ketercapaian (%)', isBold: true),
+                        _interpPercentageCell(pE),
+                        _interpPercentageCell(pP),
+                        _interpPercentageCell(pL),
+                        _interpPercentageCell(pK),
+                        _interpPercentageCell(pS),
                       ],
                     ),
-
-                    // Meal percentage rows
-                    for (final meal in mealOrder)
-                      _buildMealPercentageRow(
-                        meal,
-                        entriesByMeal[meal] ?? [],
-                      ),
                   ],
                 ),
               ),
@@ -3386,6 +3444,7 @@ class _DailyInterpretationTable extends StatelessWidget {
   TableRow _buildMealInterpretationRow(
     MealType meal,
     List<FoodLogEntry> entries,
+    {bool isEnlarged = false}
   ) {
     final percentage = meal.dmCaloriePercentage;
     final targetEnergi = totalNeeds.energi * percentage;
@@ -3412,12 +3471,12 @@ class _DailyInterpretationTable extends StatelessWidget {
     return TableRow(
       decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.05)),
       children: [
-        _interpDataCell('${meal.emoji} ${meal.label}'),
-        _interpDataCell('${actualEnergi.toInt()} / ${targetEnergi.toInt()}'),
-        _interpDataCell('${actualProt.toStringAsFixed(1)} / ${targetProt.toStringAsFixed(1)}'),
-        _interpDataCell('${actualLemak.toStringAsFixed(1)} / ${targetLemak.toStringAsFixed(1)}'),
-        _interpDataCell('${actualKarbo.toStringAsFixed(1)} / ${targetKarbo.toStringAsFixed(1)}'),
-        _interpDataCell('${actualSerat.toStringAsFixed(1)} / ${targetSerat.toStringAsFixed(1)}'),
+        _interpDataCell('${meal.emoji} ${meal.label}', isEnlarged: isEnlarged),
+        _interpDataCell('${actualEnergi.toInt()} / ${targetEnergi.toInt()}', isEnlarged: isEnlarged),
+        _interpDataCell('${actualProt.toStringAsFixed(1)} / ${targetProt.toStringAsFixed(1)}', isEnlarged: isEnlarged),
+        _interpDataCell('${actualLemak.toStringAsFixed(1)} / ${targetLemak.toStringAsFixed(1)}', isEnlarged: isEnlarged),
+        _interpDataCell('${actualKarbo.toStringAsFixed(1)} / ${targetKarbo.toStringAsFixed(1)}', isEnlarged: isEnlarged),
+        _interpDataCell('${actualSerat.toStringAsFixed(1)} / ${targetSerat.toStringAsFixed(1)}', isEnlarged: isEnlarged),
       ],
     );
   }
@@ -3425,6 +3484,7 @@ class _DailyInterpretationTable extends StatelessWidget {
   TableRow _buildMealPercentageRow(
     MealType meal,
     List<FoodLogEntry> entries,
+    {bool isEnlarged = false}
   ) {
     final percentage = meal.dmCaloriePercentage;
     final targetEnergi = totalNeeds.energi * percentage;
@@ -3451,20 +3511,20 @@ class _DailyInterpretationTable extends StatelessWidget {
     return TableRow(
       decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.05)),
       children: [
-        _interpDataCell('${meal.emoji} ${meal.label}'),
-        _interpPercentageCell(pE),
-        _interpPercentageCell(pP),
-        _interpPercentageCell(pL),
-        _interpPercentageCell(pK),
-        _interpPercentageCell(pS),
+        _interpDataCell('${meal.emoji} ${meal.label}', isEnlarged: isEnlarged),
+        _interpPercentageCell(pE, isEnlarged: isEnlarged),
+        _interpPercentageCell(pP, isEnlarged: isEnlarged),
+        _interpPercentageCell(pL, isEnlarged: isEnlarged),
+        _interpPercentageCell(pK, isEnlarged: isEnlarged),
+        _interpPercentageCell(pS, isEnlarged: isEnlarged),
       ],
     );
   }
 
-  Widget _interpPercentageCell(double ratio) {
+  Widget _interpPercentageCell(double ratio, {bool isEnlarged = false}) {
     final statusColor = getStatusColor(ratio);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      padding: EdgeInsets.symmetric(vertical: isEnlarged ? 12 : 8, horizontal: 4),
       child: Container(
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
@@ -3474,24 +3534,24 @@ class _DailyInterpretationTable extends StatelessWidget {
         ),
         child: Text(
           formatPercentage(ratio),
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
-            fontSize: 10,
+            fontSize: isEnlarged ? 12 : 10,
           ),
         ),
       ),
     );
   }
 
-  Widget _interpHeaderCell(String text) {
+  Widget _interpHeaderCell(String text, {bool isEnlarged = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      padding: EdgeInsets.symmetric(vertical: isEnlarged ? 12 : 8, horizontal: 4),
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           fontWeight: FontWeight.bold,
-          fontSize: 11,
+          fontSize: isEnlarged ? 13 : 11,
           color: Colors.grey,
         ),
         textAlign: TextAlign.center,
@@ -3501,14 +3561,14 @@ class _DailyInterpretationTable extends StatelessWidget {
     );
   }
 
-  Widget _interpDataCell(String text, {bool isBold = false, Color? color}) {
+  Widget _interpDataCell(String text, {bool isBold = false, Color? color, bool isEnlarged = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      padding: EdgeInsets.symmetric(vertical: isEnlarged ? 12 : 8, horizontal: 4),
       child: Text(
         text,
         style: TextStyle(
           fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-          fontSize: 11,
+          fontSize: isEnlarged ? 13 : 11,
           color: color ?? Colors.black87,
         ),
         textAlign: TextAlign.center,
@@ -3621,6 +3681,8 @@ class _GlycemicLoadChart extends StatelessWidget {
           touchTooltipData: BarTouchTooltipData(
             getTooltipColor: (_) => Colors.blueGrey,
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
+              final gl = rod.toY;
+              final percentage = (gl / 20.0 * 100).toStringAsFixed(0);
               return BarTooltipItem(
                 '${_dmMealOrder[group.x].label}\n',
                 TextStyle(
@@ -3630,7 +3692,7 @@ class _GlycemicLoadChart extends StatelessWidget {
                 ),
                 children: <TextSpan>[
                   TextSpan(
-                    text: rod.toY.toStringAsFixed(1),
+                    text: '${gl.toStringAsFixed(1)} ($percentage%)',
                     style: const TextStyle(
                       color: Colors.yellow,
                       fontSize: 12,
@@ -3716,6 +3778,7 @@ class _GlycemicLoadChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final mealGL = _calculateMealGL();
     final totalGL = mealGL.values.fold(0.0, (sum, gl) => sum + gl);
+    final totalPercentage = (totalGL / 120.0 * 100).toStringAsFixed(0);
 
     // Find peak GL
     MealType? peakMeal;
@@ -3781,7 +3844,7 @@ class _GlycemicLoadChart extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Total GL hari ini: ${totalGL.toStringAsFixed(1)} • $peakInfo',
+            'Total GL hari ini: ${totalGL.toStringAsFixed(1)} ($totalPercentage%) • $peakInfo',
             style: const TextStyle(
               fontSize: 11,
               color: AppColors.textSecondary,
