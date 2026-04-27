@@ -1,7 +1,5 @@
-import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import '../models/food_item.dart';
 
 /// Service untuk membaca dan mencari data makanan dari Firebase atau Asset lokal.

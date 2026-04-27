@@ -67,10 +67,10 @@ class NutritionHistoryService {
         }
 
         // Sum nutrients untuk hari tersebut
-        final energi = entries.fold(0.0, (sum, e) => sum + e.energi);
-        final lemak = entries.fold(0.0, (sum, e) => sum + e.lemak);
-        final natrium = entries.fold(0.0, (sum, e) => sum + e.natrium);
-        final cairan = entries.fold(0.0, (sum, e) => sum + e.air);
+        final energi = entries.fold(0.0, (total, e) => total + e.energi);
+        final lemak = entries.fold(0.0, (total, e) => total + e.lemak);
+        final natrium = entries.fold(0.0, (total, e) => total + e.natrium);
+        final cairan = entries.fold(0.0, (total, e) => total + e.air);
 
         return DailyNutrition(
           date: date,

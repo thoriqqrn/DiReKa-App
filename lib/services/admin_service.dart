@@ -264,53 +264,27 @@ class AdminService {
     }).toList();
   }
 
-  /// Stream realtime jumlah user
-  Stream<int> userCountStream() {
-    return _users.snapshots().map((snap) => snap.docs.length);
-  }
-
-  /// Hapus akun user (Hanya Firestore data, untuk Auth perlu admin SDK/Firebase Console)
-  Future<void> deleteUserAccount(String uid) async {
-    final batch = _db.batch();
-    
-    // 1. Hapus dokumen profil
-    batch.delete(_users.doc(uid));
-
-    // 2. Hapus log makanan (jika ada)
-    // Note: Karena Firestore tidak bisa delete collection secara rekursif via batch dengan wildcard,
-    // kita hapus log yang tanggalnya tersimpan (limitasi: butuh query dlu jika ingin bersih total)
-    // Untuk saat ini kita hapus data profil dan trigger refresh ui.
-    
-    await batch.commit();
-  }
-
-  /// Kirim notifikasi ke SEMUA user terdaftar
+  /// Kirim pengumuman/notifikasi ke semua user
   Future<void> sendBroadcastNotification({
     required String title,
     required String message,
   }) async {
-    final usersSnapshot = await _users.get();
-    final now = DateTime.now();
-    final batch = _db.batch();
+    await _db.collection('admin_broadcasts').add({
+      'title': title.trim(),
+      'message': message.trim(),
+      'createdAt': FieldValue.serverTimestamp(),
+      'sentBy': _auth.currentUser?.email ?? 'admin',
+    });
+  }
 
-    for (final doc in usersSnapshot.docs) {
-      final uid = doc.id;
-      final notifId = 'broadcast_\${now.millisecondsSinceEpoch}';
-      final notifRef = _users.doc(uid).collection('notifications').doc(notifId);
+  /// Hapus akun user dari database
+  Future<void> deleteUserAccount(String uid) async {
+    await _users.doc(uid).delete();
+  }
 
-      batch.set(notifRef, {
-        'id': notifId,
-        'title': title,
-        'message': message,
-        'typeKey': 'broadcast',
-        'source': 'admin',
-        'createdAt': FieldValue.serverTimestamp(),
-        'isRead': false,
-        'diseaseType': 'all',
-      });
-    }
-
-    await batch.commit();
+  /// Stream realtime jumlah user
+  Stream<int> userCountStream() {
+    return _users.snapshots().map((snap) => snap.docs.length);
   }
 
   AdminHealthRecordSummary _mapHealthDoc(

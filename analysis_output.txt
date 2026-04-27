@@ -1,0 +1,102 @@
+Analyzing DiReKa-App...                                         
+
+   info • Unnecessary 'this.' qualifier • lib/models/user_model.dart:298:41 • unnecessary_this
+warning • The declaration '_showSoon' isn't referenced • lib/screens/admin/admin_settings_screen.dart:223:8 • unused_element
+warning • A value for optional parameter 'isSoon' isn't ever given • lib/screens/admin/admin_settings_screen.dart:393:10 • unused_element_parameter
+warning • Unused import: 'dart:math' • lib/screens/admin/tabs/admin_home_tab.dart:1:8 • unused_import
+   info • Unnecessary use of string interpolation • lib/screens/admin/tabs/admin_users_tab.dart:260:37 • unnecessary_string_interpolations
+   info • Statements in an if should be enclosed in a block • lib/screens/auth/login_screen.dart:95:25 • curly_braces_in_flow_control_structures
+warning • The value of the local variable 'ext' isn't used • lib/screens/home/home_screen.dart:37:11 • unused_local_variable
+  error • The constructor being called isn't a const constructor • lib/screens/home/main_screen.dart:170:7 • const_with_non_const
+  error • The constructor being called isn't a const constructor • lib/screens/home/main_screen.dart:171:7 • const_with_non_const
+warning • Unused import: '../../../core/app_colors.dart' • lib/screens/home/widgets/day_streak_card.dart:3:8 • unused_import
+   info • Constructors for public widgets should have a named 'key' parameter • lib/screens/home/widgets/day_streak_card.dart:8:9 • use_key_in_widget_constructors
+warning • Unused import: '../../models/disease_type.dart' • lib/screens/notifications/notification_info_screen.dart:3:8 • unused_import
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/education_screen.dart:15:3 • prefer_const_constructors_in_immutables
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/education_screen.dart:124:3 • prefer_const_constructors_in_immutables
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/education_screen.dart:214:3 • prefer_const_constructors_in_immutables
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/education_screen.dart:301:3 • prefer_const_constructors_in_immutables
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/education_screen.dart:402:3 • prefer_const_constructors_in_immutables
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/education_screen.dart:429:3 • prefer_const_constructors_in_immutables
+warning • Unused import: '../../providers/theme_provider.dart' • lib/screens/tracker/food_tracker_screen.dart:16:8 • unused_import
+   info • Unnecessary use of 'toList' in a spread • lib/screens/tracker/food_tracker_screen.dart:370:18 • unnecessary_to_list_in_spreads
+   info • The variable name '_HFWeeklyChartsSection' isn't a lowerCamelCase identifier • lib/screens/tracker/food_tracker_screen.dart:410:10 • non_constant_identifier_names
+warning • The declaration '_DayFluidData' isn't referenced • lib/screens/tracker/food_tracker_screen.dart:1059:7 • unused_element
+   info • Unnecessary use of string interpolation • lib/screens/tracker/food_tracker_screen.dart:1271:25 • unnecessary_string_interpolations
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/health_tracker_screen.dart:24:3 • prefer_const_constructors_in_immutables
+   info • The private field _activityOptions could be 'final' • lib/screens/tracker/health_tracker_screen.dart:33:23 • prefer_final_fields
+   info • The private field _activityComplaintOptions could be 'final' • lib/screens/tracker/health_tracker_screen.dart:44:23 • prefer_final_fields
+   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre • lib/screens/tracker/health_tracker_screen.dart:860:19 • deprecated_member_use
+   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre • lib/screens/tracker/health_tracker_screen.dart:914:25 • deprecated_member_use
+   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre • lib/screens/tracker/health_tracker_screen.dart:1075:19 • deprecated_member_use
+   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre • lib/screens/tracker/health_tracker_screen.dart:1303:21 • deprecated_member_use
+   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre • lib/screens/tracker/health_tracker_screen.dart:1716:23 • deprecated_member_use
+warning • The declaration '_activityGroup' isn't referenced • lib/screens/tracker/health_tracker_screen.dart:1991:10 • unused_element
+  error • Undefined name 'daily' • lib/screens/tracker/health_tracker_screen.dart:1992:5 • undefined_identifier
+  error • Undefined name 'daily' • lib/screens/tracker/health_tracker_screen.dart:1993:12 • undefined_identifier
+  error • Undefined name 'light' • lib/screens/tracker/health_tracker_screen.dart:1997:5 • undefined_identifier
+  error • Undefined name 'moderate' • lib/screens/tracker/health_tracker_screen.dart:1998:5 • undefined_identifier
+  error • Undefined name 'light' • lib/screens/tracker/health_tracker_screen.dart:1999:9 • undefined_identifier
+  error • Undefined name 'moderate' • lib/screens/tracker/health_tracker_screen.dart:2000:9 • undefined_identifier
+warning • The declaration '_activitySystemResult' isn't referenced • lib/screens/tracker/health_tracker_screen.dart:2004:55 • unused_element
+  error • Undefined name 'severeComplaints' • lib/screens/tracker/health_tracker_screen.dart:2010:5 • undefined_identifier
+  error • Undefined name 'severeComplaints' • lib/screens/tracker/health_tracker_screen.dart:2012:9 • undefined_identifier
+   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre • lib/screens/tracker/health_tracker_screen.dart:2115:23 • deprecated_member_use
+   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre • lib/screens/tracker/health_tracker_screen.dart:2137:23 • deprecated_member_use
+   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre • lib/screens/tracker/health_tracker_screen.dart:2535:21 • deprecated_member_use
+   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre • lib/screens/tracker/health_tracker_screen.dart:2597:27 • deprecated_member_use
+   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre • lib/screens/tracker/health_tracker_screen.dart:2924:19 • deprecated_member_use
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/health_tracker_screen.dart:3732:3 • prefer_const_constructors_in_immutables
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/health_tracker_screen.dart:3762:3 • prefer_const_constructors_in_immutables
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/health_tracker_screen.dart:3967:3 • prefer_const_constructors_in_immutables
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/health_tracker_screen.dart:4078:3 • prefer_const_constructors_in_immutables
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/health_tracker_screen.dart:4169:3 • prefer_const_constructors_in_immutables
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/health_tracker_screen.dart:4223:3 • prefer_const_constructors_in_immutables
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/health_tracker_screen.dart:4258:3 • prefer_const_constructors_in_immutables
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/health_tracker_screen.dart:4337:3 • prefer_const_constructors_in_immutables
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/health_tracker_screen.dart:4462:3 • prefer_const_constructors_in_immutables
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/health_tracker_screen.dart:4546:3 • prefer_const_constructors_in_immutables
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/health_tracker_screen.dart:4613:3 • prefer_const_constructors_in_immutables
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/health_tracker_screen.dart:4681:3 • prefer_const_constructors_in_immutables
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/health_tracker_screen.dart:4760:3 • prefer_const_constructors_in_immutables
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/health_tracker_screen.dart:4862:3 • prefer_const_constructors_in_immutables
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/health_tracker_screen.dart:4991:3 • prefer_const_constructors_in_immutables
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/health_tracker_screen.dart:5014:3 • prefer_const_constructors_in_immutables
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/health_tracker_screen.dart:5032:3 • prefer_const_constructors_in_immutables
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/health_tracker_screen.dart:5049:3 • prefer_const_constructors_in_immutables
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/health_tracker_screen.dart:5083:3 • prefer_const_constructors_in_immutables
+   info • The private field _mealOrder could be 'final' • lib/screens/tracker/health_tracker_screen.dart:5098:23 • prefer_final_fields
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/health_tracker_screen.dart:5523:3 • prefer_const_constructors_in_immutables
+warning • The value of the local variable 'theme' isn't used • lib/screens/tracker/health_tracker_screen.dart:5532:11 • unused_local_variable
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/health_tracker_screen.dart:5607:3 • prefer_const_constructors_in_immutables
+warning • The value of the local variable 'theme' isn't used • lib/screens/tracker/health_tracker_screen.dart:5616:11 • unused_local_variable
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/health_tracker_screen.dart:5685:3 • prefer_const_constructors_in_immutables
+warning • The value of the local variable 'theme' isn't used • lib/screens/tracker/health_tracker_screen.dart:5689:11 • unused_local_variable
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/health_tracker_screen.dart:5723:3 • prefer_const_constructors_in_immutables
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/health_tracker_screen.dart:5775:3 • prefer_const_constructors_in_immutables
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/health_tracker_screen.dart:5809:3 • prefer_const_constructors_in_immutables
+   info • Constructors in '@immutable' classes should be declared as 'const' • lib/screens/tracker/health_tracker_screen.dart:5849:3 • prefer_const_constructors_in_immutables
+  error • Undefined name 'androidInit' • lib/services/app_notification_service.dart:35:7 • undefined_identifier
+  error • Undefined name 'iosInit' • lib/services/app_notification_service.dart:36:7 • undefined_identifier
+  error • Undefined name 'initSettings' • lib/services/app_notification_service.dart:37:7 • undefined_identifier
+  error • Undefined name 'androidInit' • lib/services/app_notification_service.dart:37:54 • undefined_identifier
+  error • Undefined name 'iosInit' • lib/services/app_notification_service.dart:37:72 • undefined_identifier
+  error • The named parameter 'settings' is required, but there's no corresponding argument • lib/services/app_notification_service.dart:39:49 • missing_required_argument
+  error • Too many positional arguments: 0 expected, but 1 found • lib/services/app_notification_service.dart:39:60 • extra_positional_arguments_could_be_named
+  error • Undefined name 'initSettings' • lib/services/app_notification_service.dart:39:60 • undefined_identifier
+  error • Undefined name 'androidDetails' • lib/services/app_notification_service.dart:663:5 • undefined_identifier
+  error • Undefined name 'iosDetails' • lib/services/app_notification_service.dart:670:5 • undefined_identifier
+  error • Undefined name 'platformDetails' • lib/services/app_notification_service.dart:671:5 • undefined_identifier
+  error • Undefined name 'androidDetails' • lib/services/app_notification_service.dart:672:16 • undefined_identifier
+  error • Undefined name 'iosDetails' • lib/services/app_notification_service.dart:673:12 • undefined_identifier
+  error • The named parameter 'id' is required, but there's no corresponding argument • lib/services/app_notification_service.dart:676:31 • missing_required_argument
+  error • Too many positional arguments: 0 expected, but 4 found • lib/services/app_notification_service.dart:677:7 • extra_positional_arguments_could_be_named
+  error • Undefined name 'platformDetails' • lib/services/app_notification_service.dart:680:7 • undefined_identifier
+warning • The declaration '_toDouble' isn't referenced • lib/services/app_notification_service.dart:684:17 • unused_element
+warning • Unused import: 'dart:convert' • lib/services/food_database_service.dart:1:8 • unused_import
+warning • Unused import: 'package:flutter/services.dart' • lib/services/food_database_service.dart:4:8 • unused_import
+warning • Unused import: '../core/app_colors.dart' • lib/widgets/custom_button.dart:2:8 • unused_import
+warning • Unused import: '../core/app_colors.dart' • lib/widgets/custom_text_field.dart:2:8 • unused_import
+warning • Unused import: '../../core/app_colors.dart' • lib/widgets/nutrition_line_chart.dart:4:8 • unused_import
+
+98 issues found. (ran in 15.3s)

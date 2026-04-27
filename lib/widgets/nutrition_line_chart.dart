@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../services/nutrition_history_service.dart';
-import '../../core/app_colors.dart';
 
 /// Reusable line chart widget untuk nutrition tracking HF patients.
 /// Menampilkan actual consumption vs target dengan 2 garis.
@@ -29,10 +28,13 @@ class NutritionLineChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     if (weeklyData.isEmpty) {
-      return const SizedBox(
+      return SizedBox(
         height: 260,
-        child: Center(child: CircularProgressIndicator()),
+        child: Center(child: CircularProgressIndicator(color: theme.primaryColor)),
       );
     }
 
@@ -48,11 +50,12 @@ class NutritionLineChart extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(12),
+        border: isDark ? Border.all(color: theme.dividerColor) : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -69,10 +72,10 @@ class NutritionLineChart extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: theme.textTheme.titleMedium?.color,
                   ),
                 ),
                 Row(
@@ -87,11 +90,11 @@ class NutritionLineChart extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 4),
-                    const Text(
+                    Text(
                       'Aktual',
                       style: TextStyle(
                         fontSize: 11,
-                        color: AppColors.textSecondary,
+                        color: theme.hintColor,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -100,17 +103,17 @@ class NutritionLineChart extends StatelessWidget {
                     Container(
                       width: 8,
                       height: 8,
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.redAccent.shade100 : Colors.red,
                         shape: BoxShape.circle,
                       ),
                     ),
                     const SizedBox(width: 4),
-                    const Text(
+                    Text(
                       'Target',
                       style: TextStyle(
                         fontSize: 11,
-                        color: AppColors.textSecondary,
+                        color: theme.hintColor,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -133,7 +136,7 @@ class NutritionLineChart extends StatelessWidget {
                     horizontalInterval: (maxY - minY) / 4,
                     getDrawingHorizontalLine: (value) {
                       return FlLine(
-                        color: Colors.grey.withValues(alpha: 0.08),
+                        color: theme.dividerColor.withValues(alpha: 0.2),
                         strokeWidth: 0.8,
                         dashArray: [5, 5],
                       );
@@ -161,9 +164,9 @@ class NutritionLineChart extends StatelessWidget {
                               padding: const EdgeInsets.only(top: 8),
                               child: Text(
                                 dayLabel,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 10,
-                                  color: AppColors.textSecondary,
+                                  color: theme.hintColor,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -180,9 +183,9 @@ class NutritionLineChart extends StatelessWidget {
                         getTitlesWidget: (value, meta) {
                           return Text(
                             value.toInt().toString(),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 9,
-                              color: AppColors.textSecondary,
+                              color: theme.hintColor,
                               fontWeight: FontWeight.w500,
                             ),
                           );
@@ -200,11 +203,11 @@ class NutritionLineChart extends StatelessWidget {
                     show: true,
                     border: Border(
                       left: BorderSide(
-                        color: Colors.grey.withValues(alpha: 0.2),
+                        color: theme.dividerColor.withValues(alpha: 0.3),
                         width: 0.8,
                       ),
                       bottom: BorderSide(
-                        color: Colors.grey.withValues(alpha: 0.2),
+                        color: theme.dividerColor.withValues(alpha: 0.3),
                         width: 0.8,
                       ),
                     ),
@@ -228,7 +231,7 @@ class NutritionLineChart extends StatelessWidget {
                             radius: 4,
                             color: lineColor,
                             strokeWidth: 2,
-                            strokeColor: Colors.white,
+                            strokeColor: isDark ? const Color(0xFF000621) : Colors.white,
                           );
                         },
                       ),
@@ -241,14 +244,14 @@ class NutritionLineChart extends StatelessWidget {
                     LineChartBarData(
                       spots: targetSpots,
                       isCurved: false,
-                      color: Colors.red.shade400,
+                      color: isDark ? Colors.redAccent.shade100 : Colors.red.shade400,
                       barWidth: 1.8,
                       dotData: FlDotData(
                         show: true,
                         getDotPainter: (spot, percent, barData, index) {
                           return FlDotCirclePainter(
                             radius: 3.5,
-                            color: Colors.red.shade400,
+                            color: isDark ? Colors.redAccent.shade100 : Colors.red.shade400,
                             strokeWidth: 0,
                           );
                         },
@@ -266,9 +269,9 @@ class NutritionLineChart extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
             child: Text(
               'Satuan: $unit',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
-                color: AppColors.textSecondary,
+                color: theme.hintColor,
                 fontWeight: FontWeight.w500,
               ),
             ),

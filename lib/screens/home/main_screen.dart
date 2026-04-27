@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/app_colors.dart';
 import '../../core/app_constants.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/theme_provider.dart';
 import '../../services/app_notification_service.dart';
 import 'home_screen.dart';
 import '../tracker/food_tracker_screen.dart';
@@ -49,14 +50,16 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   void _showNotifPermissionModal() {
+    final theme = Theme.of(context);
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        decoration: BoxDecoration(
+          color: theme.cardTheme.color ?? theme.colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
         child: Column(
@@ -66,7 +69,7 @@ class _MainScreenState extends State<MainScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: Colors.grey.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -74,32 +77,32 @@ class _MainScreenState extends State<MainScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
+                color: theme.primaryColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.notifications_active_outlined,
                 size: 40,
-                color: AppColors.primary,
+                color: theme.primaryColor,
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'Aktifkan Notifikasi Kesehatan',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: theme.textTheme.titleLarge?.color,
               ),
             ),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               'Dapatkan peringatan otomatis jika asupan cairan/makanan berlebih, jadwal cuci darah, dan pantauan kondisi harian kamu.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
-                color: AppColors.textSecondary,
+                color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                 height: 1.5,
               ),
             ),
@@ -132,9 +135,9 @@ class _MainScreenState extends State<MainScreen> {
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.setString('last_notif_prompt', DateTime.now().toIso8601String());
               },
-              child: const Text(
+              child: Text(
                 'Mungkin Nanti',
-                style: TextStyle(color: AppColors.textHint),
+                style: TextStyle(color: theme.hintColor),
               ),
             ),
           ],
@@ -152,6 +155,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final themeProvider = context.watch<ThemeProvider>();
     final user = auth.currentUser;
     final screens = [
       HomeScreen(
@@ -162,9 +166,9 @@ class _MainScreenState extends State<MainScreen> {
           _refreshNotificationsIfNeeded(force: true);
         },
       ),
-      const FoodTrackerScreen(),
-      const HealthTrackerScreen(),
-      const EducationScreen(),
+      FoodTrackerScreen(),
+      HealthTrackerScreen(),
+      EducationScreen(),
     ];
 
     return Scaffold(
@@ -183,8 +187,42 @@ class _MainScreenState extends State<MainScreen> {
         title: _buildTitle(),
         automaticallyImplyLeading: false,
         actions: [
+          // Theme Toggle
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: InkWell(
+              onTap: () => themeProvider.toggleTheme(),
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: themeProvider.isDarkMode 
+                      ? const Color(0xFF62E7D9).withValues(alpha: 0.1)
+                      : Colors.orange.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  transitionBuilder: (Widget child, Animation<double> animation) {
+                    return ScaleTransition(scale: animation, child: child);
+                  },
+                  child: Icon(
+                    themeProvider.isDarkMode 
+                        ? Icons.nightlight_round
+                        : Icons.wb_sunny_rounded,
+                    key: ValueKey(themeProvider.isDarkMode),
+                    size: 18,
+                    color: themeProvider.isDarkMode 
+                        ? const Color(0xFF62E7D9)
+                        : Colors.orange,
+                  ),
+                ),
+              ),
+            ),
+          ),
           IconButton(
-            icon: const Icon(Icons.settings_outlined),
+            icon: const Icon(Icons.settings_outlined, size: 22),
             tooltip: 'Pengaturan',
             onPressed: () async {
               await Navigator.pushNamed(context, AppConstants.routeSettings);
@@ -192,6 +230,7 @@ class _MainScreenState extends State<MainScreen> {
               _refreshNotificationsIfNeeded(force: true);
             },
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: Stack(
@@ -267,6 +306,17 @@ class _FloatingBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final ext = theme.extension<AppThemeExtension>();
+    final isDark = theme.brightness == Brightness.dark;
+    final selectedNavBackground = isDark
+        ? const Color(0xFF16224F)
+        : (ext?.primaryLight.withValues(alpha: 0.7) ?? theme.primaryColorLight);
+    final selectedNavForeground = isDark ? Colors.white : theme.primaryColor;
+    final unselectedNavForeground = isDark
+        ? Colors.white.withValues(alpha: 0.68)
+        : theme.hintColor;
+
     return SafeArea(
       minimum: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Padding(
@@ -274,15 +324,24 @@ class _FloatingBottomNav extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: theme.cardTheme.color,
             borderRadius: BorderRadius.circular(30),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.10),
+                color: theme.brightness == Brightness.dark 
+                    ? const Color(0xFF62E7D9).withValues(alpha: 0.15)
+                    : Colors.black.withValues(alpha: 0.10),
                 blurRadius: 18,
                 offset: const Offset(0, 8),
               ),
+              if (theme.brightness == Brightness.dark)
+                BoxShadow(
+                  color: const Color(0xFF62E7D9).withValues(alpha: 0.05),
+                  blurRadius: 30,
+                  spreadRadius: -5,
+                ),
             ],
+            border: theme.brightness == Brightness.dark ? Border.all(color: theme.dividerColor) : null,
           ),
           child: LayoutBuilder(
             builder: (context, constraints) {
@@ -300,12 +359,19 @@ class _FloatingBottomNav extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 6),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: AppColors.primaryLight,
+                          color: selectedNavBackground,
                           borderRadius: BorderRadius.circular(20),
+                          border: isDark
+                              ? Border.all(
+                                  color: const Color(0xFF62E7D9).withValues(alpha: 0.3),
+                                )
+                              : null,
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.08),
-                              blurRadius: 8,
+                              color: isDark
+                                  ? const Color(0xFF62E7D9).withValues(alpha: 0.18)
+                                  : theme.primaryColor.withValues(alpha: 0.08),
+                              blurRadius: isDark ? 14 : 8,
                               offset: const Offset(0, 2),
                             ),
                           ],
@@ -357,30 +423,24 @@ class _FloatingBottomNav extends StatelessWidget {
                                         selected ? item.activeIcon : item.icon,
                                         key: ValueKey('$index-$selected'),
                                         color: selected
-                                            ? AppColors.primary
-                                            : AppColors.navUnselected,
+                                            ? selectedNavForeground
+                                            : unselectedNavForeground,
                                         size: selected ? 25 : 23,
                                       ),
                                     ),
                                     const SizedBox(height: 6),
-                                    AnimatedDefaultTextStyle(
-                                      duration: const Duration(
-                                        milliseconds: 220,
-                                      ),
-                                      curve: Curves.easeOutCubic,
+                                    Text(
+                                      item.label,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                         fontSize: 10.5,
                                         fontWeight: selected
                                             ? FontWeight.w700
                                             : FontWeight.w500,
                                         color: selected
-                                            ? AppColors.primary
-                                            : AppColors.navUnselected,
-                                      ),
-                                      child: Text(
-                                        item.label,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                            ? selectedNavForeground
+                                            : unselectedNavForeground,
                                       ),
                                     ),
                                   ],

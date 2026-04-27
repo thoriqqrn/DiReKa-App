@@ -45,8 +45,6 @@ class _HomeScreenState extends State<HomeScreen> {
           // Notification Alert Badge
           if (auth.isAuthenticated && !_notificationsEnabled) ...[
             _NotificationPrompt(onTap: () {
-              // Usually the app structure has a way to navigate to settings
-              // For DiReKa, settings is often reached from profile or a specific route
               Navigator.pushNamed(context, AppConstants.routeSettings).then((_) => _checkNotifications());
             }),
             const SizedBox(height: 20),
@@ -76,15 +74,16 @@ class _NotificationPrompt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.orange.shade50,
+          color: Colors.orange.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.orange.shade200),
+          border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [
@@ -97,11 +96,11 @@ class _NotificationPrompt extends StatelessWidget {
               child: const Icon(Icons.notifications_none, color: Colors.white, size: 20),
             ),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Aktifkan Notifikasi',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
@@ -109,12 +108,12 @@ class _NotificationPrompt extends StatelessWidget {
                       color: Color(0xFFE65100), // Orange Deep
                     ),
                   ),
-                  SizedBox(height: 2),
+                  const SizedBox(height: 2),
                   Text(
                     'Dapatkan notifikasi, pastikan Anda tahu saat ada pesan baru.',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.black87,
+                      color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
                       height: 1.3,
                     ),
                   ),

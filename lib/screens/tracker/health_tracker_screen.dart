@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
@@ -30,7 +30,7 @@ class HealthTrackerScreen extends StatefulWidget {
 class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   final DateFormat _dateFmt = DateFormat('d MMM yyyy', 'id_ID');
 
-  static const List<String> _activityOptions = [
+  static final List<String> _activityOptions = [
     'Senam',
     'Jalan cepat',
     'Bersepeda',
@@ -41,7 +41,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     'Berkebun',
     'Lainnya',
   ];
-  static const List<String> _activityComplaintOptions = [
+  static final List<String> _activityComplaintOptions = [
     'Normal',
     'Sesak nafas/terengah-engah',
     'Pusing',
@@ -61,6 +61,11 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   String? _error;
   String? _heartError;
   String? _dmError;
+
+  Color get _inputButtonForeground =>
+      Theme.of(context).brightness == Brightness.dark
+          ? Colors.white
+          : const Color(0xFF0F172A);
 
   bool _canSubmitHealthInput() {
     if (_uid.isNotEmpty) return true;
@@ -99,7 +104,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     });
 
     try {
-      final fromDate = DateTime.now().subtract(const Duration(days: 31));
+      final fromDate = DateTime.now().subtract(Duration(days: 31));
       final records = await KidneyHealthService.getRecords(
         _uid,
         fromDate: fromDate,
@@ -139,7 +144,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     });
 
     try {
-      final fromDate = DateTime.now().subtract(const Duration(days: 45));
+      final fromDate = DateTime.now().subtract(Duration(days: 45));
       final records = await HeartHealthService.getRecords(
         _uid,
         fromDate: fromDate,
@@ -179,7 +184,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     });
 
     try {
-      final fromDate = DateTime.now().subtract(const Duration(days: 60));
+      final fromDate = DateTime.now().subtract(Duration(days: 60));
       final records = await DiabetesHealthService.getRecords(
         _uid,
         fromDate: fromDate,
@@ -216,7 +221,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Gagal menyimpan data. Periksa koneksi/izin akses.'),
           behavior: SnackBarBehavior.floating,
         ),
@@ -232,7 +237,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Gagal memperbarui data.'),
           behavior: SnackBarBehavior.floating,
         ),
@@ -245,16 +250,16 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Hapus data'),
-        content: const Text('Yakin ingin menghapus data ini?'),
+        title: Text('Hapus data'),
+        content: Text('Yakin ingin menghapus data ini?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Batal'),
+            child: Text('Batal'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Hapus', style: TextStyle(color: AppColors.error)),
+            child: Text('Hapus', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -268,7 +273,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Gagal menghapus data.'),
           behavior: SnackBarBehavior.floating,
         ),
@@ -313,7 +318,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Gagal menyimpan data jantung.'),
           behavior: SnackBarBehavior.floating,
         ),
@@ -329,7 +334,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Gagal memperbarui data jantung.'),
           behavior: SnackBarBehavior.floating,
         ),
@@ -342,16 +347,16 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Hapus data'),
-        content: const Text('Yakin ingin menghapus data ini?'),
+        title: Text('Hapus data'),
+        content: Text('Yakin ingin menghapus data ini?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Batal'),
+            child: Text('Batal'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Hapus', style: TextStyle(color: AppColors.error)),
+            child: Text('Hapus', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -364,7 +369,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Gagal menghapus data jantung.'),
           behavior: SnackBarBehavior.floating,
         ),
@@ -411,7 +416,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Gagal menyimpan data diabetes.'),
           behavior: SnackBarBehavior.floating,
         ),
@@ -427,7 +432,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Gagal memperbarui data diabetes.'),
           behavior: SnackBarBehavior.floating,
         ),
@@ -440,16 +445,16 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Hapus data'),
-        content: const Text('Yakin ingin menghapus data ini?'),
+        title: Text('Hapus data'),
+        content: Text('Yakin ingin menghapus data ini?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Batal'),
+            child: Text('Batal'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Hapus', style: TextStyle(color: AppColors.error)),
+            child: Text('Hapus', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -463,7 +468,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Gagal menghapus data diabetes.'),
           behavior: SnackBarBehavior.floating,
         ),
@@ -492,12 +497,12 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   Future<void> _showDmInputTypeSheet() async {
     final type = await showModalBottomSheet<DiabetesInputType>(
       context: context,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          padding: EdgeInsets.fromLTRB(16, 12, 16, 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -505,16 +510,16 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.divider,
+                  color: Theme.of(context).dividerColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              const SizedBox(height: 14),
-              const Text(
+              SizedBox(height: 14),
+              Text(
                 'Tambah Input Kesehatan',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               ...DiabetesInputType.values.map(
                 (t) => ListTile(
                   leading: CircleAvatar(
@@ -522,7 +527,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     child: Icon(_dmTypeIcon(t), color: AppColors.diabetesColor),
                   ),
                   title: Text(t.label),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: Icon(Icons.chevron_right),
                   onTap: () => Navigator.pop(ctx, t),
                 ),
               ),
@@ -555,12 +560,12 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   Future<void> _showHeartInputTypeSheet() async {
     final type = await showModalBottomSheet<HeartInputType>(
       context: context,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          padding: EdgeInsets.fromLTRB(16, 12, 16, 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -568,16 +573,16 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.divider,
+                  color: Theme.of(context).dividerColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              const SizedBox(height: 14),
-              const Text(
+              SizedBox(height: 14),
+              Text(
                 'Tambah Input Kesehatan',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               ...HeartInputType.values
                   .where((t) => t != HeartInputType.beratBadan)
                   .map(
@@ -587,7 +592,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     child: Icon(_heartTypeIcon(t), color: AppColors.heartColor),
                   ),
                   title: Text(t.label),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: Icon(Icons.chevron_right),
                   onTap: () => Navigator.pop(ctx, t),
                 ),
               ),
@@ -653,28 +658,28 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       context: context,
                       initialDate: date,
                       firstDate: DateTime(2020),
-                      lastDate: DateTime.now().add(const Duration(days: 1)),
+                      lastDate: DateTime.now().add(Duration(days: 1)),
                     );
                     if (picked != null) setLocalState(() => date = picked);
                   },
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 TextField(
                   controller: weightController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(labelText: 'Berat badan (kg)'),
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(labelText: 'Berat badan (kg)'),
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 TextField(
                   controller: idealController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(labelText: 'Berat badan ideal (kg)'),
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(labelText: 'Berat badan ideal (kg)'),
                 ),
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Batal')),
             ElevatedButton(
               onPressed: () {
                 final w = double.tryParse(weightController.text.trim()) ?? -1;
@@ -691,7 +696,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                   ),
                 );
               },
-              child: const Text('Simpan'),
+              child: Text('Simpan'),
             ),
           ],
         ),
@@ -711,7 +716,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocalState) => AlertDialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           title: Text(existing == null ? 'Input Gejala Jantung' : 'Edit Gejala Jantung'),
           content: SizedBox(
             width: 420,
@@ -728,44 +733,44 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       context: context,
                       initialDate: date,
                       firstDate: DateTime(2020),
-                      lastDate: DateTime.now().add(const Duration(days: 1)),
+                      lastDate: DateTime.now().add(Duration(days: 1)),
                     );
                     if (picked != null) setLocalState(() => date = picked);
                   },
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 _HeartOptionField(
                   label: 'Sesak napas',
                   value: sesak,
-                  options: const ['Tidak', 'Ringan', 'Berat'],
+                  options: ['Tidak', 'Ringan', 'Berat'],
                   onChanged: (v) => setLocalState(() => sesak = v),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 _HeartOptionField(
                   label: 'Bagian tubuh bengkak',
                   value: bengkak,
-                  options: const ['Tidak', 'Ringan', 'Berat'],
+                  options: ['Tidak', 'Ringan', 'Berat'],
                   onChanged: (v) => setLocalState(() => bengkak = v),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 _HeartOptionField(
                   label: 'Cepat lelah',
                   value: cepatLelah,
-                  options: const ['Ya', 'Tidak'],
+                  options: ['Ya', 'Tidak'],
                   onChanged: (v) => setLocalState(() => cepatLelah = v),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 TextField(
                   controller: bbController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(labelText: 'BB (kg)'),
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(labelText: 'BB (kg)'),
                 ),
                 ],
               ),
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Batal')),
             ElevatedButton(
               onPressed: () {
                 final category = _heartSymptomCategory(
@@ -790,7 +795,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                   ),
                 );
               },
-              child: const Text('Simpan'),
+              child: Text('Simpan'),
             ),
           ],
         ),
@@ -828,7 +833,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocalState) => AlertDialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           title: Text(existing == null ? 'Input Obat Jantung' : 'Edit Obat Jantung'),
           content: SizedBox(
             width: 420,
@@ -845,22 +850,22 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       context: context,
                       initialDate: date,
                       firstDate: DateTime(2020),
-                      lastDate: DateTime.now().add(const Duration(days: 1)),
+                      lastDate: DateTime.now().add(Duration(days: 1)),
                     );
                     if (picked != null) setLocalState(() => date = picked);
                   },
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 TextField(
                   controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Nama obat'),
+                  decoration: InputDecoration(labelText: 'Nama obat'),
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 DropdownButtonFormField<String>(
-                  value: formType,
+                  initialValue: formType,
                   isExpanded: true,
-                  decoration: const InputDecoration(labelText: 'Bentuk'),
-                  items: const [
+                  decoration: InputDecoration(labelText: 'Bentuk'),
+                  items: [
                     DropdownMenuItem(value: 'Tablet', child: Text('Tablet')),
                     DropdownMenuItem(value: 'Kapsul', child: Text('Kapsul')),
                     DropdownMenuItem(value: 'Sirup', child: Text('Sirup')),
@@ -869,51 +874,51 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     if (v != null) setLocalState(() => formType = v);
                   },
                 ),
-                const SizedBox(height: 8),
-                const Text(
+                SizedBox(height: 8),
+                Text(
                   'Format dosis: ... x ... (... mg/ml/g)',
-                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodyMedium?.color),
                 ),
-                const SizedBox(height: 6),
+                SizedBox(height: 6),
                 Row(
                   children: [
                     Expanded(
                       child: TextField(
                         controller: doseFreqController,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Frekuensi'),
+                        decoration: InputDecoration(labelText: 'Frekuensi'),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    const Text('x'),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
+                    Text('x'),
+                    SizedBox(width: 8),
                     Expanded(
                       child: TextField(
                         controller: doseQtyController,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Jumlah'),
+                        decoration: InputDecoration(labelText: 'Jumlah'),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Row(
                   children: [
                     Expanded(
                       child: TextField(
                         controller: doseStrengthController,
                         keyboardType:
-                            const TextInputType.numberWithOptions(decimal: true),
-                        decoration: const InputDecoration(labelText: 'Kadar'),
+                            TextInputType.numberWithOptions(decimal: true),
+                        decoration: InputDecoration(labelText: 'Kadar'),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     SizedBox(
                       width: 110,
                       child: DropdownButtonFormField<String>(
-                        value: doseUnit,
-                        decoration: const InputDecoration(labelText: 'Satuan'),
-                        items: const [
+                        initialValue: doseUnit,
+                        decoration: InputDecoration(labelText: 'Satuan'),
+                        items: [
                           DropdownMenuItem(value: 'mg', child: Text('mg')),
                           DropdownMenuItem(value: 'ml', child: Text('ml')),
                           DropdownMenuItem(value: 'g', child: Text('g')),
@@ -925,31 +930,31 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 _HeartOptionField(
                   label: 'Waktu minum',
                   value: period,
-                  options: const ['Pagi', 'Siang', 'Malam'],
+                  options: ['Pagi', 'Siang', 'Malam'],
                   onChanged: (v) => setLocalState(() => period = v),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 _HeartOptionField(
                   label: 'Sudah diminum',
                   value: consumed,
-                  options: const ['Ya', 'Tidak'],
+                  options: ['Ya', 'Tidak'],
                   onChanged: (v) => setLocalState(() => consumed = v),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 TextField(
                   controller: noteController,
-                  decoration: const InputDecoration(labelText: 'Catatan'),
+                  decoration: InputDecoration(labelText: 'Catatan'),
                 ),
                 ],
               ),
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Batal')),
             ElevatedButton(
               onPressed: () {
                 if (nameController.text.trim().isEmpty) return;
@@ -976,7 +981,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                   ),
                 );
               },
-              child: const Text('Simpan'),
+              child: Text('Simpan'),
             ),
           ],
         ),
@@ -1023,7 +1028,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocalState) => AlertDialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           title: Text(existing == null ? 'Input Pemeriksaan' : 'Edit Pemeriksaan'),
           content: SizedBox(
             width: 430,
@@ -1040,17 +1045,17 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       context: context,
                       initialDate: date,
                       firstDate: DateTime(2020),
-                      lastDate: DateTime.now().add(const Duration(days: 1)),
+                      lastDate: DateTime.now().add(Duration(days: 1)),
                     );
                     if (picked != null) setLocalState(() => date = picked);
                   },
                 ),
-                const SizedBox(height: 10),
-                const Text(
+                SizedBox(height: 10),
+                Text(
                   'Jenis pemeriksaan',
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
-                const SizedBox(height: 6),
+                SizedBox(height: 6),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -1070,11 +1075,11 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       )
                       .toList(),
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 DropdownButtonFormField<String>(
-                  value: examId,
+                  initialValue: examId,
                   isExpanded: true,
-                  decoration: const InputDecoration(labelText: 'Pemeriksaan'),
+                  decoration: InputDecoration(labelText: 'Pemeriksaan'),
                   items: refs
                       .where((e) => e.group == examType)
                       .map(
@@ -1089,31 +1094,31 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     setLocalState(() => examId = value);
                   },
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 Builder(
                   builder: (_) {
                     final exam = selectedExam();
                     return Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(10),
+                      padding: EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: AppColors.background,
+                        color: Theme.of(context).scaffoldBackgroundColor,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.border),
+                        border: Border.all(color: Theme.of(context).dividerColor),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'Satuan: ${exam.unit.isEmpty ? '-' : exam.unit}',
-                            style: const TextStyle(fontSize: 12),
+                            style: TextStyle(fontSize: 12),
                           ),
-                          const SizedBox(height: 2),
+                          SizedBox(height: 2),
                           Text(
                             'Nilai normal: ${exam.normal}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textSecondary,
+                              color: Theme.of(context).textTheme.bodyMedium?.color,
                             ),
                           ),
                         ],
@@ -1122,24 +1127,24 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                   },
                 ),
                 if (examType == 'Urin') ...[
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   _HeartOptionField(
                     label: 'Waktu pengambilan urin',
                     value: sampleTime,
-                    options: const ['Pagi', 'Siang', 'Sore', 'Malam'],
+                    options: ['Pagi', 'Siang', 'Sore', 'Malam'],
                     onChanged: (v) => setLocalState(() => sampleTime = v),
                   ),
                 ],
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 TextField(
                   controller: resultController,
                   onChanged: (_) => setLocalState(() {}),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Hasil',
                     hintText: 'Contoh: 130/80, 5.2, Negatif',
                   ),
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 Builder(
                   builder: (_) {
                     final autoCategory = _autoExamCategory(
@@ -1148,16 +1153,16 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     );
                     return Row(
                       children: [
-                        const Text(
+                        Text(
                           'Kategori otomatis: ',
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary,
+                            color: Theme.of(context).hintColor,
                           ),
                         ),
                         _StatusBadge(
                           text: autoCategory,
-                          color: _checkupCategoryColor(autoCategory),
+                          color: _checkupCategoryColor(context, autoCategory),
                         ),
                       ],
                     );
@@ -1168,13 +1173,13 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Batal')),
             ElevatedButton(
               onPressed: () {
                 final exam = selectedExam();
                 if (resultController.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                    SnackBar(
                       content: Text('Hasil pemeriksaan wajib diisi.'),
                       behavior: SnackBarBehavior.floating,
                     ),
@@ -1204,7 +1209,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                   ),
                 );
               },
-              child: const Text('Simpan'),
+              child: Text('Simpan'),
             ),
           ],
         ),
@@ -1251,7 +1256,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocalState) => AlertDialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           title: Text(existing == null ? 'Input Pemeriksaan' : 'Edit Pemeriksaan'),
           content: SizedBox(
             width: 430,
@@ -1268,17 +1273,17 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                         context: context,
                         initialDate: date,
                         firstDate: DateTime(2020),
-                        lastDate: DateTime.now().add(const Duration(days: 1)),
+                        lastDate: DateTime.now().add(Duration(days: 1)),
                       );
                       if (picked != null) setLocalState(() => date = picked);
                     },
                   ),
-                  const SizedBox(height: 10),
-                  const Text(
+                  SizedBox(height: 10),
+                  Text(
                     'Jenis pemeriksaan',
                     style: TextStyle(fontWeight: FontWeight.w600),
                   ),
-                  const SizedBox(height: 6),
+                  SizedBox(height: 6),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -1298,11 +1303,11 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                         )
                         .toList(),
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   DropdownButtonFormField<String>(
-                    value: examId,
+                    initialValue: examId,
                     isExpanded: true,
-                    decoration: const InputDecoration(labelText: 'Pemeriksaan'),
+                    decoration: InputDecoration(labelText: 'Pemeriksaan'),
                     items: refs
                         .where((e) => e.group == examType)
                         .map(
@@ -1317,31 +1322,31 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       setLocalState(() => examId = value);
                     },
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   Builder(
                     builder: (_) {
                       final exam = selectedExam();
                       return Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.all(10),
+                        padding: EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: AppColors.background,
+                          color: Theme.of(context).scaffoldBackgroundColor,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AppColors.border),
+                          border: Border.all(color: Theme.of(context).dividerColor),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               'Satuan: ${exam.unit.isEmpty ? '-' : exam.unit}',
-                              style: const TextStyle(fontSize: 12),
+                              style: TextStyle(fontSize: 12),
                             ),
-                            const SizedBox(height: 2),
+                            SizedBox(height: 2),
                             Text(
                               'Nilai normal: ${exam.normal}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: AppColors.textSecondary,
+                                color: Theme.of(context).textTheme.bodyMedium?.color,
                               ),
                             ),
                           ],
@@ -1350,24 +1355,24 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     },
                   ),
                   if (examType == 'Urin') ...[
-                    const SizedBox(height: 10),
+                    SizedBox(height: 10),
                     _HeartOptionField(
                       label: 'Waktu pengambilan urin',
                       value: sampleTime,
-                      options: const ['Pagi', 'Siang', 'Sore', 'Malam'],
+                      options: ['Pagi', 'Siang', 'Sore', 'Malam'],
                       onChanged: (v) => setLocalState(() => sampleTime = v),
                     ),
                   ],
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   TextField(
                     controller: resultController,
                     onChanged: (_) => setLocalState(() {}),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Hasil',
                       hintText: 'Contoh: 95, 180, 5.9, Negatif',
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   Builder(
                     builder: (_) {
                       final autoCategory = _autoExamCategory(
@@ -1376,16 +1381,16 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       );
                       return Row(
                         children: [
-                          const Text(
+                          Text(
                             'Kategori otomatis: ',
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
-                              color: AppColors.textSecondary,
+                              color: Theme.of(context).hintColor,
                             ),
                           ),
                           _StatusBadge(
                             text: autoCategory,
-                            color: _checkupCategoryColor(autoCategory),
+                            color: _checkupCategoryColor(context, autoCategory),
                           ),
                         ],
                       );
@@ -1396,13 +1401,13 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Batal')),
             ElevatedButton(
               onPressed: () {
                 final exam = selectedExam();
                 if (resultController.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                    SnackBar(
                       content: Text('Hasil pemeriksaan wajib diisi.'),
                       behavior: SnackBarBehavior.floating,
                     ),
@@ -1432,7 +1437,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                   ),
                 );
               },
-              child: const Text('Simpan'),
+              child: Text('Simpan'),
             ),
           ],
         ),
@@ -1483,19 +1488,19 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     List<MealType> mapMealLabelToTypes(String mealLabel) {
       switch (mealLabel) {
         case 'Sarapan':
-          return const [MealType.sarapan];
+          return [MealType.sarapan];
         case 'Selingan Pagi':
-          return const [MealType.selinganPagi];
+          return [MealType.selinganPagi];
         case 'Makan Siang':
-          return const [MealType.makanSiang];
+          return [MealType.makanSiang];
         case 'Selingan Siang':
-          return const [MealType.selinganSiang];
+          return [MealType.selinganSiang];
         case 'Makan Malam':
-          return const [MealType.makanMalam];
+          return [MealType.makanMalam];
         case 'Selingan Malam':
-          return const [MealType.selinganMalam];
+          return [MealType.selinganMalam];
         default:
-          return const [MealType.sarapan];
+          return [MealType.sarapan];
       }
     }
 
@@ -1592,7 +1597,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
           final category = categoryFromDiff(diff);
 
           return AlertDialog(
-            insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+            insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
             title: Text(
               existing == null
                   ? 'Input Analisis Keseimbangan Insulin'
@@ -1607,7 +1612,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                   children: [
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(10),
+                      padding: EdgeInsets.all(10),
                       decoration: BoxDecoration(
                         color: AppColors.diabetesColor.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(10),
@@ -1615,29 +1620,29 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                           color: AppColors.diabetesColor.withValues(alpha: 0.25),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Isi data insulin harian dan karbohidrat makan. Sistem akan menghitung otomatis: total insulin harian, ICR, estimasi insulin makan, selisih, dan kategori.',
                         style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.textSecondary,
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
                           height: 1.35,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: 10),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppColors.background,
+                        color: Theme.of(context).scaffoldBackgroundColor,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.border),
+                        border: Border.all(color: Theme.of(context).dividerColor),
                       ),
                       child: Row(
                         children: [
                           IconButton(
                             onPressed: () {
                               setLocalState(() {
-                                date = date.subtract(const Duration(days: 1));
+                                date = date.subtract(Duration(days: 1));
                               });
                               syncMealFromFood(
                                 setLocalState: setLocalState,
@@ -1645,8 +1650,8 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                                 mealLabel: meal,
                               );
                             },
-                            icon: const Icon(Icons.chevron_left),
-                            color: AppColors.textPrimary,
+                            icon: Icon(Icons.chevron_left),
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
                           ),
                           Expanded(
                             child: GestureDetector(
@@ -1655,7 +1660,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                                   context: context,
                                   initialDate: date,
                                   firstDate: DateTime(2020),
-                                  lastDate: DateTime.now().add(const Duration(days: 1)),
+                                  lastDate: DateTime.now().add(Duration(days: 1)),
                                 );
                                 if (picked != null) {
                                   setLocalState(() => date = picked);
@@ -1673,17 +1678,17 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                                         ? 'Hari Ini · ${_dateFmt.format(date)}'
                                         : _dateFmt.format(date),
                                     textAlign: TextAlign.center,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontWeight: FontWeight.w600,
-                                      color: AppColors.textPrimary,
+                                      color: Theme.of(context).textTheme.bodyLarge?.color,
                                     ),
                                   ),
-                                  const SizedBox(height: 2),
-                                  const Text(
+                                  SizedBox(height: 2),
+                                  Text(
                                     'Tap untuk pilih tanggal',
                                     style: TextStyle(
                                       fontSize: 11,
-                                      color: AppColors.textSecondary,
+                                      color: Theme.of(context).textTheme.bodyMedium?.color,
                                     ),
                                   ),
                                 ],
@@ -1695,7 +1700,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                                 ? null
                                 : () {
                                     setLocalState(() {
-                                      date = date.add(const Duration(days: 1));
+                                      date = date.add(Duration(days: 1));
                                     });
                                     syncMealFromFood(
                                       setLocalState: setLocalState,
@@ -1703,19 +1708,19 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                                       mealLabel: meal,
                                     );
                                   },
-                            icon: const Icon(Icons.chevron_right),
+                            icon: Icon(Icons.chevron_right),
                             color: isTodayDate(date)
                                 ? AppColors.textHint
-                                : AppColors.textPrimary,
+                                : Theme.of(context).textTheme.bodyLarge?.color,
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: 10),
                     DropdownButtonFormField<String>(
-                      value: meal,
-                      decoration: const InputDecoration(labelText: 'Waktu makan'),
-                      items: const [
+                      initialValue: meal,
+                      decoration: InputDecoration(labelText: 'Waktu makan'),
+                      items: [
                         DropdownMenuItem(value: 'Sarapan', child: Text('Sarapan')),
                         DropdownMenuItem(value: 'Selingan Pagi', child: Text('Selingan Pagi')),
                         DropdownMenuItem(value: 'Makan Siang', child: Text('Makan Siang')),
@@ -1734,14 +1739,14 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                         }
                       },
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(10),
+                      padding: EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: AppColors.background,
+                        color: Theme.of(context).scaffoldBackgroundColor,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.border),
+                        border: Border.all(color: Theme.of(context).dividerColor),
                       ),
                       child: Row(
                         children: [
@@ -1750,21 +1755,21 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                               autoInfoText.isEmpty
                                   ? 'Sinkronisasi karbo/GL dari Food Tracker.'
                                   : autoInfoText,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 11,
-                                color: AppColors.textSecondary,
+                                color: Theme.of(context).textTheme.bodyMedium?.color,
                               ),
                             ),
                           ),
                           if (isAutoLoading) ...[
-                            const SizedBox(width: 8),
-                            const SizedBox(
+                            SizedBox(width: 8),
+                            SizedBox(
                               width: 14,
                               height: 14,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             ),
                           ],
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8),
                           TextButton(
                             onPressed: isAutoLoading
                                 ? null
@@ -1773,85 +1778,85 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                                       targetDate: date,
                                       mealLabel: meal,
                                     ),
-                            child: const Text('Sinkronkan'),
+                            child: Text('Sinkronkan'),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: 10),
                     TextField(
                       controller: basalController,
                       onChanged: (_) => setLocalState(() {}),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(labelText: 'Insulin basal harian (A) unit'),
+                      keyboardType: TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(labelText: 'Insulin basal harian (A) unit'),
                     ),
-                    const SizedBox(height: 4),
-                    const Text(
+                    SizedBox(height: 4),
+                    Text(
                       'Contoh: total insulin kerja panjang dalam 1 hari. Isi angka saja (mis. 12).',
-                      style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                      style: TextStyle(fontSize: 11, color: Theme.of(context).textTheme.bodyMedium?.color),
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: 10),
                     TextField(
                       controller: prandialController,
                       onChanged: (_) => setLocalState(() {}),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(labelText: 'Insulin prandial harian (B) unit'),
+                      keyboardType: TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(labelText: 'Insulin prandial harian (B) unit'),
                     ),
-                    const SizedBox(height: 4),
-                    const Text(
+                    SizedBox(height: 4),
+                    Text(
                       'Contoh: total insulin sebelum makan selama 1 hari. Isi angka saja (mis. 18).',
-                      style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                      style: TextStyle(fontSize: 11, color: Theme.of(context).textTheme.bodyMedium?.color),
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: 10),
                     TextField(
                       controller: carbsController,
                       readOnly: true,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(
+                      keyboardType: TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
                         labelText: 'Total karbohidrat makan (gram)',
                         helperText: 'Otomatis dari Food Tracker',
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    const Text(
+                    SizedBox(height: 4),
+                    Text(
                       'Nilai ini otomatis sesuai tanggal + waktu makan yang dipilih.',
-                      style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                      style: TextStyle(fontSize: 11, color: Theme.of(context).textTheme.bodyMedium?.color),
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: 10),
                     TextField(
                       controller: glController,
                       readOnly: true,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(
+                      keyboardType: TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
                         labelText: 'GL',
                         helperText: 'Otomatis dari Food Tracker',
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    const Text(
+                    SizedBox(height: 4),
+                    Text(
                       'Nilai GL dihitung otomatis dari log makanan pada waktu makan tersebut.',
-                      style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                      style: TextStyle(fontSize: 11, color: Theme.of(context).textTheme.bodyMedium?.color),
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: 10),
                     TextField(
                       controller: actualController,
                       onChanged: (_) => setLocalState(() {}),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(labelText: 'Dosis insulin aktual (F) unit'),
+                      keyboardType: TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(labelText: 'Dosis insulin aktual (F) unit'),
                     ),
-                    const SizedBox(height: 4),
-                    const Text(
+                    SizedBox(height: 4),
+                    Text(
                       'Isi dosis insulin yang benar-benar diberikan sebelum makan.',
-                      style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                      style: TextStyle(fontSize: 11, color: Theme.of(context).textTheme.bodyMedium?.color),
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(10),
+                      padding: EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: AppColors.background,
+                        color: Theme.of(context).scaffoldBackgroundColor,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.border),
+                        border: Border.all(color: Theme.of(context).dividerColor),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1860,10 +1865,10 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                           Text('ICR (D = 500/C): ${d.toStringAsFixed(2)}'),
                           Text('Estimasi insulin makan (E = karbohidrat/D): ${e.toStringAsFixed(2)} unit'),
                           Text('Selisih (F-E): ${diff.toStringAsFixed(2)} unit'),
-                          const SizedBox(height: 6),
+                          SizedBox(height: 6),
                           Row(
                             children: [
-                              const Text('Kategori: '),
+                              Text('Kategori: '),
                               _StatusBadge(
                                 text: category,
                                 color: category == 'Balance'
@@ -1882,12 +1887,12 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+              TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Batal')),
               ElevatedButton(
                 onPressed: () {
                   if (actualController.text.trim().isEmpty || carbsController.text.trim().isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                      SnackBar(
                         content: Text('Isi karbohidrat dan dosis aktual terlebih dahulu.'),
                         behavior: SnackBarBehavior.floating,
                       ),
@@ -1918,7 +1923,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     ),
                   );
                 },
-                child: const Text('Simpan'),
+                child: Text('Simpan'),
               ),
             ],
           );
@@ -1930,12 +1935,12 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   Future<void> _showInputTypeSheet() async {
     final type = await showModalBottomSheet<KidneyInputType>(
       context: context,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          padding: EdgeInsets.fromLTRB(16, 12, 16, 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1943,16 +1948,16 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.divider,
+                  color: Theme.of(context).dividerColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              const SizedBox(height: 14),
-              const Text(
+              SizedBox(height: 14),
+              Text(
                 'Tambah Input Kesehatan Ginjal',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               ...KidneyInputType.values.map(
                 (t) => ListTile(
                   leading: CircleAvatar(
@@ -1960,7 +1965,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     child: Icon(_typeIcon(t), color: AppColors.kidneyColor),
                   ),
                   title: Text(t.label),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: Icon(Icons.chevron_right),
                   onTap: () => Navigator.pop(ctx, t),
                 ),
               ),
@@ -1986,78 +1991,6 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     if (record != null) {
       await _addRecord(record);
     }
-  }
-
-  String _activityGroup(String activity) {
-    const daily = {'Mencuci', 'Mengepel', 'Memasak', 'Menyetrika', 'Berkebun'};
-    return daily.contains(activity) ? 'Aktivitas sehari-hari' : 'Olahraga';
-  }
-
-  String _baseActivityCategory(String activity) {
-    const light = {'Mencuci', 'Memasak', 'Menyetrika', 'Berkebun'};
-    const moderate = {'Mengepel', 'Jalan kaki', 'Bersepeda', 'Senam'};
-    if (light.contains(activity)) return 'Aktivitas ringan yang masih ditoleransi';
-    if (moderate.contains(activity)) return 'Aktivitas sedang';
-    return 'Aktivitas berat';
-  }
-
-  ({String category, String analysis, String status}) _activitySystemResult({
-    required String activity,
-    required String complaint,
-  }) {
-    final baseCategory = _baseActivityCategory(activity);
-    final hasComplaint = complaint != 'Normal';
-    const severeComplaints = {'Nyeri dada', 'Keringat dingin'};
-
-    if (severeComplaints.contains(complaint)) {
-      return (
-        category: 'Aktivitas berat',
-        analysis: 'Sesak, palpitasi, nyeri dada, kelelahan jelas',
-        status: 'Tidak normal / tidak disarankan',
-      );
-    }
-
-    if (!hasComplaint) {
-      if (baseCategory == 'Aktivitas ringan yang masih ditoleransi') {
-        return (
-          category: baseCategory,
-          analysis: 'Tidak ada sesak, palpitasi, atau kelelahan berlebihan',
-          status: 'Normal / aman',
-        );
-      }
-      if (baseCategory == 'Aktivitas sedang') {
-        return (
-          category: baseCategory,
-          analysis: 'Gejala muncul saat aktivitas dan membaik saat istirahat',
-          status: 'Perlu pemantauan',
-        );
-      }
-      return (
-        category: baseCategory,
-        analysis: 'Sesak ringan, cepat capek, jantung berdebar',
-        status: 'Waspada / mulai tidak normal',
-      );
-    }
-
-    if (baseCategory == 'Aktivitas ringan yang masih ditoleransi') {
-      return (
-        category: 'Aktivitas ringan tetapi mulai memberatkan',
-        analysis: 'Sesak ringan, cepat capek, jantung berdebar',
-        status: 'Waspada / mulai tidak normal',
-      );
-    }
-    if (baseCategory == 'Aktivitas sedang') {
-      return (
-        category: baseCategory,
-        analysis: 'Gejala muncul saat aktivitas dan membaik saat istirahat',
-        status: 'Perlu pemantauan',
-      );
-    }
-    return (
-      category: baseCategory,
-      analysis: 'Sesak, palpitasi, nyeri dada, kelelahan jelas',
-      status: 'Tidak normal / tidak disarankan',
-    );
   }
 
   Future<_ActivityInputResult?> _showActivityDialog({
@@ -2088,7 +2021,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocalState) {
           return AlertDialog(
-            insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 20),
             title: Text(title),
             content: SizedBox(
               width: 420,
@@ -2105,15 +2038,15 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                           context: context,
                           initialDate: date,
                           firstDate: DateTime(2020),
-                          lastDate: DateTime.now().add(const Duration(days: 1)),
+                          lastDate: DateTime.now().add(Duration(days: 1)),
                         );
                         if (picked != null) setLocalState(() => date = picked);
                       },
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: 10),
                     DropdownButtonFormField<String>(
-                      value: _activityOptions.contains(activity) ? activity : _activityOptions.first,
-                      decoration: const InputDecoration(labelText: 'Jenis aktivitas'),
+                      initialValue: _activityOptions.contains(activity) ? activity : _activityOptions.first,
+                      decoration: InputDecoration(labelText: 'Jenis aktivitas'),
                       items: _activityOptions.toSet().map((v) {
                         return DropdownMenuItem(value: v, child: Text(v));
                       }).toList(),
@@ -2122,21 +2055,21 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                         setLocalState(() => activity = v);
                       },
                     ),
-                    const SizedBox(height: 14),
+                    SizedBox(height: 14),
                     TextField(
                       controller: durationCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: false),
-                      decoration: const InputDecoration(
+                      keyboardType: TextInputType.numberWithOptions(decimal: false),
+                      decoration: InputDecoration(
                         labelText: 'Durasi (menit)',
                         hintText: 'contoh: 30',
                         suffixText: 'menit',
                       ),
                     ),
-                    const SizedBox(height: 14),
+                    SizedBox(height: 14),
                     DropdownButtonFormField<String>(
-                      value: _activityComplaintOptions.contains(complaint) ? complaint : _activityComplaintOptions.first,
+                      initialValue: _activityComplaintOptions.contains(complaint) ? complaint : _activityComplaintOptions.first,
                       isExpanded: true,
-                      decoration: const InputDecoration(labelText: 'Status Keluhan'),
+                      decoration: InputDecoration(labelText: 'Status Keluhan'),
                       items: _activityComplaintOptions.toSet().map((v) {
                         return DropdownMenuItem(
                           value: v,
@@ -2168,7 +2101,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+              TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Batal')),
               ElevatedButton(
                 onPressed: () {
                   final durationValue = durationCtrl.text.trim();
@@ -2188,7 +2121,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     ),
                   );
                 },
-                child: const Text('Simpan'),
+                child: Text('Simpan'),
               ),
             ],
           );
@@ -2234,15 +2167,52 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
       createdAt: existing?.createdAt ?? DateTime.now(),
     );
   }
+  void _showNormalValuesDialog(DiseaseType diseaseType) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text("Daftar Nilai Normal"),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: _NormalValuesTableContent(diseaseType: diseaseType),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text("Tutup"),
+          ),
+        ],
+        ),
+    );
+  }
+
+  void _showInsulinGuideDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text("Panduan Analisis Insulin"),
+        content: SingleChildScrollView(
+          child: _InsulinGuideContent(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text("Tutup"),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   void _showLoginRequired() {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -2250,32 +2220,32 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.divider,
+                color: Theme.of(context).dividerColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 20),
-            const Icon(Icons.lock_outline, size: 52, color: AppColors.primary),
-            const SizedBox(height: 16),
-            const Text(
+            SizedBox(height: 20),
+            Icon(Icons.lock_outline, size: 52, color: AppColors.primary),
+            SizedBox(height: 16),
+            Text(
               'Login Diperlukan',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
-            const SizedBox(height: 8),
-            const Text(
+            SizedBox(height: 8),
+            Text(
               'Kamu bisa lihat tracker sebagai guest. Untuk menambah data kesehatan, silakan login dulu.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: AppColors.textSecondary,
+                color: Theme.of(context).textTheme.bodyMedium?.color,
                 fontSize: 14,
                 height: 1.5,
               ),
             ),
-            const SizedBox(height: 28),
+            SizedBox(height: 28),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -2283,10 +2253,10 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                   Navigator.pop(ctx);
                   Navigator.pushNamed(context, AppConstants.routeLogin);
                 },
-                child: const Text('Masuk'),
+                child: Text('Masuk'),
               ),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
@@ -2294,10 +2264,10 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                   Navigator.pop(ctx);
                   Navigator.pushNamed(context, AppConstants.routeRegister);
                 },
-                child: const Text('Daftar Akun'),
+                child: Text('Daftar Akun'),
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
           ],
         ),
       ),
@@ -2339,37 +2309,37 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       context: context,
                       initialDate: date,
                       firstDate: DateTime(2020),
-                      lastDate: DateTime.now().add(const Duration(days: 1)),
+                      lastDate: DateTime.now().add(Duration(days: 1)),
                     );
                     if (picked != null) {
                       setLocalState(() => date = picked);
                     }
                   },
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 TextField(
                   controller: postController,
-                  keyboardType: const TextInputType.numberWithOptions(
+                  keyboardType: TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'BB setelah hemodialisa I (kg)',
                   ),
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 TextField(
                   controller: preController,
-                  keyboardType: const TextInputType.numberWithOptions(
+                  keyboardType: TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'BB sebelum hemodialisa II (kg)',
                   ),
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 TextField(
                   controller: noteController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Catatan (opsional)',
                   ),
                   maxLines: 2,
@@ -2380,7 +2350,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Batal'),
+              child: Text('Batal'),
             ),
             ElevatedButton(
               onPressed: () {
@@ -2388,7 +2358,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                 final pre = double.tryParse(preController.text.trim()) ?? -1;
                 if (post <= 0 || pre <= 0) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                    SnackBar(
                       content: Text('Isi berat badan dengan benar.'),
                       behavior: SnackBarBehavior.floating,
                     ),
@@ -2410,7 +2380,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                   ),
                 );
               },
-              child: const Text('Simpan'),
+              child: Text('Simpan'),
             ),
           ],
         ),
@@ -2464,7 +2434,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocalState) => AlertDialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           title: Text(existing == null ? 'Input Obat' : 'Edit Obat'),
           content: SizedBox(
             width: 420,
@@ -2481,24 +2451,24 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                         context: context,
                         initialDate: date,
                         firstDate: DateTime(2020),
-                        lastDate: DateTime.now().add(const Duration(days: 1)),
+                        lastDate: DateTime.now().add(Duration(days: 1)),
                       );
                       if (picked != null) {
                         setLocalState(() => date = picked);
                       }
                     },
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   TextField(
                     controller: nameController,
-                    decoration: const InputDecoration(labelText: 'Nama obat'),
+                    decoration: InputDecoration(labelText: 'Nama obat'),
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   DropdownButtonFormField<String>(
-                    value: formType,
+                    initialValue: formType,
                     isExpanded: true,
-                    decoration: const InputDecoration(labelText: 'Bentuk'),
-                    items: const [
+                    decoration: InputDecoration(labelText: 'Bentuk'),
+                    items: [
                       DropdownMenuItem(value: 'Tablet', child: Text('Tablet')),
                       DropdownMenuItem(value: 'Kapsul', child: Text('Kapsul')),
                       DropdownMenuItem(value: 'Sirup', child: Text('Sirup')),
@@ -2507,32 +2477,32 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       if (v != null) setLocalState(() => formType = v);
                     },
                   ),
-                  const SizedBox(height: 10),
-                  const Text(
+                  SizedBox(height: 10),
+                  Text(
                     'Format dosis: ... x ... (... mg/ml/g)',
-                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodyMedium?.color),
                   ),
-                  const SizedBox(height: 6),
+                  SizedBox(height: 6),
                   Row(
                     children: [
                       Expanded(
                         child: TextField(
                           controller: doseFreqController,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'Frekuensi',
                             hintText: '1',
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      const Text('x'),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
+                      Text('x'),
+                      SizedBox(width: 8),
                       Expanded(
                         child: TextField(
                           controller: doseQtyController,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'Jumlah',
                             hintText: '1',
                           ),
@@ -2540,26 +2510,26 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Row(
                     children: [
                       Expanded(
                         child: TextField(
                           controller: doseStrengthController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          decoration: const InputDecoration(
+                          keyboardType: TextInputType.numberWithOptions(decimal: true),
+                          decoration: InputDecoration(
                             labelText: 'Kadar',
                             hintText: '500',
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       SizedBox(
                         width: 110,
                         child: DropdownButtonFormField<String>(
-                          value: doseUnit,
-                          decoration: const InputDecoration(labelText: 'Satuan'),
-                          items: const [
+                          initialValue: doseUnit,
+                          decoration: InputDecoration(labelText: 'Satuan'),
+                          items: [
                             DropdownMenuItem(value: 'mg', child: Text('mg')),
                             DropdownMenuItem(value: 'ml', child: Text('ml')),
                             DropdownMenuItem(value: 'g', child: Text('g')),
@@ -2571,12 +2541,12 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  const Text(
+                  SizedBox(height: 12),
+                  Text(
                     'Waktu minum',
                     style: TextStyle(fontWeight: FontWeight.w600),
                   ),
-                  const SizedBox(height: 6),
+                  SizedBox(height: 6),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -2588,12 +2558,12 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       );
                     }).toList(),
                   ),
-                  const SizedBox(height: 10),
-                  const Text(
+                  SizedBox(height: 10),
+                  Text(
                     'Kaitan dengan makan',
                     style: TextStyle(fontWeight: FontWeight.w600),
                   ),
-                  const SizedBox(height: 6),
+                  SizedBox(height: 6),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -2606,12 +2576,12 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       );
                     }).toList(),
                   ),
-                  const SizedBox(height: 10),
-                  const Text(
+                  SizedBox(height: 10),
+                  Text(
                     'Kaitan dengan HD',
                     style: TextStyle(fontWeight: FontWeight.w600),
                   ),
-                  const SizedBox(height: 6),
+                  SizedBox(height: 6),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -2624,11 +2594,11 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       );
                     }).toList(),
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   TextField(
                     controller: noteController,
                     decoration:
-                        const InputDecoration(labelText: 'Catatan/efek keluh'),
+                        InputDecoration(labelText: 'Catatan/efek keluh'),
                     maxLines: 2,
                   ),
                 ],
@@ -2638,13 +2608,13 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Batal'),
+              child: Text('Batal'),
             ),
             ElevatedButton(
               onPressed: () {
                 if (nameController.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                    SnackBar(
                       content: Text('Nama obat wajib diisi.'),
                       behavior: SnackBarBehavior.floating,
                     ),
@@ -2676,7 +2646,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                   ),
                 );
               },
-              child: const Text('Simpan'),
+              child: Text('Simpan'),
             ),
           ],
         ),
@@ -2716,28 +2686,28 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       context: context,
                       initialDate: date,
                       firstDate: DateTime(2020),
-                      lastDate: DateTime.now().add(const Duration(days: 1)),
+                      lastDate: DateTime.now().add(Duration(days: 1)),
                     );
                     if (picked != null) {
                       setLocalState(() => date = picked);
                     }
                   },
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 TextField(
                   controller: symptomController,
-                  decoration: const InputDecoration(labelText: 'Gejala utama'),
+                  decoration: InputDecoration(labelText: 'Gejala utama'),
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 TextField(
                   controller: intensityController,
                   decoration:
-                      const InputDecoration(labelText: 'Intensitas (Ringan/Sedang/Berat)'),
+                      InputDecoration(labelText: 'Intensitas (Ringan/Sedang/Berat)'),
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 TextField(
                   controller: noteController,
-                  decoration: const InputDecoration(labelText: 'Catatan'),
+                  decoration: InputDecoration(labelText: 'Catatan'),
                   maxLines: 2,
                 ),
               ],
@@ -2746,13 +2716,13 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Batal'),
+              child: Text('Batal'),
             ),
             ElevatedButton(
               onPressed: () {
                 if (symptomController.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                    SnackBar(
                       content: Text('Gejala utama wajib diisi.'),
                       behavior: SnackBarBehavior.floating,
                     ),
@@ -2774,7 +2744,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                   ),
                 );
               },
-              child: const Text('Simpan'),
+              child: Text('Simpan'),
             ),
           ],
         ),
@@ -2833,7 +2803,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocalState) => AlertDialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           title: Text(existing == null ? 'Input Pemeriksaan' : 'Edit Pemeriksaan'),
           content: SizedBox(
             width: 430,
@@ -2850,19 +2820,19 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       context: context,
                       initialDate: date,
                       firstDate: DateTime(2020),
-                      lastDate: DateTime.now().add(const Duration(days: 1)),
+                      lastDate: DateTime.now().add(Duration(days: 1)),
                     );
                     if (picked != null) {
                       setLocalState(() => date = picked);
                     }
                   },
                 ),
-                const SizedBox(height: 10),
-                const Text(
+                SizedBox(height: 10),
+                Text(
                   'Jenis pemeriksaan',
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
-                const SizedBox(height: 6),
+                SizedBox(height: 6),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -2882,11 +2852,11 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       )
                       .toList(),
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 DropdownButtonFormField<String>(
-                  value: examId,
+                  initialValue: examId,
                   isExpanded: true,
-                  decoration: const InputDecoration(labelText: 'Pemeriksaan'),
+                  decoration: InputDecoration(labelText: 'Pemeriksaan'),
                   items: refs
                       .where((e) => e.group == examType)
                       .map(
@@ -2901,31 +2871,31 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     setLocalState(() => examId = value);
                   },
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 Builder(
                   builder: (_) {
                     final exam = selectedExam();
                     return Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(10),
+                      padding: EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: AppColors.background,
+                        color: Theme.of(context).scaffoldBackgroundColor,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.border),
+                        border: Border.all(color: Theme.of(context).dividerColor),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'Satuan: ${exam.unit.isEmpty ? '-' : exam.unit}',
-                            style: const TextStyle(fontSize: 12),
+                            style: TextStyle(fontSize: 12),
                           ),
-                          const SizedBox(height: 2),
+                          SizedBox(height: 2),
                           Text(
                             'Nilai normal: ${exam.normal}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textSecondary,
+                              color: Theme.of(context).textTheme.bodyMedium?.color,
                             ),
                           ),
                         ],
@@ -2934,24 +2904,24 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                   },
                 ),
                 if (examType == 'Urin') ...[
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   _HeartOptionField(
                     label: 'Waktu pengambilan urin',
                     value: sampleTime,
-                    options: const ['Pagi', 'Siang', 'Sore', 'Malam'],
+                    options: ['Pagi', 'Siang', 'Sore', 'Malam'],
                     onChanged: (v) => setLocalState(() => sampleTime = v),
                   ),
                 ],
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 TextField(
                   controller: resultController,
                   onChanged: (_) => setLocalState(() {}),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Hasil',
                     hintText: 'Contoh: 130/80, 13.2, Negatif',
                   ),
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 Builder(
                   builder: (_) {
                     final autoCategory = _autoExamCategory(
@@ -2960,16 +2930,16 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     );
                     return Row(
                       children: [
-                        const Text(
+                        Text(
                           'Kategori otomatis: ',
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary,
+                            color: Theme.of(context).hintColor,
                           ),
                         ),
                         _StatusBadge(
                           text: autoCategory,
-                          color: _checkupCategoryColor(autoCategory),
+                          color: _checkupCategoryColor(context, autoCategory),
                         ),
                       ],
                     );
@@ -2982,14 +2952,14 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Batal'),
+              child: Text('Batal'),
             ),
             ElevatedButton(
               onPressed: () {
                 final exam = selectedExam();
                 if (resultController.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                    SnackBar(
                       content: Text('Hasil pemeriksaan wajib diisi.'),
                       behavior: SnackBarBehavior.floating,
                     ),
@@ -3019,7 +2989,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                   ),
                 );
               },
-              child: const Text('Simpan'),
+              child: Text('Simpan'),
             ),
           ],
         ),
@@ -3268,17 +3238,17 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Consumer<AuthProvider>(
         builder: (context, auth, _) {
           final guestDisease = context.watch<DiseaseProvider>().selectedDisease;
           final diseaseType = auth.currentUser?.diseaseType ?? guestDisease;
 
           if (diseaseType == null) {
-            return const Center(
+            return Center(
               child: Text(
                 'Pilih penyakit terlebih dulu untuk melihat tracker kesehatan.',
-                style: TextStyle(color: AppColors.textSecondary),
+                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
                 textAlign: TextAlign.center,
               ),
             );
@@ -3286,30 +3256,30 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
 
           if (diseaseType == DiseaseType.heartFailure) {
             if (_isHeartLoading) {
-              return const Center(child: CircularProgressIndicator());
+              return Center(child: CircularProgressIndicator());
             }
 
             return RefreshIndicator(
               onRefresh: _loadHeartRecords,
               child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+                physics: AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.fromLTRB(16, 16, 16, 140),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _HeartHeader(onInput: _showHeartInputTypeSheet),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     if (_uid.isEmpty) ...[
-                      const _GuestReadOnlyBanner(
+                      _GuestReadOnlyBanner(
                         message:
                             'Mode Guest (Read-only). Kamu bisa buka form, tapi tidak bisa menyimpan input tanpa login.',
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                     ],
                     if (_heartError != null)
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.all(12),
+                        padding: EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: AppColors.error.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(12),
@@ -3319,24 +3289,24 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                         ),
                         child: Text(
                           _heartError!,
-                          style: const TextStyle(color: AppColors.error),
+                          style: TextStyle(color: AppColors.error),
                         ),
                       ),
-                    if (_heartError != null) const SizedBox(height: 14),
+                    if (_heartError != null) SizedBox(height: 14),
                     _HeartTrendCard(
                       records: _heartWeightRecords,
                       idealWeight: auth.currentUser?.bbi ?? auth.currentUser?.weight ?? 0,
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     // Activity Gauge for Heart
                     () {
                       final now = DateTime.now();
                       final today = DateTime(now.year, now.month, now.day);
-                      final sevenDaysAgo = today.subtract(const Duration(days: 6));
+                      final sevenDaysAgo = today.subtract(Duration(days: 6));
                       
                       final weeklyRecords = _heartActivityRecords.where((r) =>
-                          r.date.isAfter(sevenDaysAgo.subtract(const Duration(seconds: 1))) &&
-                          r.date.isBefore(today.add(const Duration(days: 1))));
+                          r.date.isAfter(sevenDaysAgo.subtract(Duration(seconds: 1))) &&
+                          r.date.isBefore(today.add(Duration(days: 1))));
 
                       final totalDuration = weeklyRecords.fold<double>(
                           0,
@@ -3351,9 +3321,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                         isWeekly: true,
                       );
                     }(),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     _heartSymptomRecords.isEmpty
-                        ? const _EmptyTableState(
+                        ? _EmptyTableState(
                             message: 'Belum ada input gejala jantung.',
                           )
                         : _HeartSymptomTable(
@@ -3362,9 +3332,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                             onEdit: _editHeartRecord,
                             onDelete: _deleteHeartRecord,
                           ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     _heartActivityRecords.isEmpty
-                        ? const _EmptyTableState(
+                        ? _EmptyTableState(
                             message: 'Belum ada input aktivitas jantung.',
                           )
                         : _HeartActivityTable(
@@ -3373,9 +3343,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                             onEdit: _editHeartRecord,
                             onDelete: _deleteHeartRecord,
                           ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     _heartMedicationRecords.isEmpty
-                        ? const _EmptyTableState(
+                        ? _EmptyTableState(
                             message: 'Belum ada input obat jantung.',
                           )
                         : _HeartMedicationTable(
@@ -3384,9 +3354,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                             onEdit: _editHeartRecord,
                             onDelete: _deleteHeartRecord,
                           ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     _heartCheckupRecords.isEmpty
-                        ? const _EmptyTableState(
+                        ? _EmptyTableState(
                             message: 'Belum ada input pemeriksaan jantung.',
                           )
                         : _HeartCheckupTable(
@@ -3395,10 +3365,8 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                             onEdit: _editHeartRecord,
                             onDelete: _deleteHeartRecord,
                           ),
-                    const SizedBox(height: 16),
-                    const _NormalValuesButtonCard(
-                      diseaseType: DiseaseType.heartFailure,
-                    ),
+                    SizedBox(height: 16),
+                      _NormalValuesButtonCard(onTap: () => _showNormalValuesDialog(DiseaseType.heartFailure)),
                   ],
                 ),
               ),
@@ -3407,30 +3375,30 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
 
           if (diseaseType == DiseaseType.type2DiabetesMellitus) {
             if (_isDmLoading) {
-              return const Center(child: CircularProgressIndicator());
+              return Center(child: CircularProgressIndicator());
             }
 
             return RefreshIndicator(
               onRefresh: _loadDmRecords,
               child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+                physics: AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.fromLTRB(16, 16, 16, 140),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _DiabetesHeader(onInput: _showDmInputTypeSheet),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     if (_uid.isEmpty) ...[
-                      const _GuestReadOnlyBanner(
+                      _GuestReadOnlyBanner(
                         message:
                             'Mode Guest (Read-only). Kamu bisa buka form, tapi tidak bisa menyimpan input tanpa login.',
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                     ],
                     if (_dmError != null)
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.all(12),
+                        padding: EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: AppColors.error.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(12),
@@ -3440,10 +3408,10 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                         ),
                         child: Text(
                           _dmError!,
-                          style: const TextStyle(color: AppColors.error),
+                          style: TextStyle(color: AppColors.error),
                         ),
                       ),
-                    if (_dmError != null) const SizedBox(height: 14),
+                    if (_dmError != null) SizedBox(height: 14),
                     _DiabetesInsulinSummaryTable(
                       records: _dmInsulinRecords,
                       dateFmt: _dateFmt,
@@ -3452,16 +3420,16 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       onEdit: _editDmRecord,
                       onDelete: _deleteDmRecord,
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     // Activity Gauge for Diabetes
                     () {
                       final now = DateTime.now();
                       final today = DateTime(now.year, now.month, now.day);
-                      final sevenDaysAgo = today.subtract(const Duration(days: 6));
+                      final sevenDaysAgo = today.subtract(Duration(days: 6));
 
                       final weeklyRecords = _dmActivityRecords.where((r) =>
-                          r.date.isAfter(sevenDaysAgo.subtract(const Duration(seconds: 1))) &&
-                          r.date.isBefore(today.add(const Duration(days: 1))));
+                          r.date.isAfter(sevenDaysAgo.subtract(Duration(seconds: 1))) &&
+                          r.date.isBefore(today.add(Duration(days: 1))));
                       
                       final totalDuration = weeklyRecords.fold<double>(
                           0,
@@ -3476,9 +3444,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                         isWeekly: true,
                       );
                     }(),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     _dmActivityRecords.isEmpty
-                        ? const _EmptyTableState(
+                        ? _EmptyTableState(
                             message: 'Belum ada input aktivitas diabetes.',
                           )
                         : _DiabetesActivityTable(
@@ -3487,9 +3455,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                             onEdit: _editDmRecord,
                             onDelete: _deleteDmRecord,
                           ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     _dmCheckupRecords.isEmpty
-                        ? const _EmptyTableState(
+                        ? _EmptyTableState(
                             message: 'Belum ada input pemeriksaan diabetes.',
                           )
                         : _DiabetesCheckupTable(
@@ -3498,37 +3466,35 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                             onEdit: _editDmRecord,
                             onDelete: _deleteDmRecord,
                           ),
-                    const SizedBox(height: 16),
-                    const _NormalValuesButtonCard(
-                      diseaseType: DiseaseType.type2DiabetesMellitus,
-                    ),
-                    const SizedBox(height: 16),
-                    const _InsulinGuideButtonCard(),
-                  ],
+                      SizedBox(height: 16),
+                      _NormalValuesButtonCard(onTap: () => _showNormalValuesDialog(DiseaseType.type2DiabetesMellitus)),
+                      SizedBox(height: 16),
+                      _InsulinGuideButtonCard(onTap: _showInsulinGuideDialog),
+                    ],
+                  ),
                 ),
-              ),
-            );
+              );
           }
 
           if (diseaseType != DiseaseType.chronicKidneyDisease) {
-            return const SizedBox.shrink();
+            return SizedBox.shrink();
           }
 
           if (_isLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return Center(child: CircularProgressIndicator());
           }
 
           return RefreshIndicator(
             onRefresh: _loadRecords,
             child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
+              physics: AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 140),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(14),
+                    padding: EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
@@ -3539,23 +3505,23 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border),
+                      border: Border.all(color: Theme.of(context).dividerColor),
                     ),
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(10),
+                          padding: EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: AppColors.surface,
+                            color: Theme.of(context).cardTheme.color ?? Theme.of(context).cardColor,
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.health_and_safety,
                             color: AppColors.kidneyColor,
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        const Expanded(
+                        SizedBox(width: 10),
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -3564,7 +3530,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
+                                  color: Theme.of(context).textTheme.bodyLarge?.color,
                                 ),
                               ),
                               SizedBox(height: 2),
@@ -3572,7 +3538,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                                 'Pantau hemodialisa, gejala, dan obat',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: AppColors.textSecondary,
+                                  color: Theme.of(context).textTheme.bodyMedium?.color,
                                 ),
                               ),
                             ],
@@ -3582,7 +3548,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                           onTap: _showInputTypeSheet,
                           borderRadius: BorderRadius.circular(10),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(
+                            padding: EdgeInsets.symmetric(
                               horizontal: 12,
                               vertical: 10,
                             ),
@@ -3593,20 +3559,20 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                                 BoxShadow(
                                   color: AppColors.success.withValues(alpha: 0.35),
                                   blurRadius: 10,
-                                  offset: const Offset(0, 3),
+                                  offset: Offset(0, 3),
                                 ),
                               ],
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.add, size: 16, color: Colors.black),
+                                Icon(Icons.add, size: 16, color: _inputButtonForeground),
                                 SizedBox(width: 4),
                                 Text(
                                   'Input',
                                   style: TextStyle(
                                     fontWeight: FontWeight.w700,
-                                    color: Colors.black,
+                                    color: _inputButtonForeground,
                                   ),
                                 ),
                               ],
@@ -3616,18 +3582,18 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   if (_uid.isEmpty) ...[
-                    const _GuestReadOnlyBanner(
+                    _GuestReadOnlyBanner(
                       message:
                           'Mode Guest (Read-only). Kamu bisa buka form, tapi tidak bisa menyimpan input tanpa login.',
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                   ],
                   if (_error != null)
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(12),
+                      padding: EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: AppColors.error.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(12),
@@ -3637,16 +3603,16 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       ),
                       child: Text(
                         _error!,
-                        style: const TextStyle(color: AppColors.error),
+                        style: TextStyle(color: AppColors.error),
                       ),
                     ),
-                  if (_error != null) const SizedBox(height: 14),
+                  if (_error != null) SizedBox(height: 14),
                   _TrendCard(
                     records: _hemodialysisRecords,
                     riskCategory: _riskCategory,
                     riskColor: _riskColor,
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   _HemodialysisTable(
                     records: _hemodialysisRecords,
                     dateFmt: _dateFmt,
@@ -3655,14 +3621,14 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     onEdit: _editRecord,
                     onDelete: _deleteRecord,
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   _MedicationTable(
                     records: _medicationRecords,
                     dateFmt: _dateFmt,
                     onEdit: _editRecord,
                     onDelete: _deleteRecord,
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   _SimpleListCard(
                     title: 'Riwayat Gejala',
                     emptyText: 'Belum ada input gejala.',
@@ -3673,27 +3639,24 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     buildLine: (r) =>
                         '${_dateFmt.format(r.date)} • ${(r.payload['symptom'] ?? '-')} (${r.payload['intensity'] ?? '-'})',
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   _KidneyCheckupTable(
                     records: _checkupRecords,
                     dateFmt: _dateFmt,
                     onEdit: _editRecord,
                     onDelete: _deleteRecord,
                   ),
-                  const SizedBox(height: 16),
-                  const _NormalValuesButtonCard(
-                    diseaseType: DiseaseType.chronicKidneyDisease,
-                  ),
-                ],
+                  SizedBox(height: 16),
+                    _NormalValuesButtonCard(onTap: () => _showNormalValuesDialog(DiseaseType.chronicKidneyDisease)),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
-      ),
-    );
+            );
+          },
+        ),
+      );
+    }
   }
-}
-
 class _DatePickerField extends StatelessWidget {
   final String label;
   final String value;
@@ -3716,7 +3679,7 @@ class _DatePickerField extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(value),
-            const Icon(Icons.calendar_month, size: 18),
+            Icon(Icons.calendar_month, size: 18),
           ],
         ),
       ),
@@ -3767,25 +3730,25 @@ class _TrendCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).cardTheme.color ?? Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(14),
+      padding: EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Trend % kenaikan BB antar dialisis (1 bulan)',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: 6),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -3797,20 +3760,20 @@ class _TrendCard extends StatelessWidget {
                   Container(
                     width: 10,
                     height: 10,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: AppColors.kidneyColor,
                       shape: BoxShape.circle,
                     ),
                   ),
-                  const SizedBox(width: 6),
-                  const Text(
+                  SizedBox(width: 6),
+                  Text(
                     'BB kurva',
-                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodyMedium?.color),
                   ),
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: riskColor(lastPercent).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
@@ -3826,19 +3789,19 @@ class _TrendCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           SizedBox(
             height: 170,
             child: spots.isEmpty
-                ? const Center(
+                ? Center(
                     child: Text(
                       'Belum ada data hemodialisa.',
-                      style: TextStyle(color: AppColors.textSecondary),
+                      style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
                     ),
                   )
                 : LineChart(
                     LineChartData(
-                      clipData: const FlClipData.all(),
+                      clipData: FlClipData.all(),
                       minX: 0,
                       maxX: (spots.length - 1).toDouble(),
                       minY: minY,
@@ -3848,15 +3811,15 @@ class _TrendCard extends StatelessWidget {
                         drawVerticalLine: false,
                         horizontalInterval: interval,
                         getDrawingHorizontalLine: (value) => FlLine(
-                          color: AppColors.divider,
+                          color: Theme.of(context).dividerColor,
                           strokeWidth: 1,
                         ),
                       ),
                       titlesData: FlTitlesData(
-                        topTitles: const AxisTitles(
+                        topTitles: AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
                         ),
-                        rightTitles: const AxisTitles(
+                        rightTitles: AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
                         ),
                         bottomTitles: AxisTitles(
@@ -3866,16 +3829,16 @@ class _TrendCard extends StatelessWidget {
                             getTitlesWidget: (value, meta) {
                               final idx = value.toInt();
                               if (idx < 0 || idx >= spots.length) {
-                                return const SizedBox();
+                                return SizedBox();
                               }
                               if (spots.length > 5 && idx.isOdd) {
-                                return const SizedBox();
+                                return SizedBox();
                               }
                               return Text(
                                 xLabelFmt.format(trendData[idx].date),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 9,
-                                  color: AppColors.textSecondary,
+                                  color: Theme.of(context).textTheme.bodyMedium?.color,
                                 ),
                               );
                             },
@@ -3887,7 +3850,7 @@ class _TrendCard extends StatelessWidget {
                             reservedSize: 32,
                             getTitlesWidget: (value, meta) => Text(
                               '${value.toInt()}%',
-                              style: const TextStyle(fontSize: 10),
+                              style: TextStyle(fontSize: 10),
                             ),
                           ),
                         ),
@@ -3948,52 +3911,52 @@ class _HemodialysisTable extends StatelessWidget {
     return _TableCard(
       title: 'Tabel kenaikan berat badan antar dialisis',
       child: records.isEmpty
-          ? const Padding(
+          ? Padding(
               padding: EdgeInsets.all(16),
               child: Text(
                 'Belum ada input hemodialisa.',
-                style: TextStyle(color: AppColors.textSecondary),
+                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
               ),
             )
           : SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
                 headingTextStyle:
-                    const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                dataTextStyle: const TextStyle(fontSize: 12),
+                    TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                dataTextStyle: TextStyle(fontSize: 12),
                 columnSpacing: 18,
                 columns: [
-                  const DataColumn(label: Text('Tanggal')),
-                  const DataColumn(label: Text('BB setelah\nHemodialisa I')),
-                  const DataColumn(label: Text('BB sebelum\nHemodialisa II')),
-                  const DataColumn(label: Text('Kenaikan\nBB')),
-                  const DataColumn(label: Text('%')),
+                  DataColumn(label: Text('Tanggal')),
+                  DataColumn(label: Text('BB setelah\nHemodialisa I')),
+                  DataColumn(label: Text('BB sebelum\nHemodialisa II')),
+                  DataColumn(label: Text('Kenaikan\nBB')),
+                  DataColumn(label: Text('%')),
                   DataColumn(
                     label: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text('Kategori'),
-                        const SizedBox(width: 4),
+                        Text('Kategori'),
+                        SizedBox(width: 4),
                         Tooltip(
                           triggerMode: TooltipTriggerMode.tap,
-                          showDuration: const Duration(seconds: 4),
-                          padding: const EdgeInsets.all(10),
-                          textStyle: const TextStyle(color: Colors.white, fontSize: 12),
+                          showDuration: Duration(seconds: 4),
+                          padding: EdgeInsets.all(10),
+                          textStyle: TextStyle(color: Colors.white, fontSize: 12),
                           decoration: BoxDecoration(
                             color: Colors.black87,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           message: 'Kategori % IDWG:\nRingan: < 2%\nSedang: 2% - 4%\nBerat: > 4%',
-                          child: const Icon(
+                          child: Icon(
                             Icons.info_outline,
                             size: 15,
-                            color: AppColors.textSecondary,
+                            color: Theme.of(context).textTheme.bodyMedium?.color,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const DataColumn(label: Text('Aksi')),
+                  DataColumn(label: Text('Aksi')),
                 ],
                 rows: records.reversed.map((e) {
                   return DataRow(
@@ -4015,12 +3978,12 @@ class _HemodialysisTable extends StatelessWidget {
                           children: [
                             IconButton(
                               visualDensity: VisualDensity.compact,
-                              icon: const Icon(Icons.edit_outlined, size: 18),
+                              icon: Icon(Icons.edit_outlined, size: 18),
                               onPressed: () => onEdit(e),
                             ),
                             IconButton(
                               visualDensity: VisualDensity.compact,
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.delete_outline,
                                 size: 18,
                                 color: AppColors.error,
@@ -4057,21 +4020,21 @@ class _MedicationTable extends StatelessWidget {
     return _TableCard(
       title: 'Tabel riwayat konsumsi obat',
       child: records.isEmpty
-          ? const Padding(
+          ? Padding(
               padding: EdgeInsets.all(16),
               child: Text(
                 'Belum ada input obat.',
-                style: TextStyle(color: AppColors.textSecondary),
+                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
               ),
             )
           : SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
                 headingTextStyle:
-                    const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                dataTextStyle: const TextStyle(fontSize: 12),
+                    TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                dataTextStyle: TextStyle(fontSize: 12),
                 columnSpacing: 18,
-                columns: const [
+                columns: [
                   DataColumn(label: Text('Tanggal')),
                   DataColumn(label: Text('Nama obat')),
                   DataColumn(label: Text('Bentuk')),
@@ -4103,12 +4066,12 @@ class _MedicationTable extends StatelessWidget {
                           children: [
                             IconButton(
                               visualDensity: VisualDensity.compact,
-                              icon: const Icon(Icons.edit_outlined, size: 18),
+                              icon: Icon(Icons.edit_outlined, size: 18),
                               onPressed: () => onEdit(e),
                             ),
                             IconButton(
                               visualDensity: VisualDensity.compact,
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.delete_outline,
                                 size: 18,
                                 color: AppColors.error,
@@ -4152,18 +4115,18 @@ class _SimpleListCard extends StatelessWidget {
       title: title,
       child: records.isEmpty
           ? Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(16),
               child: Text(
                 emptyText,
-                style: const TextStyle(color: AppColors.textSecondary),
+                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
               ),
             )
           : Column(
               children: records.take(5).map((r) {
                 return ListTile(
                   dense: true,
-                  leading: Icon(icon, size: 18, color: AppColors.textSecondary),
-                  title: Text(buildLine(r), style: const TextStyle(fontSize: 12.5)),
+                  leading: Icon(icon, size: 18, color: Theme.of(context).textTheme.bodyMedium?.color),
+                  title: Text(buildLine(r), style: TextStyle(fontSize: 12.5)),
                   trailing: PopupMenuButton<String>(
                     onSelected: (value) {
                       if (value == 'edit') {
@@ -4172,7 +4135,7 @@ class _SimpleListCard extends StatelessWidget {
                         onDelete(r);
                       }
                     },
-                    itemBuilder: (ctx) => const [
+                    itemBuilder: (ctx) => [
                       PopupMenuItem(value: 'edit', child: Text('Edit')),
                       PopupMenuItem(value: 'delete', child: Text('Hapus')),
                     ],
@@ -4202,8 +4165,8 @@ class _HeartOptionField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
-        const SizedBox(height: 6),
+        Text(label, style: TextStyle(fontWeight: FontWeight.w600)),
+        SizedBox(height: 6),
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -4229,9 +4192,12 @@ class _HeartHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final inputForeground = Theme.of(context).brightness == Brightness.dark
+        ? Colors.white
+        : const Color(0xFF0F172A);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: EdgeInsets.all(14),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -4242,20 +4208,20 @@ class _HeartHeader extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: Theme.of(context).cardTheme.color ?? Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.health_and_safety, color: AppColors.heartColor),
+            child: Icon(Icons.health_and_safety, color: AppColors.heartColor),
           ),
-          const SizedBox(width: 10),
-          const Expanded(
+          SizedBox(width: 10),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -4264,13 +4230,13 @@ class _HeartHeader extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                 ),
                 SizedBox(height: 2),
                 Text(
                   'Pantau gejala, aktivitas, obat, pemeriksaan, dan BB',
-                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodyMedium?.color),
                 ),
               ],
             ),
@@ -4279,17 +4245,17 @@ class _HeartHeader extends StatelessWidget {
             onTap: onInput,
             borderRadius: BorderRadius.circular(10),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: AppColors.success,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.add, size: 16, color: Colors.black),
+                  Icon(Icons.add, size: 16, color: inputForeground),
                   SizedBox(width: 4),
-                  Text('Input', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.black)),
+                  Text('Input', style: TextStyle(fontWeight: FontWeight.w700, color: inputForeground)),
                 ],
               ),
             ),
@@ -4336,42 +4302,42 @@ class _HeartTrendCard extends StatelessWidget {
       child: SizedBox(
         height: 240,
         child: records.isEmpty
-            ? const Center(
+            ? Center(
                 child: Text(
                   'Belum ada data berat badan.',
-                  style: TextStyle(color: AppColors.textSecondary),
+                  style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
                 ),
               )
             : Padding(
-                padding: const EdgeInsets.fromLTRB(10, 8, 14, 8),
+                padding: EdgeInsets.fromLTRB(10, 8, 14, 8),
                 child: LineChart(
                   LineChartData(
                     minX: 0,
                     maxX: (spots.length - 1).toDouble(),
                     minY: 0,
                     maxY: maxY,
-                    clipData: const FlClipData.all(),
+                    clipData: FlClipData.all(),
                     gridData: FlGridData(
                       show: true,
                       drawVerticalLine: false,
                       getDrawingHorizontalLine: (_) => FlLine(
-                        color: AppColors.divider,
+                        color: Theme.of(context).dividerColor,
                         strokeWidth: 1,
                       ),
                     ),
                     titlesData: FlTitlesData(
-                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
                           getTitlesWidget: (value, meta) {
                             final i = value.toInt();
-                            if (i < 0 || i >= records.length) return const SizedBox();
-                            if (records.length > 6 && i.isOdd) return const SizedBox();
+                            if (i < 0 || i >= records.length) return SizedBox();
+                            if (records.length > 6 && i.isOdd) return SizedBox();
                             return Text(
                               dateFmt.format(records[i].date),
-                              style: const TextStyle(fontSize: 9),
+                              style: TextStyle(fontSize: 9),
                             );
                           },
                         ),
@@ -4382,7 +4348,7 @@ class _HeartTrendCard extends StatelessWidget {
                           reservedSize: 30,
                           getTitlesWidget: (v, m) => Text(
                             v.toInt().toString(),
-                            style: const TextStyle(fontSize: 9),
+                            style: TextStyle(fontSize: 9),
                           ),
                         ),
                       ),
@@ -4392,27 +4358,27 @@ class _HeartTrendCard extends StatelessWidget {
                       LineChartBarData(
                         spots: spots,
                         isCurved: true,
-                        color: const Color(0xFF6B1414).withValues(alpha: 0.18),
+                        color: Color(0xFF6B1414).withValues(alpha: 0.18),
                         barWidth: 7,
-                        dotData: const FlDotData(show: false),
+                        dotData: FlDotData(show: false),
                       ),
                       LineChartBarData(
                         spots: spots,
                         isCurved: true,
-                        color: const Color(0xFF6B1414),
+                        color: Color(0xFF6B1414),
                         barWidth: 2.4,
                         belowBarData: BarAreaData(
                           show: true,
-                          color: const Color(0xFF6B1414).withValues(alpha: 0.08),
+                          color: Color(0xFF6B1414).withValues(alpha: 0.08),
                         ),
-                        dotData: const FlDotData(show: true),
+                        dotData: FlDotData(show: true),
                       ),
                       LineChartBarData(
                         spots: idealSpots,
                         isCurved: false,
                         color: Colors.redAccent,
                         barWidth: 2,
-                        dotData: const FlDotData(show: true),
+                        dotData: FlDotData(show: true),
                       ),
                     ],
                   ),
@@ -4441,15 +4407,15 @@ class _HeartSymptomTable extends StatelessWidget {
     return _TableCard(
       title: 'Tabel gejala jantung',
       child: records.isEmpty
-          ? const Padding(
+          ? Padding(
               padding: EdgeInsets.all(16),
-              child: Text('Belum ada input gejala.', style: TextStyle(color: AppColors.textSecondary)),
+              child: Text('Belum ada input gejala.', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color)),
             )
           : SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
                 columnSpacing: 16,
-                columns: const [
+                columns: [
                   DataColumn(label: Text('Tgl')),
                   DataColumn(label: Text('Sesak\nNafas')),
                   DataColumn(label: Text('Bagian\nBengkak')),
@@ -4489,12 +4455,12 @@ class _HeartSymptomTable extends StatelessWidget {
                       children: [
                         IconButton(
                           visualDensity: VisualDensity.compact,
-                          icon: const Icon(Icons.edit_outlined, size: 18),
+                          icon: Icon(Icons.edit_outlined, size: 18),
                           onPressed: () => onEdit(r),
                         ),
                         IconButton(
                           visualDensity: VisualDensity.compact,
-                          icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.error),
+                          icon: Icon(Icons.delete_outline, size: 18, color: AppColors.error),
                           onPressed: () => onDelete(r),
                         ),
                       ],
@@ -4525,15 +4491,15 @@ class _HeartMedicationTable extends StatelessWidget {
     return _TableCard(
       title: 'Tabel riwayat konsumsi obat',
       child: records.isEmpty
-          ? const Padding(
+          ? Padding(
               padding: EdgeInsets.all(16),
-              child: Text('Belum ada input obat.', style: TextStyle(color: AppColors.textSecondary)),
+              child: Text('Belum ada input obat.', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color)),
             )
           : SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
                 columnSpacing: 16,
-                columns: const [
+                columns: [
                   DataColumn(label: Text('Tgl')),
                   DataColumn(label: Text('Nama\nobat')),
                   DataColumn(label: Text('Dosis')),
@@ -4556,12 +4522,12 @@ class _HeartMedicationTable extends StatelessWidget {
                       children: [
                         IconButton(
                           visualDensity: VisualDensity.compact,
-                          icon: const Icon(Icons.edit_outlined, size: 18),
+                          icon: Icon(Icons.edit_outlined, size: 18),
                           onPressed: () => onEdit(r),
                         ),
                         IconButton(
                           visualDensity: VisualDensity.compact,
-                          icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.error),
+                          icon: Icon(Icons.delete_outline, size: 18, color: AppColors.error),
                           onPressed: () => onDelete(r),
                         ),
                       ],
@@ -4595,7 +4561,7 @@ class _HeartActivityTable extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         child: DataTable(
           columnSpacing: 14,
-          columns: const [
+          columns: [
             DataColumn(label: Text('Tgl')),
             DataColumn(label: Text('Jenis aktivitas')),
             DataColumn(label: Text('Durasi')),
@@ -4619,12 +4585,12 @@ class _HeartActivityTable extends StatelessWidget {
                   children: [
                     IconButton(
                       visualDensity: VisualDensity.compact,
-                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      icon: Icon(Icons.edit_outlined, size: 18),
                       onPressed: () => onEdit(r),
                     ),
                     IconButton(
                       visualDensity: VisualDensity.compact,
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.delete_outline,
                         size: 18,
                         color: AppColors.error,
@@ -4660,15 +4626,15 @@ class _HeartCheckupTable extends StatelessWidget {
     return _TableCard(
       title: 'Riwayat Pemeriksaan',
       child: records.isEmpty
-          ? const Padding(
+          ? Padding(
               padding: EdgeInsets.all(16),
-              child: Text('Belum ada input pemeriksaan.', style: TextStyle(color: AppColors.textSecondary)),
+              child: Text('Belum ada input pemeriksaan.', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color)),
             )
           : SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
                 columnSpacing: 16,
-                columns: const [
+                columns: [
                   DataColumn(label: Text('Tgl')),
                   DataColumn(label: Text('Jenis')),
                   DataColumn(label: Text('Pemeriksaan')),
@@ -4693,6 +4659,7 @@ class _HeartCheckupTable extends StatelessWidget {
                       _StatusBadge(
                         text: (p['category'] ?? '-').toString(),
                         color: _checkupCategoryColor(
+                          context,
                           (p['category'] ?? '').toString(),
                         ),
                       ),
@@ -4702,12 +4669,12 @@ class _HeartCheckupTable extends StatelessWidget {
                       children: [
                         IconButton(
                           visualDensity: VisualDensity.compact,
-                          icon: const Icon(Icons.edit_outlined, size: 18),
+                          icon: Icon(Icons.edit_outlined, size: 18),
                           onPressed: () => onEdit(r),
                         ),
                         IconButton(
                           visualDensity: VisualDensity.compact,
-                          icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.error),
+                          icon: Icon(Icons.delete_outline, size: 18, color: AppColors.error),
                           onPressed: () => onDelete(r),
                         ),
                       ],
@@ -4738,18 +4705,18 @@ class _KidneyCheckupTable extends StatelessWidget {
     return _TableCard(
       title: 'Riwayat Pemeriksaan',
       child: records.isEmpty
-          ? const Padding(
+          ? Padding(
               padding: EdgeInsets.all(16),
               child: Text(
                 'Belum ada input pemeriksaan.',
-                style: TextStyle(color: AppColors.textSecondary),
+                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
               ),
             )
           : SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
                 columnSpacing: 16,
-                columns: const [
+                columns: [
                   DataColumn(label: Text('Tgl')),
                   DataColumn(label: Text('Jenis')),
                   DataColumn(label: Text('Pemeriksaan')),
@@ -4793,7 +4760,7 @@ class _KidneyCheckupTable extends StatelessWidget {
                     DataCell(
                       _StatusBadge(
                         text: category,
-                        color: _checkupCategoryColor(category),
+                        color: _checkupCategoryColor(context, category),
                       ),
                     ),
                     DataCell(
@@ -4802,12 +4769,12 @@ class _KidneyCheckupTable extends StatelessWidget {
                         children: [
                           IconButton(
                             visualDensity: VisualDensity.compact,
-                            icon: const Icon(Icons.edit_outlined, size: 18),
+                            icon: Icon(Icons.edit_outlined, size: 18),
                             onPressed: () => onEdit(r),
                           ),
                           IconButton(
                             visualDensity: VisualDensity.compact,
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.delete_outline,
                               size: 18,
                               color: AppColors.error,
@@ -4832,9 +4799,12 @@ class _DiabetesHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final inputForeground = Theme.of(context).brightness == Brightness.dark
+        ? Colors.white
+        : const Color(0xFF0F172A);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: EdgeInsets.all(14),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -4845,20 +4815,20 @@ class _DiabetesHeader extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: Theme.of(context).cardTheme.color ?? Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.health_and_safety, color: AppColors.diabetesColor),
+            child: Icon(Icons.health_and_safety, color: AppColors.diabetesColor),
           ),
-          const SizedBox(width: 10),
-          const Expanded(
+          SizedBox(width: 10),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -4867,13 +4837,13 @@ class _DiabetesHeader extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                 ),
                 SizedBox(height: 2),
                 Text(
                   'Pantau aktivitas, pemeriksaan, dan analisis insulin',
-                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodyMedium?.color),
                 ),
               ],
             ),
@@ -4882,23 +4852,161 @@ class _DiabetesHeader extends StatelessWidget {
             onTap: onInput,
             borderRadius: BorderRadius.circular(10),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: AppColors.success,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.add, size: 16, color: Colors.black),
+                  Icon(Icons.add, size: 16, color: inputForeground),
                   SizedBox(width: 4),
-                  Text('Input', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.black)),
+                  Text('Input', style: TextStyle(fontWeight: FontWeight.w700, color: inputForeground)),
                 ],
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+  }
+
+
+class _ExamReference {
+  final String id;
+  final String group;
+  final String name;
+  final String unit;
+  final String normal;
+  final bool forKidney;
+  final bool forHeart;
+  final bool forDiabetes;
+  _ExamReference({
+    required this.id,
+    required this.group,
+    required this.name,
+    required this.unit,
+    required this.normal,
+    this.forKidney = false,
+    this.forHeart = false,
+    this.forDiabetes = false,
+  });
+}
+
+List<_ExamReference> _examReferenceCatalog = [
+  _ExamReference(id: "bb", group: "Fisik", name: "Berat Badan", unit: "kg", normal: "-", forKidney: false, forHeart: true, forDiabetes: true),
+  _ExamReference(id: "td", group: "Fisik", name: "Tekanan Darah", unit: "mmHg", normal: "90/60 - 120/80", forKidney: true, forHeart: true, forDiabetes: true),
+  _ExamReference(id: "nadi", group: "Fisik", name: "Denyut Nadi", unit: "x/mnt", normal: "60 - 100", forKidney: true, forHeart: true, forDiabetes: true),
+  _ExamReference(id: "suhu", group: "Fisik", name: "Suhu Tubuh", unit: "°C", normal: "36,5 - 37,5", forKidney: true, forHeart: true, forDiabetes: true),
+  _ExamReference(id: "spo2", group: "Fisik", name: "Saturasi Oksigen", unit: "%", normal: "95 - 100", forKidney: true, forHeart: true, forDiabetes: true),
+  _ExamReference(id: "gdp", group: "Darah", name: "Gula darah puasa", unit: "mg/dL", normal: "70 - 110", forKidney: true, forHeart: true, forDiabetes: true),
+  _ExamReference(id: "gds", group: "Darah", name: "Gula darah sewaktu", unit: "mg/dL", normal: "70 - 200", forKidney: true, forHeart: true, forDiabetes: true),
+  _ExamReference(id: "hba1c", group: "Darah", name: "HbA1c", unit: "%", normal: "< 5,7", forKidney: true, forHeart: true, forDiabetes: true),
+  _ExamReference(id: "ureum", group: "Darah", name: "Ureum", unit: "mg/dL", normal: "10 - 50", forKidney: true, forHeart: true, forDiabetes: true),
+  _ExamReference(id: "kreatinin", group: "Darah", name: "Kreatinin", unit: "mg/dL", normal: "0,6 - 1,3", forKidney: true, forHeart: true, forDiabetes: true),
+  _ExamReference(id: "kalium", group: "Darah", name: "Kalium", unit: "mmol/L", normal: "3,5 - 5,1", forKidney: true, forHeart: true, forDiabetes: true),
+];
+
+List<_ExamReference> _examReferencesForDiseaseType(DiseaseType diseaseType) {
+  return _examReferenceCatalog.where((e) {
+    if (diseaseType == DiseaseType.chronicKidneyDisease) return e.forKidney;
+    if (diseaseType == DiseaseType.heartFailure) return e.forHeart;
+    if (diseaseType == DiseaseType.type2DiabetesMellitus) return e.forDiabetes;
+    return false;
+  }).toList();
+}
+
+class _ActivityInputResult {
+  final DateTime date;
+  final Map<String, dynamic> payload;
+  _ActivityInputResult({required this.date, required this.payload});
+}
+
+class _StatusBadge extends StatelessWidget {
+  final String text;
+  final Color color;
+  const _StatusBadge({required this.text, required this.color});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(999)),
+      child: Text(text, style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 11)),
+    );
+  }
+}
+
+Color _checkupCategoryColor(BuildContext context, String category) {
+  final theme = Theme.of(context);
+  switch (category.trim().toLowerCase()) {
+    case "tinggi": case "tidak normal": return theme.colorScheme.error;
+    case "rendah": return Colors.orange;
+    case "normal": return Colors.green;
+    default: return theme.hintColor;
+  }
+}
+
+class _NormalValuesButtonCard extends StatelessWidget {
+  final VoidCallback onTap;
+  const _NormalValuesButtonCard({required this.onTap});
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(color: theme.cardTheme.color, borderRadius: BorderRadius.circular(12), border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3))),
+        child: Row(children: [Icon(Icons.info_outline, color: theme.primaryColor), SizedBox(width: 12), Text("Lihat Daftar Nilai Normal", style: TextStyle(fontWeight: FontWeight.bold))]),
+      ),
+    );
+  }
+}
+
+class _InsulinGuideButtonCard extends StatelessWidget {
+  final VoidCallback onTap;
+  const _InsulinGuideButtonCard({required this.onTap});
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(color: theme.cardTheme.color, borderRadius: BorderRadius.circular(12), border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3))),
+        child: Row(children: [Icon(Icons.help_outline, color: theme.primaryColor), SizedBox(width: 12), Text("Panduan Analisis Insulin", style: TextStyle(fontWeight: FontWeight.bold))]),
+      ),
+    );
+  }
+}
+
+class _InsulinGuideContent extends StatelessWidget {
+  const _InsulinGuideContent();
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("Panduan Terapi Insulin", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: theme.primaryColor)),
+        SizedBox(height: 12),
+        Text("Langkah-langkah Analisis:", style: TextStyle(fontWeight: FontWeight.bold)),
+        SizedBox(height: 8),
+        Text("1. Masukkan dosis Insulin Basal dan Prandial sesuai resep dokter."),
+        Text("2. Masukkan total Karbohidrat yang dikonsumsi (bisa otomatis dari Food Tracker)."),
+        Text("3. Sistem akan menghitung estimasi kebutuhan insulin berdasarkan ICR (Insulin to Carb Ratio)."),
+        Text("4. Bandingkan Dosis Aktual dengan Estimasi sistem untuk melihat keseimbangan."),
+        SizedBox(height: 16),
+        Text("Kategori Status:", style: TextStyle(fontWeight: FontWeight.bold)),
+        SizedBox(height: 8),
+        Text("• Balance: Selisih dosis aktual dan estimasi ≤ 1 unit."),
+        Text("• Lebih: Dosis aktual lebih tinggi > 1 unit dari estimasi."),
+        Text("• Kurang: Dosis aktual lebih rendah > 1 unit dari estimasi."),
+      ],
     );
   }
 }
@@ -4926,7 +5034,7 @@ class _DiabetesInsulinSummaryTable extends StatefulWidget {
 }
 
 class _DiabetesInsulinSummaryTableState extends State<_DiabetesInsulinSummaryTable> {
-  static const List<String> _mealOrder = [
+  static final List<String> _mealOrder = [
     'Sarapan',
     'Selingan Pagi',
     'Makan Siang',
@@ -5001,19 +5109,19 @@ class _DiabetesInsulinSummaryTableState extends State<_DiabetesInsulinSummaryTab
   List<MealType> _mapMealLabelToTypes(String mealLabel) {
     switch (mealLabel) {
       case 'Sarapan':
-        return const [MealType.sarapan];
+        return [MealType.sarapan];
       case 'Selingan Pagi':
-        return const [MealType.selinganPagi];
+        return [MealType.selinganPagi];
       case 'Makan Siang':
-        return const [MealType.makanSiang];
+        return [MealType.makanSiang];
       case 'Selingan Siang':
-        return const [MealType.selinganSiang];
+        return [MealType.selinganSiang];
       case 'Makan Malam':
-        return const [MealType.makanMalam];
+        return [MealType.makanMalam];
       case 'Selingan Malam':
-        return const [MealType.selinganMalam];
+        return [MealType.selinganMalam];
       default:
-        return const [MealType.sarapan];
+        return [MealType.sarapan];
     }
   }
 
@@ -5035,7 +5143,6 @@ class _DiabetesInsulinSummaryTableState extends State<_DiabetesInsulinSummaryTab
     final dateRecords = widget.records.where((r) => _isSameDay(r.date, _normalizedSelectedDate));
     final allowedLabels = <String>{mealLabel};
     if (mealLabel == 'Selingan Siang') {
-      // Backward compatibility: old records used a single "Snack" label.
       allowedLabels.add('Snack');
     }
     final byMeal = dateRecords.where((r) => allowedLabels.contains((r.payload['meal'] ?? '').toString())).toList()
@@ -5097,7 +5204,7 @@ class _DiabetesInsulinSummaryTableState extends State<_DiabetesInsulinSummaryTab
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sinkronisasi gagal. Coba lagi.')),
+        SnackBar(content: Text('Sinkronisasi gagal. Coba lagi.')),
       );
     } finally {
       if (mounted) setState(() => _isSyncLoading = false);
@@ -5106,240 +5213,255 @@ class _DiabetesInsulinSummaryTableState extends State<_DiabetesInsulinSummaryTab
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final ext = theme.extension<AppThemeExtension>();
+    final isDark = theme.brightness == Brightness.dark;
+
     final dateRecords = widget.records.where((r) => _isSameDay(r.date, _normalizedSelectedDate)).toList();
     final visibleMeals = _mealOrder.where((mealLabel) => _foodCountForMeal(mealLabel) > 0).toList();
 
     return _TableCard(
       title: 'Analisis Insulin (DM)',
       child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.background,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.border),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Date Navigation Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              decoration: BoxDecoration(
+                color: theme.dividerColor.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        _selectedDate = _selectedDate.subtract(Duration(days: 1));
+                      });
+                      _loadFoodEntriesForDate();
+                    },
+                    icon: Icon(Icons.chevron_left),
                   ),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          setState(() {
-                            _selectedDate = _selectedDate.subtract(const Duration(days: 1));
-                          });
-                          _loadFoodEntriesForDate();
-                        },
-                        icon: const Icon(Icons.chevron_left),
-                      ),
-                      Expanded(
-                        child: Column(
-                          children: [
-                            Text(
-                              _isToday
-                                  ? 'Hari Ini · ${widget.dateFmt.format(_selectedDate)}'
-                                  : widget.dateFmt.format(_selectedDate),
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                            Text(
-                              '${dateRecords.length} data insulin',
-                              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                            ),
-                          ],
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Text(
+                          _isToday
+                              ? 'Hari Ini · ${widget.dateFmt.format(_selectedDate)}'
+                              : widget.dateFmt.format(_selectedDate),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: theme.textTheme.bodyLarge?.color,
+                          ),
                         ),
-                      ),
-                      IconButton(
-                        onPressed: _isToday
-                            ? null
-                            : () {
-                                setState(() {
-                                  _selectedDate = _selectedDate.add(const Duration(days: 1));
-                                });
-                                _loadFoodEntriesForDate();
-                              },
-                        icon: const Icon(Icons.chevron_right),
-                      ),
-                    ],
+                        Text(
+                          '${dateRecords.length} data insulin',
+                          style: TextStyle(fontSize: 11, color: theme.hintColor),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                if (_syncError != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    _syncError!,
-                    style: const TextStyle(fontSize: 11, color: AppColors.error),
+                  IconButton(
+                    onPressed: _isToday
+                        ? null
+                        : () {
+                            setState(() {
+                              _selectedDate = _selectedDate.add(Duration(days: 1));
+                            });
+                            _loadFoodEntriesForDate();
+                          },
+                    icon: Icon(Icons.chevron_right),
                   ),
                 ],
-                const SizedBox(height: 10),
-                if (_isTableLoading)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Center(child: CircularProgressIndicator()),
-                  )
-                else if (visibleMeals.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text(
-                      'Belum ada input makanan pada tanggal ini, jadi tabel analisis belum ditampilkan.',
-                      style: TextStyle(color: AppColors.textSecondary),
-                    ),
-                  )
-                else
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: double.infinity,
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: AppColors.warning.withValues(alpha: 0.14),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: AppColors.warning.withValues(alpha: 0.35),
-                          ),
-                        ),
-                        child: const Text(
-                          'Keterangan: Biru (belum input), Kuning (perlu update), Hijau (sinkron/aman).',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: AppColors.textSecondary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: DataTable(
-                      columnSpacing: 14,
-                      columns: const [
-                        DataColumn(label: Text('Makan')),
-                        DataColumn(label: Text('Karbo\n(Auto)')),
-                        DataColumn(label: Text('GL\n(Auto)')),
-                        DataColumn(label: Text('Basal')),
-                        DataColumn(label: Text('Prandial')),
-                        DataColumn(label: Text('Aktual')),
-                        DataColumn(label: Text('Estimasi')),
-                        DataColumn(label: Text('Selisih')),
-                        DataColumn(label: Text('Status')),
-                        DataColumn(label: Text('Kategori')),
-                        DataColumn(label: Text('Aksi')),
-                      ],
-                      rows: visibleMeals.map((mealLabel) {
-                        final auto = _autoCarbAndGl(mealLabel);
-                        final r = _recordByMeal(mealLabel);
-                        final p = r?.payload ?? const <String, dynamic>{};
-
-                        final basal = _toDouble(p['insulinBasal']);
-                        final prandial = _toDouble(p['insulinPrandial']);
-                        final aktual = _toDouble(p['dosisAktual']);
-                        final totalInsulin = basal + prandial;
-                        final icr = totalInsulin <= 0 ? 0.0 : 500 / totalInsulin;
-                        final estimasi = icr <= 0 ? 0.0 : auto.carb / icr;
-                        final diff = aktual - estimasi;
-                        final computedCategory = _categoryFromDiff(diff);
-
-                        final storedCarb = _toDouble(p['karbohidratMakan']);
-                        final storedGl = _toDouble(p['gl']);
-                        final isSynced = r != null &&
-                            (storedCarb - auto.carb).abs() < 0.1 &&
-                            (storedGl - auto.gl).abs() < 0.1;
-                        final statusText = r == null
-                            ? 'Belum input'
-                            : isSynced
-                                ? 'Sinkron'
-                                : 'Perlu update';
-                        final statusColor = r == null
-                            ? AppColors.warning
-                            : isSynced
-                                ? AppColors.success
-                                : AppColors.warning;
-
-                        return DataRow(
-                          color: (statusText == 'Perlu update' ||
-                                  statusText == 'Belum input')
-                              ? MaterialStatePropertyAll<Color?>(
-                                  statusText == 'Belum input' 
-                                    ? Colors.blue.withValues(alpha: 0.12)
-                                    : AppColors.warning.withValues(alpha: 0.14),
-                                )
-                              : null,
-                          cells: [
-                            DataCell(Text(mealLabel)),
-                            DataCell(Text('${auto.carb.toStringAsFixed(1)} g')),
-                            DataCell(Text(auto.gl.toStringAsFixed(1))),
-                            DataCell(Text(r == null ? '-' : basal.toStringAsFixed(1))),
-                            DataCell(Text(r == null ? '-' : prandial.toStringAsFixed(1))),
-                            DataCell(Text(r == null ? '-' : aktual.toStringAsFixed(1))),
-                            DataCell(Text(r == null ? '-' : estimasi.toStringAsFixed(1))),
-                            DataCell(Text(r == null ? '-' : diff.toStringAsFixed(1))),
-                            DataCell(_StatusBadge(text: statusText, color: statusColor)),
-                            DataCell(
-                              r == null
-                                  ? const Text('-')
-                                  : _StatusBadge(
-                                      text: computedCategory,
-                                      color: computedCategory == 'Balance'
-                                          ? AppColors.success
-                                          : computedCategory == 'Lebih'
-                                              ? AppColors.warning
-                                              : AppColors.error,
-                                    ),
-                            ),
-                            DataCell(
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (r != null) ...[
-                                    IconButton(
-                                      visualDensity: VisualDensity.compact,
-                                      tooltip: 'Edit',
-                                      icon: const Icon(Icons.edit_outlined, size: 18),
-                                      onPressed: () => widget.onEdit(r),
-                                    ),
-                                    IconButton(
-                                      visualDensity: VisualDensity.compact,
-                                      tooltip: 'Sinkronkan dari food',
-                                      icon: _isSyncLoading
-                                          ? const SizedBox(
-                                              width: 14,
-                                              height: 14,
-                                              child: CircularProgressIndicator(strokeWidth: 2),
-                                            )
-                                          : const Icon(Icons.sync, size: 18),
-                                      onPressed: _isSyncLoading ? null : () => _syncRow(r, mealLabel),
-                                    ),
-                                    IconButton(
-                                      visualDensity: VisualDensity.compact,
-                                      tooltip: 'Hapus',
-                                      icon: const Icon(
-                                        Icons.delete_outline,
-                                        size: 18,
-                                        color: AppColors.error,
-                                      ),
-                                      onPressed: () => widget.onDelete(r),
-                                    ),
-                                  ] else
-                                    const Text(
-                                      'Isi via form',
-                                      style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        );
-                      }).toList(),
-                        ),
-                      ),
-                    ],
-                  ),
-              ],
+              ),
             ),
+          ),
+
+          if (_syncError != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: Text(
+                _syncError!,
+                style: TextStyle(fontSize: 11, color: AppColors.error),
+              ),
+            ),
+
+          if (_isTableLoading)
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (visibleMeals.isEmpty)
+            Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(
+                child: Text(
+                  'Belum ada data makan pada tanggal ini.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: theme.textTheme.bodyMedium?.color),
+                ),
+              ),
+            )
+          else ...[
+            // Legend
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.warning.withValues(alpha: 0.35)),
+                ),
+                child: Text(
+                  'Keterangan: Biru (belum input), Kuning (perlu update), Hijau (sinkron/aman).',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: theme.textTheme.bodyMedium?.color,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+
+            // Table
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 16),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  columnSpacing: 14,
+                  columns: [
+                    DataColumn(label: Text('Makan')),
+                    DataColumn(label: Text('Karbo\n(Auto)')),
+                    DataColumn(label: Text('GL\n(Auto)')),
+                    DataColumn(label: Text('Basal')),
+                    DataColumn(label: Text('Prandial')),
+                    DataColumn(label: Text('Aktual')),
+                    DataColumn(label: Text('Estimasi')),
+                    DataColumn(label: Text('Selisih')),
+                    DataColumn(label: Text('Status')),
+                    DataColumn(label: Text('Kategori')),
+                    DataColumn(label: Text('Aksi')),
+                  ],
+                  rows: visibleMeals.map((mealLabel) {
+                    final auto = _autoCarbAndGl(mealLabel);
+                    final r = _recordByMeal(mealLabel);
+                    final p = r?.payload ?? <String, dynamic>{};
+
+                    final basal = _toDouble(p['insulinBasal']);
+                    final prandial = _toDouble(p['insulinPrandial']);
+                    final aktual = _toDouble(p['dosisAktual']);
+                    final totalInsulin = basal + prandial;
+                    final icr = totalInsulin <= 0 ? 0.0 : 500 / totalInsulin;
+                    final estimasi = icr <= 0 ? 0.0 : auto.carb / icr;
+                    final diff = aktual - estimasi;
+                    final computedCategory = _categoryFromDiff(diff);
+
+                    final storedCarb = _toDouble(p['karbohidratMakan']);
+                    final storedGl = _toDouble(p['gl']);
+                    final isSynced = r != null &&
+                        (storedCarb - auto.carb).abs() < 0.1 &&
+                        (storedGl - auto.gl).abs() < 0.1;
+                    final statusText = r == null
+                        ? 'Belum input'
+                        : isSynced
+                            ? 'Sinkron'
+                            : 'Perlu update';
+                    final statusColor = r == null
+                        ? AppColors.warning
+                        : isSynced
+                            ? AppColors.success
+                            : AppColors.warning;
+
+                    return DataRow(
+                      color: (statusText == 'Perlu update' || statusText == 'Belum input')
+                          ? WidgetStatePropertyAll<Color?>(
+                              statusText == 'Belum input' 
+                                ? Colors.blue.withValues(alpha: isDark ? 0.25 : 0.12)
+                                : (ext?.diabetesColor ?? Colors.orange).withValues(alpha: 0.14),
+                            )
+                          : null,
+                      cells: [
+                        DataCell(Text(mealLabel, style: TextStyle(color: theme.textTheme.bodyMedium?.color))),
+                        DataCell(Text('${auto.carb.toStringAsFixed(1)} g', style: TextStyle(color: theme.textTheme.bodyMedium?.color))),
+                        DataCell(Text(auto.gl.toStringAsFixed(1), style: TextStyle(color: theme.textTheme.bodyMedium?.color))),
+                        DataCell(Text(r == null ? '-' : basal.toStringAsFixed(1), style: TextStyle(color: theme.textTheme.bodyMedium?.color))),
+                        DataCell(Text(r == null ? '-' : prandial.toStringAsFixed(1), style: TextStyle(color: theme.textTheme.bodyMedium?.color))),
+                        DataCell(Text(r == null ? '-' : aktual.toStringAsFixed(1), style: TextStyle(color: theme.textTheme.bodyMedium?.color))),
+                        DataCell(Text(r == null ? '-' : estimasi.toStringAsFixed(1), style: TextStyle(color: theme.textTheme.bodyMedium?.color))),
+                        DataCell(Text(r == null ? '-' : diff.toStringAsFixed(1), style: TextStyle(color: theme.textTheme.bodyMedium?.color))),
+                        DataCell(_StatusBadge(text: statusText, color: statusColor)),
+                        DataCell(
+                          r == null
+                              ? Text('-', style: TextStyle(color: theme.hintColor))
+                              : _StatusBadge(
+                                  text: computedCategory,
+                                  color: computedCategory == 'Balance'
+                                      ? AppColors.success
+                                      : computedCategory == 'Lebih'
+                                          ? AppColors.warning
+                                          : AppColors.error,
+                                ),
+                        ),
+                        DataCell(
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (r != null) ...[
+                                IconButton(
+                                  visualDensity: VisualDensity.compact,
+                                  tooltip: 'Edit',
+                                  icon: Icon(Icons.edit_outlined, size: 18),
+                                  onPressed: () => widget.onEdit(r),
+                                ),
+                                IconButton(
+                                  visualDensity: VisualDensity.compact,
+                                  tooltip: 'Sinkronkan dari food',
+                                  icon: _isSyncLoading
+                                      ? SizedBox(
+                                          width: 14,
+                                          height: 14,
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        )
+                                      : Icon(Icons.sync, size: 18),
+                                  onPressed: _isSyncLoading ? null : () => _syncRow(r, mealLabel),
+                                ),
+                                IconButton(
+                                  visualDensity: VisualDensity.compact,
+                                  tooltip: 'Hapus',
+                                  icon: Icon(
+                                    Icons.delete_outline,
+                                    size: 18,
+                                    color: AppColors.error,
+                                  ),
+                                  onPressed: () => widget.onDelete(r),
+                                ),
+                              ] else
+                                Text(
+                                  'Isi via form',
+                                  style: TextStyle(fontSize: 11, color: theme.textTheme.bodyMedium?.color),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
+
 }
 
 class _DiabetesCheckupTable extends StatelessWidget {
@@ -5357,38 +5479,33 @@ class _DiabetesCheckupTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final todayCheckups = records
+        .where((record) => record.type == DiabetesInputType.pemeriksaan)
+        .toList();
+
     return _TableCard(
-      title: 'Riwayat Pemeriksaan',
-      child: records.isEmpty
-          ? const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text(
-                'Belum ada input pemeriksaan.',
-                style: TextStyle(color: AppColors.textSecondary),
-              ),
-            )
-          : SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DataTable(
-                columnSpacing: 16,
-                columns: const [
+      title: 'Pemeriksaan Kesehatan',
+      child: todayCheckups.isEmpty
+          ? _EmptyTableState(message: 'Belum ada data pemeriksaan hari ini.')
+          : Padding(
+              padding: const EdgeInsets.only(bottom: 12, left: 14, right: 14),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                columnSpacing: 20,
+                columns: [
                   DataColumn(label: Text('Tgl')),
                   DataColumn(label: Text('Jenis')),
-                  DataColumn(label: Text('Pemeriksaan')),
+                  DataColumn(label: Text('Parameter')),
                   DataColumn(label: Text('Hasil')),
-                  DataColumn(label: Text('Kategori')),
+                  DataColumn(label: Text('Status')),
                   DataColumn(label: Text('Aksi')),
                 ],
-                rows: records.map((r) {
+                rows: todayCheckups.map((r) {
                   final p = r.payload;
-                  String examType = (p['examType'] ?? '-').toString();
-                  if ((p['sampleTime'] ?? '').toString().isNotEmpty) {
-                    examType = '$examType (${p['sampleTime']})';
-                  }
+                  final examType = (p['examType'] ?? '-').toString();
                   final result = (p['result'] ?? '-').toString();
                   final unit = (p['unit'] ?? '').toString();
-                  final category = (p['category'] ?? '-').toString();
-
                   return DataRow(cells: [
                     DataCell(Text(dateFmt.format(r.date))),
                     DataCell(Text(examType)),
@@ -5396,35 +5513,39 @@ class _DiabetesCheckupTable extends StatelessWidget {
                     DataCell(Text(unit.isNotEmpty ? '$result $unit' : result)),
                     DataCell(
                       _StatusBadge(
-                        text: category,
-                        color: _checkupCategoryColor(category),
+                        text: (p['category'] ?? '-').toString(),
+                        color: _checkupCategoryColor(
+                          context,
+                          (p['category'] ?? '').toString(),
+                        ),
                       ),
                     ),
-                    DataCell(
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            visualDensity: VisualDensity.compact,
-                            icon: const Icon(Icons.edit_outlined, size: 18),
-                            onPressed: () => onEdit(r),
+                    DataCell(Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          tooltip: 'Edit',
+                          icon: Icon(Icons.edit_outlined, size: 18),
+                          onPressed: () => onEdit(r),
+                        ),
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          tooltip: 'Hapus',
+                          icon: Icon(
+                            Icons.delete_outline,
+                            size: 18,
+                            color: AppColors.error,
                           ),
-                          IconButton(
-                            visualDensity: VisualDensity.compact,
-                            icon: const Icon(
-                              Icons.delete_outline,
-                              size: 18,
-                              color: AppColors.error,
-                            ),
-                            onPressed: () => onDelete(r),
-                          ),
-                        ],
-                      ),
-                    ),
+                          onPressed: () => onDelete(r),
+                        ),
+                      ],
+                    )),
                   ]);
                 }).toList(),
               ),
             ),
+          ),
     );
   }
 }
@@ -5444,278 +5565,67 @@ class _DiabetesActivityTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final todayActivities = records
+        .where((record) => record.type == DiabetesInputType.aktivitas)
+        .toList();
+
     return _TableCard(
-      title: 'Tabel Aktivitas',
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          columnSpacing: 14,
-          columns: const [
-            DataColumn(label: Text('Tgl')),
-            DataColumn(label: Text('Jenis aktivitas')),
-            DataColumn(label: Text('Durasi')),
-            DataColumn(label: Text('Keluhan')),
-            DataColumn(label: Text('Aksi')),
-          ],
-          rows: records.map((r) {
-            final p = r.payload;
-            final complaint = (p['complaint'] ?? 'Normal').toString();
-            final complaintColor =
-                complaint == 'Normal' ? AppColors.success : AppColors.error;
-
-            return DataRow(cells: [
-              DataCell(Text(dateFmt.format(r.date))),
-              DataCell(Text((p['activityName'] ?? '-').toString())),
-              DataCell(Text('${p['duration'] ?? '-'} mnt')),
-              DataCell(_StatusBadge(text: complaint, color: complaintColor)),
-              DataCell(
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      icon: const Icon(Icons.edit_outlined, size: 18),
-                      onPressed: () => onEdit(r),
-                    ),
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      icon: const Icon(
-                        Icons.delete_outline,
-                        size: 18,
-                        color: AppColors.error,
+      title: 'Riwayat Aktivitas Fisik',
+      child: todayActivities.isEmpty
+          ? _EmptyTableState(message: 'Belum ada data aktivitas hari ini.')
+          : SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                columnSpacing: 24,
+                columns: [
+                  DataColumn(label: Text('Tgl')),
+                  DataColumn(label: Text('Aktivitas')),
+                  DataColumn(label: Text('Durasi')),
+                  DataColumn(label: Text('Keluhan')),
+                  DataColumn(label: Text('Status')),
+                  DataColumn(label: Text('Aksi')),
+                ],
+                rows: todayActivities.map((r) {
+                  final p = r.payload;
+                  final category = (p['category'] ?? '-').toString();
+                  return DataRow(cells: [
+                    DataCell(Text(dateFmt.format(r.date))),
+                    DataCell(Text((p['activityName'] ?? '-').toString())),
+                    DataCell(Text('${p['duration'] ?? '-'} mnt')),
+                    DataCell(Text((p['complaint'] ?? '-').toString())),
+                    DataCell(
+                      _StatusBadge(
+                        text: category,
+                        color: _checkupCategoryColor(context, category),
                       ),
-                      onPressed: () => onDelete(r),
                     ),
-                  ],
-                ),
+                    DataCell(
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            visualDensity: VisualDensity.compact,
+                            tooltip: 'Edit',
+                            icon: Icon(Icons.edit_outlined, size: 18),
+                            onPressed: () => onEdit(r),
+                          ),
+                          IconButton(
+                            visualDensity: VisualDensity.compact,
+                            tooltip: 'Hapus',
+                            icon: Icon(
+                              Icons.delete_outline,
+                              size: 18,
+                              color: AppColors.error,
+                            ),
+                            onPressed: () => onDelete(r),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ]);
+                }).toList(),
               ),
-            ]);
-          }).toList(),
-        ),
-      ),
-    );
-  }
-}
-
-class _InsulinGuideButtonCard extends StatelessWidget {
-  const _InsulinGuideButtonCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Panduan Analisis Insulin',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          ),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: () {
-              showDialog<void>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-                  title: const Text('Analisis Keseimbangan Insulin (Detail)'),
-                  content: SizedBox(
-                    width: 760,
-                    child: SingleChildScrollView(
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: DataTable(
-                          columnSpacing: 14,
-                          columns: [
-                            DataColumn(label: Text('No')),
-                            DataColumn(label: Text('Komponen Perhitungan')),
-                            DataColumn(label: Text('Simbol')),
-                            DataColumn(label: Text('Cara Perolehan Data')),
-                            DataColumn(label: Text('Rumus / Keterangan')),
-                            DataColumn(label: Text('Skala')),
-                          ],
-                          rows: [
-                            DataRow(cells: [
-                              DataCell(Text('1')),
-                              DataCell(Text('Insulin basal harian')),
-                              DataCell(Text('A')),
-                              DataCell(Text('Input manual responden')),
-                              DataCell(Text('Total insulin basal per hari (unit)')),
-                              DataCell(Text('Rasio')),
-                            ]),
-                            DataRow(cells: [
-                              DataCell(Text('2')),
-                              DataCell(Text('Insulin prandial harian')),
-                              DataCell(Text('B')),
-                              DataCell(Text('Input manual responden')),
-                              DataCell(Text('Total insulin prandial per hari (unit)')),
-                              DataCell(Text('Rasio')),
-                            ]),
-                            DataRow(cells: [
-                              DataCell(Text('3')),
-                              DataCell(Text('Total dosis insulin harian')),
-                              DataCell(Text('C')),
-                              DataCell(Text('Otomatis aplikasi')),
-                              DataCell(Text('C = A + B')),
-                              DataCell(Text('Rasio')),
-                            ]),
-                            DataRow(cells: [
-                              DataCell(Text('4')),
-                              DataCell(Text('Insulin to Carbohydrate Ratio')),
-                              DataCell(Text('D')),
-                              DataCell(Text('Otomatis aplikasi')),
-                              DataCell(Text('D = 500 / C')),
-                              DataCell(Text('Rasio')),
-                            ]),
-                            DataRow(cells: [
-                              DataCell(Text('5')),
-                              DataCell(Text('Total karbohidrat makan')),
-                              DataCell(Text('-')),
-                              DataCell(Text('Input/estimasi makanan')),
-                              DataCell(Text('Gram karbohidrat per waktu makan')),
-                              DataCell(Text('Rasio')),
-                            ]),
-                            DataRow(cells: [
-                              DataCell(Text('6')),
-                              DataCell(Text('Estimasi dosis insulin makan')),
-                              DataCell(Text('E')),
-                              DataCell(Text('Otomatis aplikasi')),
-                              DataCell(Text('Karbohidrat / D')),
-                              DataCell(Text('Rasio')),
-                            ]),
-                            DataRow(cells: [
-                              DataCell(Text('7')),
-                              DataCell(Text('Dosis insulin aktual')),
-                              DataCell(Text('F')),
-                              DataCell(Text('Input manual responden')),
-                              DataCell(Text('Dosis insulin sebelum makan')),
-                              DataCell(Text('Rasio')),
-                            ]),
-                            DataRow(cells: [
-                              DataCell(Text('8')),
-                              DataCell(Text('Selisih dosis insulin')),
-                              DataCell(Text('F-E')),
-                              DataCell(Text('Otomatis aplikasi')),
-                              DataCell(Text('Aktual dikurangi estimasi')),
-                              DataCell(Text('Rasio')),
-                            ]),
-                            DataRow(cells: [
-                              DataCell(Text('9')),
-                              DataCell(Text('Kategori kesesuaian')),
-                              DataCell(Text('-')),
-                              DataCell(Text('Otomatis aplikasi')),
-                              DataCell(Text('Berdasarkan nilai selisih')),
-                              DataCell(Text('Ordinal')),
-                            ]),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Tutup'),
-                    ),
-                  ],
-                ),
-              );
-            },
-            icon: const Icon(Icons.table_chart_outlined),
-            label: const Text('Lihat detail analisis insulin'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.diabetesColor,
-              side: BorderSide(color: AppColors.diabetesColor.withValues(alpha: 0.45)),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NormalValuesButtonCard extends StatelessWidget {
-  final DiseaseType diseaseType;
-
-  const _NormalValuesButtonCard({required this.diseaseType});
-
-  @override
-  Widget build(BuildContext context) {
-    final accent = diseaseType == DiseaseType.heartFailure
-        ? AppColors.heartColor
-        : diseaseType == DiseaseType.type2DiabetesMellitus
-            ? AppColors.diabetesColor
-        : AppColors.kidneyColor;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Referensi Pemeriksaan',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: () {
-              showDialog<void>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  insetPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 24,
-                  ),
-                  title: const Text('Tabel nilai normal pemeriksaan'),
-                  content: SizedBox(
-                    width: 680,
-                    child: _NormalValuesTableContent(diseaseType: diseaseType),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Tutup'),
-                    ),
-                  ],
-                ),
-              );
-            },
-            icon: const Icon(Icons.table_view_outlined),
-            label: const Text('Lihat tabel nilai normal'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: accent,
-              side: BorderSide(color: accent.withValues(alpha: 0.45)),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -5727,344 +5637,32 @@ class _NormalValuesTableContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final rows = _examReferencesForDiseaseType(diseaseType);
+    final refs = _examReferencesForDiseaseType(diseaseType);
 
     return SingleChildScrollView(
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          columnSpacing: 18,
-          columns: [
-            DataColumn(label: Text('Pemeriksaan')),
-            DataColumn(label: Text('Satuan')),
-            DataColumn(label: Text('Nilai normal')),
-          ],
-          rows: rows
-              .map(
-                (e) => DataRow(
-                  cells: [
-                    DataCell(Text('${e.group} • ${e.name}')),
-                    DataCell(Text(e.unit.isEmpty ? '-' : e.unit)),
-                    DataCell(Text(e.normal)),
-                  ],
-                ),
-              )
-              .toList(),
-        ),
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        columnSpacing: 20,
+        headingRowHeight: 40,
+        dataRowMinHeight: 40,
+        columns: [
+          DataColumn(label: Text('Parameter')),
+          DataColumn(label: Text('Satuan')),
+          DataColumn(label: Text('Nilai Normal')),
+        ],
+        rows: refs
+            .map(
+              (e) => DataRow(
+                cells: [
+                  DataCell(Text('${e.group} • ${e.name}')),
+                  DataCell(Text(e.unit.isEmpty ? '-' : e.unit)),
+                  DataCell(Text(e.normal)),
+                ],
+              ),
+            )
+            .toList(),
       ),
     );
-  }
-}
-
-class _ExamReference {
-  final String id;
-  final String group;
-  final String name;
-  final String unit;
-  final String normal;
-  final bool forKidney;
-  final bool forHeart;
-  final bool forDiabetes;
-
-  const _ExamReference({
-    required this.id,
-    required this.group,
-    required this.name,
-    required this.unit,
-    required this.normal,
-    required this.forKidney,
-    required this.forHeart,
-    this.forDiabetes = false,
-  });
-}
-
-const List<_ExamReference> _examReferenceCatalog = [
-  _ExamReference(
-    id: 'bb',
-    group: 'Fisik',
-    name: 'Berat Badan',
-    unit: 'kg',
-    normal: '-',
-    forKidney: false,
-    forHeart: true,
-    forDiabetes: true,
-  ),
-  _ExamReference(
-    id: 'tb',
-    group: 'Fisik',
-    name: 'Tinggi badan',
-    unit: 'cm',
-    normal: '-',
-    forKidney: true,
-    forHeart: true,
-    forDiabetes: true,
-  ),
-  _ExamReference(
-    id: 'suhu',
-    group: 'Fisik',
-    name: 'Suhu',
-    unit: '°C',
-    normal: '36,5–37,5',
-    forKidney: true,
-    forHeart: true,
-    forDiabetes: true,
-  ),
-  _ExamReference(
-    id: 'td',
-    group: 'Fisik',
-    name: 'Tekanan Darah',
-    unit: 'mmHg',
-    normal: '< 120/80',
-    forKidney: true,
-    forHeart: true,
-    forDiabetes: true,
-  ),
-  _ExamReference(
-    id: 'spo2',
-    group: 'Fisik',
-    name: 'Saturasi Oksigen',
-    unit: '%',
-    normal: '95 - 100',
-    forKidney: true,
-    forHeart: true,
-    forDiabetes: true,
-  ),
-  _ExamReference(
-    id: 'nadi',
-    group: 'Fisik',
-    name: 'Denyut nadi',
-    unit: 'x/menit',
-    normal: '60 - 100',
-    forKidney: true,
-    forHeart: true,
-    forDiabetes: true,
-  ),
-  _ExamReference(
-    id: 'urin_protein',
-    group: 'Urin',
-    name: 'Protein urin',
-    unit: '',
-    normal: 'Negatif',
-    forKidney: true,
-    forHeart: false,
-  ),
-  _ExamReference(
-    id: 'urin_ph',
-    group: 'Urin',
-    name: 'pH urin',
-    unit: '',
-    normal: '4,5 - 8,0',
-    forKidney: true,
-    forHeart: false,
-  ),
-  _ExamReference(
-    id: 'urin_hb',
-    group: 'Urin',
-    name: 'Hb urin',
-    unit: '',
-    normal: 'Negatif',
-    forKidney: true,
-    forHeart: false,
-  ),
-  _ExamReference(
-    id: 'gdp',
-    group: 'Darah',
-    name: 'Gula darah puasa',
-    unit: 'mg/dL',
-    normal: '70 - 110',
-    forKidney: false,
-    forHeart: false,
-    forDiabetes: true,
-  ),
-  _ExamReference(
-    id: 'gds',
-    group: 'Darah',
-    name: 'Gula darah sewaktu',
-    unit: 'mg/dL',
-    normal: '< 200',
-    forKidney: false,
-    forHeart: false,
-    forDiabetes: true,
-  ),
-  _ExamReference(
-    id: 'hba1c',
-    group: 'Darah',
-    name: 'HbA1c',
-    unit: '%',
-    normal: '< 5,7',
-    forKidney: false,
-    forHeart: false,
-    forDiabetes: true,
-  ),
-  _ExamReference(
-    id: 'chol_total',
-    group: 'Darah',
-    name: 'Kolesterol Total',
-    unit: 'mg/dL',
-    normal: '<200',
-    forKidney: false,
-    forHeart: true,
-  ),
-  _ExamReference(
-    id: 'hdl',
-    group: 'Darah',
-    name: 'HDL',
-    unit: 'mg/dL',
-    normal: '<4,5',
-    forKidney: false,
-    forHeart: true,
-  ),
-  _ExamReference(
-    id: 'ldl',
-    group: 'Darah',
-    name: 'LDL',
-    unit: 'mg/dL',
-    normal: '<100',
-    forKidney: false,
-    forHeart: true,
-  ),
-  _ExamReference(
-    id: 'trigliserida',
-    group: 'Darah',
-    name: 'Trigliserida',
-    unit: 'mg/dL',
-    normal: '<150',
-    forKidney: false,
-    forHeart: true,
-  ),
-  _ExamReference(
-    id: 'natrium',
-    group: 'Darah',
-    name: 'Natrium',
-    unit: 'mmol/L',
-    normal: '135 - 145',
-    forKidney: true,
-    forHeart: true,
-  ),
-  _ExamReference(
-    id: 'ureum',
-    group: 'Darah',
-    name: 'Ureum',
-    unit: 'mg/dL',
-    normal: '10 - 50',
-    forKidney: true,
-    forHeart: true,
-  ),
-  _ExamReference(
-    id: 'kreatinin',
-    group: 'Darah',
-    name: 'Kreatinin',
-    unit: 'mg/dL',
-    normal: 'L: 0,7 - 1,3 • P: 0,6 - 1,1',
-    forKidney: true,
-    forHeart: true,
-  ),
-  _ExamReference(
-    id: 'kalium',
-    group: 'Darah',
-    name: 'Kalium',
-    unit: 'mmol/L',
-    normal: '3,5 - 5,1',
-    forKidney: true,
-    forHeart: true,
-  ),
-  _ExamReference(
-    id: 'fosfat',
-    group: 'Darah',
-    name: 'Fosfat',
-    unit: 'mg/dL',
-    normal: '2,5 - 4,5',
-    forKidney: true,
-    forHeart: false,
-  ),
-  _ExamReference(
-    id: 'albumin',
-    group: 'Darah',
-    name: 'Albumin',
-    unit: 'g/dL',
-    normal: '3,5 - 5,0',
-    forKidney: true,
-    forHeart: false,
-  ),
-  _ExamReference(
-    id: 'hb_darah',
-    group: 'Darah',
-    name: 'Hemoglobin (Hb)',
-    unit: 'g/dL',
-    normal: 'L: 13,0 - 16,0 • P: 12,0 - 14,0',
-    forKidney: true,
-    forHeart: true,
-  ),
-  _ExamReference(
-    id: 'ht',
-    group: 'Darah',
-    name: 'Hematokrit (Ht)',
-    unit: '%',
-    normal: 'L: 40 - 50 • P: 36 - 44',
-    forKidney: true,
-    forHeart: true,
-  ),
-];
-
-List<_ExamReference> _examReferencesForDiseaseType(DiseaseType diseaseType) {
-  return _examReferenceCatalog.where((e) {
-    if (diseaseType == DiseaseType.chronicKidneyDisease) {
-      return e.forKidney;
-    }
-    if (diseaseType == DiseaseType.heartFailure) {
-      return e.forHeart;
-    }
-    if (diseaseType == DiseaseType.type2DiabetesMellitus) {
-      return e.forDiabetes;
-    }
-    return false;
-  }).toList();
-}
-
-class _ActivityInputResult {
-  final DateTime date;
-  final Map<String, dynamic> payload;
-
-  const _ActivityInputResult({required this.date, required this.payload});
-}
-
-class _StatusBadge extends StatelessWidget {
-  final String text;
-  final Color color;
-
-  const _StatusBadge({required this.text, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.w700,
-          fontSize: 11,
-        ),
-      ),
-    );
-  }
-}
-
-Color _checkupCategoryColor(String category) {
-  switch (category.trim().toLowerCase()) {
-    case 'tinggi':
-    case 'tidak normal':
-      return AppColors.error;
-    case 'rendah':
-      return AppColors.warning;
-    case 'normal':
-      return AppColors.success;
-    default:
-      return AppColors.textSecondary;
   }
 }
 
@@ -6076,15 +5674,19 @@ class _TableCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(14),
+        border: isDark ? Border.all(color: theme.dividerColor) : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
             blurRadius: 8,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -6092,24 +5694,25 @@ class _TableCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
+            padding: EdgeInsets.fromLTRB(14, 12, 14, 0),
             child: Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
+                color: theme.textTheme.titleSmall?.color,
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 300),
+            constraints: BoxConstraints(maxHeight: 300),
             child: SingleChildScrollView(
               scrollDirection: Axis.vertical,
               child: child,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
         ],
       ),
     );
@@ -6123,24 +5726,25 @@ class _EmptyTableState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       width: double.infinity,
-      constraints: const BoxConstraints(minHeight: 140),
-      padding: const EdgeInsets.all(16),
+      constraints: BoxConstraints(minHeight: 140),
+      padding: EdgeInsets.all(16),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.inbox_outlined,
-              color: AppColors.textHint,
+              color: theme.hintColor,
               size: 28,
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textSecondary),
+              style: TextStyle(color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6)),
             ),
           ],
         ),
@@ -6156,24 +5760,25 @@ class _GuestReadOnlyBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.08),
+        color: theme.primaryColor.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.22)),
+        border: Border.all(color: theme.primaryColor.withValues(alpha: 0.22)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.visibility_outlined, color: AppColors.primary, size: 18),
-          const SizedBox(width: 8),
+          Icon(Icons.visibility_outlined, color: theme.primaryColor, size: 18),
+          SizedBox(width: 8),
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
+              style: TextStyle(
+                color: theme.textTheme.bodySmall?.color,
                 fontSize: 12,
                 height: 1.35,
               ),
@@ -6185,10 +5790,6 @@ class _GuestReadOnlyBanner extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ACTIVITY GAUGE WIDGET
-// ─────────────────────────────────────────────────────────────────────────────
-
 class _ActivityGauge extends StatelessWidget {
   final double totalDuration;
   final double target;
@@ -6197,7 +5798,7 @@ class _ActivityGauge extends StatelessWidget {
 
   const _ActivityGauge({
     required this.totalDuration,
-    this.target = 150.0, // Default 150 menit per minggu
+    this.target = 150.0,
     required this.themeColor,
     this.isWeekly = true,
   });
@@ -6206,6 +5807,7 @@ class _ActivityGauge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -6219,65 +5821,60 @@ class _ActivityGauge extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: themeColor.withValues(alpha: 0.2)),
       ),
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+      padding: EdgeInsets.symmetric(vertical: 24, horizontal: 20),
       child: Column(
         children: [
           Row(
             children: [
               Icon(Icons.directions_run_outlined, color: themeColor, size: 20),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Expanded(
                 child: Text(
                   isWeekly ? 'Progres Aktivitas Mingguan' : 'Progres Aktivitas Harian',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
-                    color: AppColors.textPrimary,
+                    color: theme.textTheme.titleMedium?.color,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           Center(
             child: SizedBox(
               width: 180,
               height: 180,
               child: Stack(
-                alignment: Alignment.center,
+                fit: StackFit.expand,
                 children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppColors.divider.withValues(alpha: 0.3),
-                    ),
+                  CircularProgressIndicator(
+                    value: 1.0,
+                    strokeWidth: 14,
+                    color: theme.dividerColor.withValues(alpha: 0.1),
                   ),
-                  CustomPaint(
-                    painter: _CircleProgressPainter(
-                      progress: _ratio.clamp(0.0, 1.0),
-                      color: themeColor,
-                      backgroundColor: AppColors.divider.withValues(alpha: 0.2),
-                      strokeWidth: 12,
-                    ),
-                    size: const Size(180, 180),
+                  CircularProgressIndicator(
+                    value: _ratio.clamp(0, 1),
+                    strokeWidth: 14,
+                    color: themeColor,
+                    strokeCap: StrokeCap.round,
                   ),
                   Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        totalDuration.toInt().toString(),
+                        '${(_ratio * 100).toInt()}%',
                         style: TextStyle(
-                          fontSize: 36,
+                          fontSize: 32,
                           fontWeight: FontWeight.bold,
                           color: themeColor,
                         ),
                       ),
-                      const SizedBox(height: 2),
                       Text(
-                        'dari ${target.toInt()} mnt',
-                        style: const TextStyle(
+                        '${totalDuration.toInt()} / ${target.toInt()} mnt',
+                        style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.textSecondary,
+                          color: theme.hintColor,
                         ),
                       ),
                     ],
@@ -6286,77 +5883,9 @@ class _ActivityGauge extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          _statusText(),
+          SizedBox(height: 16),
         ],
       ),
     );
   }
-
-  Widget _statusText() {
-    String message = 'Yuk, mulai beraktivitas!';
-    if (_ratio >= 1.0) {
-      message = 'Target hari ini tercapai! Luar biasa.';
-    } else if (_ratio >= 0.5) {
-      message = 'Sedikit lagi mencapai target.';
-    } else if (totalDuration > 0) {
-      message = 'Terus bergerak, kamu pasti bisa!';
-    }
-
-    return Text(
-      message,
-      textAlign: TextAlign.center,
-      style: const TextStyle(
-        fontSize: 13,
-        fontWeight: FontWeight.w500,
-        color: AppColors.textSecondary,
-      ),
-    );
-  }
-}
-
-class _CircleProgressPainter extends CustomPainter {
-  final double progress;
-  final Color color;
-  final Color backgroundColor;
-  final double strokeWidth;
-
-  _CircleProgressPainter({
-    required this.progress,
-    required this.color,
-    required this.backgroundColor,
-    required this.strokeWidth,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = (size.width - strokeWidth) / 2;
-
-    // BG circle
-    final bgPaint = Paint()
-      ..color = backgroundColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-    canvas.drawCircle(center, radius, bgPaint);
-
-    // Progress arc
-    final progressPaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -pi / 2,
-      2 * pi * progress,
-      false,
-      progressPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

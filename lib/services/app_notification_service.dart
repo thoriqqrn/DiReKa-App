@@ -32,11 +32,13 @@ class AppNotificationService {
     if (_isInitialized) return;
 
     try {
-      const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
-      const iosInit = DarwinInitializationSettings();
-      const initSettings = InitializationSettings(android: androidInit, iOS: iosInit);
+      final androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+      final iosInit = DarwinInitializationSettings();
+      final initSettings = InitializationSettings(android: androidInit, iOS: iosInit);
 
-      final success = await _localNotifications.initialize(initSettings);
+      final success = await _localNotifications.initialize(
+        settings: initSettings,
+      );
       _isInitialized = success ?? false;
       
       // Update initial status
@@ -143,6 +145,21 @@ class AppNotificationService {
     await batch.commit();
   }
 
+  static Future<void> deleteNotification(String uid, String notificationId) async {
+    await _notificationsRef(uid).doc(notificationId).delete();
+  }
+
+  static Future<void> clearAllNotifications(String uid) async {
+    final snapshot = await _notificationsRef(uid).get();
+    if (snapshot.docs.isEmpty) return;
+
+    final batch = _db.batch();
+    for (final doc in snapshot.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
+  }
+
   static Future<void> refreshForUser(UserModel user) async {
     final userNotifications = await _buildNotifications(user);
     await _syncManagedNotifications(
@@ -230,7 +247,7 @@ class AppNotificationService {
     if (user.diseaseType == DiseaseType.chronicKidneyDisease) {
       final kidneyRecords = await KidneyHealthService.getRecords(
         user.uid,
-        fromDate: today.subtract(const Duration(days: 7)),
+        fromDate: today.subtract(Duration(days: 7)),
         limit: 50,
       );
       final todayRecords = kidneyRecords.where((e) => _isSameDay(e.date, today)).toList();
@@ -305,7 +322,7 @@ class AppNotificationService {
 
       // H-1 Hemodialisis Reminder
       if (user.hemodialysisData != null) {
-        final tomorrow = now.add(const Duration(days: 1));
+        final tomorrow = now.add(Duration(days: 1));
         final dayNameTomorrow = _getDayNameIndonesian(tomorrow.weekday);
         if (user.hemodialysisData!.scheduleDays.contains(dayNameTomorrow)) {
           notifications.add(
@@ -326,7 +343,7 @@ class AppNotificationService {
     if (user.diseaseType == DiseaseType.type2DiabetesMellitus) {
       final dmRecords = await DiabetesHealthService.getRecords(
         user.uid,
-        fromDate: today.subtract(const Duration(days: 7)),
+        fromDate: today.subtract(Duration(days: 7)),
         limit: 50,
       );
       final todayRecords = dmRecords.where((e) => _isSameDay(e.date, today)).toList();
@@ -371,7 +388,7 @@ class AppNotificationService {
       }
 
       entriesByMeal.forEach((mealType, entries) {
-        final mealGL = entries.fold(0.0, (sum, e) => sum + e.glycemicLoad);
+        final mealGL = entries.fold(0.0, (total, e) => total + e.glycemicLoad);
         if (mealGL >= 20) { // GL Tinggi > 20
           intakeMismatchCount++;
           notifications.add(
@@ -443,7 +460,7 @@ class AppNotificationService {
     if (user.diseaseType == DiseaseType.heartFailure) {
       final heartRecords = await HeartHealthService.getRecords(
         user.uid,
-        fromDate: today.subtract(const Duration(days: 14)),
+        fromDate: today.subtract(Duration(days: 14)),
         limit: 80,
       );
       final todayRecords = heartRecords.where((e) => _isSameDay(e.date, today)).toList();
@@ -660,29 +677,25 @@ class AppNotificationService {
 
   static Future<void> _showLocalNotification(AppNotification item) async {
     final id = item.id.hashCode;
-    const androidDetails = AndroidNotificationDetails(
+    final androidDetails = AndroidNotificationDetails(
       'direka_alerts',
       'Alerts & Reminders',
       channelDescription: 'Pemberitahuan kesehatan DiReKa',
       importance: Importance.max,
       priority: Priority.high,
     );
-    const iosDetails = DarwinNotificationDetails();
-    const platformDetails = NotificationDetails(
+    final iosDetails = DarwinNotificationDetails();
+    final platformDetails = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );
 
     await _localNotifications.show(
-      id,
-      item.title,
-      item.message,
-      platformDetails,
+      id: id,
+      title: item.title,
+      body: item.message,
+      notificationDetails: platformDetails,
     );
   }
 
-  static double _toDouble(dynamic value) {
-    if (value is num) return value.toDouble();
-    return double.tryParse((value ?? '').toString()) ?? 0;
-  }
 }

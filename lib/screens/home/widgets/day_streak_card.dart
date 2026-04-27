@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../core/app_colors.dart';
 import '../../../models/user_model.dart';
 
 class DayStreakCard extends StatelessWidget {
   final UserModel user;
-  const DayStreakCard({required this.user});
+  const DayStreakCard({super.key, required this.user});
 
   int _getDaysInMonth(int year, int month) {
     return DateTime(year, month + 1, 0).day;
@@ -13,6 +12,8 @@ class DayStreakCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final now = DateTime.now();
     final currentMonth = now.month;
     final currentYear = now.year;
@@ -30,17 +31,27 @@ class DayStreakCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF87CEEB), Color(0xFFB0E0E6)],
+        gradient: LinearGradient(
+          colors: isDark 
+              ? [const Color(0xFF0D1B3E), const Color(0xFF000621)]
+              : [const Color(0xFF87CEEB), const Color(0xFFB0E0E6)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.12),
+            blurRadius: 22,
+            spreadRadius: 1,
+            offset: const Offset(0, 10),
+          ),
+          BoxShadow(
+            color: (isDark ? const Color(0xFF62E7D9) : Colors.white)
+                .withValues(alpha: isDark ? 0.08 : 0.35),
+            blurRadius: 18,
+            spreadRadius: -6,
+            offset: const Offset(0, -2),
           ),
         ],
       ),
@@ -58,7 +69,7 @@ class DayStreakCard extends StatelessWidget {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isDark ? const Color(0xFF1E2A5E) : Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
@@ -74,19 +85,19 @@ class DayStreakCard extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        const Text(
+                          'Hari',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.white70,
+                          ),
+                        ),
                         Text(
                           '${user.currentStreak}',
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: Colors.red,
-                          ),
-                        ),
-                        const Text(
-                          'Hari',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: AppColors.textSecondary,
+                            color: Colors.redAccent,
                           ),
                         ),
                       ],
@@ -101,7 +112,7 @@ class DayStreakCard extends StatelessWidget {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.3),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Column(
@@ -160,7 +171,7 @@ class DayStreakCard extends StatelessWidget {
                     width: 12,
                     height: 12,
                     decoration: BoxDecoration(
-                      color: Colors.red.withValues(alpha: 0.3),
+                      color: Colors.red.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(3),
                     ),
                   ),

@@ -257,7 +257,7 @@ class _AdminUsersTabState extends State<AdminUsersTab> {
                   _detailRow('Penyakit Utama', DiseaseTypeExtension.getLabel(user.diseaseType)),
                   _detailRow('Berat Badan', '${user.weight} kg'),
                   _detailRow('Tinggi Badan', '${user.height} cm'),
-                  _detailRow('IMT', '${user.bmi.toStringAsFixed(2)}'),
+                  _detailRow('IMT', user.bmi.toStringAsFixed(2)),
                   _detailRow('Status Gizi', user.bmiCategory),
                   _detailRow('Berat Badan Ideal', '${user.bbi.toStringAsFixed(1)} kg'),
                   _detailRow('Tingkat Aktivitas', user.activityLevel?.label ?? '-'),

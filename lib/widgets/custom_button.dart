@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../core/app_colors.dart';
 
 class CustomButton extends StatelessWidget {
   final String label;
@@ -21,13 +20,19 @@ class CustomButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bgColor = backgroundColor ?? theme.primaryColor;
+    final fgColor = theme.brightness == Brightness.dark && backgroundColor == null
+        ? const Color(0xFF000621)
+        : Colors.white;
+
     final child = isLoading
-        ? const SizedBox(
+        ? SizedBox(
             height: 22,
             width: 22,
             child: CircularProgressIndicator(
               strokeWidth: 2.5,
-              color: Colors.white,
+              color: fgColor,
             ),
           )
         : icon != null
@@ -47,7 +52,8 @@ class CustomButton extends StatelessWidget {
     return ElevatedButton(
       onPressed: isLoading ? null : onPressed,
       style: ElevatedButton.styleFrom(
-        backgroundColor: backgroundColor ?? AppColors.primary,
+        backgroundColor: bgColor,
+        foregroundColor: fgColor,
       ),
       child: child,
     );

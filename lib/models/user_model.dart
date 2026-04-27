@@ -295,7 +295,7 @@ class UserModel {
       longestStreak: longestStreak ?? this.longestStreak,
       lastLoginDate: lastLoginDate ?? this.lastLoginDate,
       loginDates: loginDates ?? this.loginDates,
-      primaryUserUid: primaryUserUid ?? this.primaryUserUid,
+      primaryUserUid: primaryUserUid ?? primaryUserUid,
     );
   }
 }

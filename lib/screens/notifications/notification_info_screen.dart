@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../core/app_colors.dart';
-import '../../models/disease_type.dart';
 
 class NotificationInfoScreen extends StatelessWidget {
   const NotificationInfoScreen({super.key});

@@ -176,6 +176,7 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
   }
 
   Future<void> _deleteEntry(FoodLogEntry entry) async {
+    final theme = Theme.of(context);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -188,9 +189,9 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text(
+            child: Text(
               'Hapus',
-              style: TextStyle(color: AppColors.error),
+              style: TextStyle(color: theme.colorScheme.error),
             ),
           ),
         ],
@@ -297,18 +298,20 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
   }
 
   void _showMealTimeSelector({bool isGuest = false}) {
+    final theme = Theme.of(context);
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: theme.cardTheme.color,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Padding(
               padding: const EdgeInsets.all(20),
-              child: const Text(
+              child: Text(
                 'Pilih Waktu Makan',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.textTheme.titleLarge?.color),
               ),
             ),
             ...MealType.values
@@ -338,31 +341,31 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
                               children: [
                                 Text(
                                   meal.label,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
+                                    color: theme.textTheme.bodyLarge?.color,
                                   ),
                                 ),
                                 Text(
                                   meal.timeRange,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 12,
-                                    color: AppColors.textSecondary,
+                                    color: theme.hintColor,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          const Icon(
+                          Icon(
                             Icons.chevron_right,
-                            color: AppColors.primary,
+                            color: theme.primaryColor,
                           ),
                         ],
                       ),
                     ),
                   ),
-                )
-                .toList(),
+                ),
             const SizedBox(height: 12),
           ],
         ),
@@ -402,7 +405,8 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
   }
 
   /// Build HF weekly charts section
-  Widget _HFWeeklyChartsSection({required List<DailyNutrition> weeklyData}) {
+  Widget _hfWeeklyChartsSection({required List<DailyNutrition> weeklyData}) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -411,10 +415,10 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
           padding: const EdgeInsets.only(left: 4, bottom: 12),
           child: Text(
             'Grafik Nutrisi Mingguan',
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 14,
-              color: AppColors.textPrimary,
+              color: theme.textTheme.titleSmall?.color,
             ),
           ),
         ),
@@ -481,7 +485,7 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    final uid = auth.currentUser?.uid ?? auth.firebaseUser?.uid ?? '';
+    final theme = Theme.of(context);
     final needs = auth.currentUser?.nutritionNeeds;
     // True jika user sudah login Firebase tapi userModel belum selesai load
     final isUserModelLoading =
@@ -489,7 +493,7 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
     final intake = _totalIntake;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Column(
         children: [
           _DateHeader(
@@ -536,7 +540,7 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
                                     DiseaseType.heartFailure &&
                                 _weeklyData != null &&
                                 _weeklyData!.isNotEmpty) ...[
-                              _HFWeeklyChartsSection(weeklyData: _weeklyData!),
+                              _hfWeeklyChartsSection(weeklyData: _weeklyData!),
                               const SizedBox(height: 16),
                             ],
                             // 3. DM Patients: Show Glycemic Load chart and hierarchical meal table
@@ -577,13 +581,33 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
       ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 100),
-        child: FloatingActionButton.extended(
-          onPressed: _showAddFoodSheet,
-          backgroundColor: AppColors.primary,
-          icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-          label: const Text(
-            'Tambah Makanan',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            boxShadow: [
+              BoxShadow(
+                color: theme.brightness == Brightness.dark
+                    ? const Color(0xFF62E7D9).withValues(alpha: 0.45)
+                    : Colors.black.withValues(alpha: 0.25),
+                blurRadius: theme.brightness == Brightness.dark ? 22 : 14,
+                spreadRadius: theme.brightness == Brightness.dark ? 1 : 0,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: FloatingActionButton.extended(
+            onPressed: _showAddFoodSheet,
+            backgroundColor: theme.primaryColor,
+            elevation: theme.brightness == Brightness.dark ? 2 : 4,
+            highlightElevation: theme.brightness == Brightness.dark ? 4 : 6,
+            icon: const Icon(Icons.add_circle_outline, color: Colors.white),
+            label: const Text(
+              'Tambah Makanan',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ),
       ),
@@ -612,35 +636,36 @@ class _DateHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final label = isToday
         ? 'Hari Ini · ${DateFormat('d MMM y').format(date)}'
         : DateFormat('EEE, d MMM y').format(date);
 
     return Container(
-      color: AppColors.surface,
+      color: theme.cardTheme.color,
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       child: Row(
         children: [
           IconButton(
             onPressed: onPrev,
             icon: const Icon(Icons.chevron_left),
-            color: AppColors.textPrimary,
+            color: theme.textTheme.bodyLarge?.color,
           ),
           Expanded(
             child: Text(
               label,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
-                color: AppColors.textPrimary,
+                color: theme.textTheme.bodyLarge?.color,
               ),
             ),
           ),
           IconButton(
             onPressed: canGoNext ? onNext : null,
             icon: const Icon(Icons.chevron_right),
-            color: canGoNext ? AppColors.textPrimary : AppColors.textHint,
+            color: canGoNext ? theme.textTheme.bodyLarge?.color : theme.hintColor,
           ),
         ],
       ),
@@ -657,11 +682,12 @@ class _NutritionLoadingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -671,18 +697,18 @@ class _NutritionLoadingCard extends StatelessWidget {
           ),
         ],
       ),
-      child: const Row(
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           SizedBox(
             width: 18,
             height: 18,
-            child: CircularProgressIndicator(strokeWidth: 2.5),
+            child: CircularProgressIndicator(strokeWidth: 2.5, color: theme.primaryColor),
           ),
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
           Text(
             'Memuat data nutrisi...',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            style: TextStyle(color: theme.hintColor, fontSize: 13),
           ),
         ],
       ),
@@ -707,11 +733,11 @@ class _NutritionSummaryCard extends StatelessWidget {
 
   bool get _isDM => diseaseType == DiseaseType.type2DiabetesMellitus;
 
-  Color get _themeColor =>
-      _isDM ? AppColors.diabetesColor : AppColors.kidneyColor; // Kembali ke Biru
-
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final ext = theme.extension<AppThemeExtension>();
+    final themeColor = _isDM ? (ext?.diabetesColor ?? Colors.orange) : (ext?.kidneyColor ?? Colors.red);
     final energyRatio = needs.energi > 0 ? intake.energi / needs.energi : 0.0;
 
     // Nutrisi dasar (semua penyakit)
@@ -787,11 +813,14 @@ class _NutritionSummaryCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(16),
+        border: theme.brightness == Brightness.dark 
+            ? Border.all(color: theme.dividerColor)
+            : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: theme.brightness == Brightness.dark ? 0.2 : 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -808,23 +837,23 @@ class _NutritionSummaryCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: _themeColor.withValues(alpha: 0.1),
+                    color: themeColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     Icons.bar_chart_rounded,
-                    color: _themeColor,
+                    color: themeColor,
                     size: 20,
                   ),
                 ),
                 const SizedBox(width: 10),
-                const Expanded(
+                Expanded(
                   child: Text(
                     'Ringkasan Nutrisi Harian',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
-                      color: AppColors.textPrimary,
+                      color: theme.textTheme.titleMedium?.color,
                     ),
                   ),
                 ),
@@ -839,11 +868,11 @@ class _NutritionSummaryCard extends StatelessWidget {
                         color: _progressColor(energyRatio),
                       ),
                     ),
-                    const Text(
+                    Text(
                       'energi',
                       style: TextStyle(
                         fontSize: 10,
-                        color: AppColors.textSecondary,
+                        color: theme.hintColor,
                       ),
                     ),
                   ],
@@ -851,7 +880,7 @@ class _NutritionSummaryCard extends StatelessWidget {
               ],
             ),
           ),
-          const Divider(height: 1, color: AppColors.divider),
+          Divider(height: 1, color: theme.dividerColor),
 
           // ── Nutrient rows ──
           Padding(
@@ -897,6 +926,7 @@ class _WeeklyFluidChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final maxValue =
         (weeklyData.map((d) => d.cairan).reduce((a, b) => a > b ? a : b) * 1.1)
             .clamp(target, double.infinity);
@@ -904,12 +934,12 @@ class _WeeklyFluidChart extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Cairan Mingguan',
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
+            color: theme.hintColor,
           ),
         ),
         const SizedBox(height: 12),
@@ -948,7 +978,7 @@ class _WeeklyFluidChart extends StatelessWidget {
                     Container(
                       height: 80,
                       decoration: BoxDecoration(
-                        color: AppColors.divider.withValues(alpha: 0.3),
+                        color: theme.dividerColor.withValues(alpha: 0.1),
                         borderRadius: const BorderRadius.vertical(
                           top: Radius.circular(6),
                         ),
@@ -971,8 +1001,8 @@ class _WeeklyFluidChart extends StatelessWidget {
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
                         color: isToday
-                            ? AppColors.primary
-                            : AppColors.textSecondary,
+                            ? theme.primaryColor
+                            : theme.textTheme.bodyMedium?.color,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -980,7 +1010,7 @@ class _WeeklyFluidChart extends StatelessWidget {
                       dayOfWeek,
                       style: TextStyle(
                         fontSize: 10,
-                        color: isToday ? AppColors.primary : AppColors.textHint,
+                        color: isToday ? theme.primaryColor : theme.hintColor,
                         fontWeight: isToday
                             ? FontWeight.w600
                             : FontWeight.normal,
@@ -992,7 +1022,7 @@ class _WeeklyFluidChart extends StatelessWidget {
                         width: 4,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: AppColors.primary,
+                          color: theme.primaryColor,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -1010,14 +1040,14 @@ class _WeeklyFluidChart extends StatelessWidget {
               width: 12,
               height: 12,
               decoration: BoxDecoration(
-                color: AppColors.primary,
+                color: theme.primaryColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             const SizedBox(width: 4),
-            const Text(
+            Text(
               'Target',
-              style: TextStyle(fontSize: 10, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 10, color: theme.hintColor),
             ),
             const SizedBox(width: 12),
             Container(
@@ -1029,9 +1059,9 @@ class _WeeklyFluidChart extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 4),
-            const Text(
+            Text(
               'Berlebih',
-              style: TextStyle(fontSize: 10, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 10, color: theme.hintColor),
             ),
           ],
         ),
@@ -1043,14 +1073,6 @@ class _WeeklyFluidChart extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // DAY FLUID DATA MODEL
 // ─────────────────────────────────────────────────────────────────────────────
-
-class _DayFluidData {
-  final String day;
-  final double intake;
-  final DateTime date;
-
-  _DayFluidData({required this.day, required this.intake, required this.date});
-}
 
 class _NutrientData {
   final String label;
@@ -1096,19 +1118,20 @@ class _NutrientRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Icon(data.icon, size: 13, color: AppColors.textSecondary),
+            Icon(data.icon, size: 13, color: theme.hintColor),
             const SizedBox(width: 6),
             Text(
               data.label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: theme.textTheme.bodyLarge?.color,
               ),
             ),
             const Spacer(),
@@ -1131,9 +1154,9 @@ class _NutrientRow extends StatelessWidget {
               ),
             Text(
               '${_fmt(data.intake)} / ${_fmt(data.target)} ${data.unit}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
-                color: AppColors.textSecondary,
+                color: theme.hintColor,
               ),
             ),
           ],
@@ -1144,7 +1167,7 @@ class _NutrientRow extends StatelessWidget {
           child: LinearProgressIndicator(
             value: data.ratio.clamp(0.0, 1.0),
             minHeight: 7,
-            backgroundColor: AppColors.divider,
+            backgroundColor: theme.dividerColor.withValues(alpha: 0.1),
             valueColor: AlwaysStoppedAnimation<Color>(_barColor),
           ),
         ),
@@ -1182,18 +1205,22 @@ class _KidneyFluidGauge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final ext = theme.extension<AppThemeExtension>();
+    final kidneyColor = ext?.kidneyColor ?? AppColors.kidneyColor;
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.kidneyColor.withValues(alpha: 0.15),
-            AppColors.kidneyColor.withValues(alpha: 0.08),
+            kidneyColor.withValues(alpha: 0.15),
+            kidneyColor.withValues(alpha: 0.08),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.kidneyColor.withValues(alpha: 0.2)),
+        border: Border.all(color: kidneyColor.withValues(alpha: 0.2)),
       ),
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
       child: Column(
@@ -1203,17 +1230,17 @@ class _KidneyFluidGauge extends StatelessWidget {
             children: [
               Icon(
                 Icons.opacity_outlined,
-                color: AppColors.kidneyColor,
+                color: kidneyColor,
                 size: 20,
               ),
               const SizedBox(width: 8),
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Target Cairan Harian',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
-                    color: AppColors.textPrimary,
+                    color: theme.textTheme.bodyLarge?.color,
                   ),
                 ),
               ),
@@ -1233,7 +1260,7 @@ class _KidneyFluidGauge extends StatelessWidget {
                   Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppColors.divider.withValues(alpha: 0.3),
+                      color: theme.dividerColor.withValues(alpha: 0.1),
                     ),
                   ),
                   // Progress arc (using CustomPaint for curved progress)
@@ -1241,7 +1268,7 @@ class _KidneyFluidGauge extends StatelessWidget {
                     painter: _CircleProgressPainter(
                       progress: _ratio.clamp(0.0, 1.0),
                       color: _gaugeColor,
-                      backgroundColor: AppColors.divider.withValues(alpha: 0.2),
+                      backgroundColor: theme.dividerColor.withValues(alpha: 0.05),
                       strokeWidth: 12,
                     ),
                     size: const Size(200, 200),
@@ -1251,7 +1278,7 @@ class _KidneyFluidGauge extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        '${intake.toStringAsFixed(0)}',
+                        intake.toStringAsFixed(0),
                         style: TextStyle(
                           fontSize: 40,
                           fontWeight: FontWeight.bold,
@@ -1261,9 +1288,9 @@ class _KidneyFluidGauge extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         'dari ${target.toStringAsFixed(0)} ml',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.textSecondary,
+                          color: theme.hintColor,
                         ),
                       ),
                     ],
@@ -1278,9 +1305,9 @@ class _KidneyFluidGauge extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.background,
+              color: theme.dividerColor.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.divider),
+              border: Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1291,7 +1318,7 @@ class _KidneyFluidGauge extends StatelessWidget {
                   value: '${intake.toStringAsFixed(0)} ml',
                   color: AppColors.success,
                 ),
-                Container(width: 1, height: 40, color: AppColors.divider),
+                Container(width: 1, height: 40, color: theme.dividerColor.withValues(alpha: 0.3)),
                 _StatItem(
                   icon: _exceeded
                       ? Icons.warning_outlined
@@ -1377,6 +1404,7 @@ class _StatItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -1384,7 +1412,7 @@ class _StatItem extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           label,
-          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+          style: TextStyle(fontSize: 11, color: theme.hintColor),
         ),
         Text(
           value,
@@ -1408,23 +1436,24 @@ class _NoFormulaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5)),
       ),
       child: Column(
         children: [
-          Icon(Icons.info_outline_rounded, color: AppColors.textHint, size: 36),
+          Icon(Icons.info_outline_rounded, color: theme.hintColor, size: 36),
           const SizedBox(height: 10),
-          const Text(
+          Text(
             'Formula nutrisi untuk penyakit Anda\nsedang dikembangkan.',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: AppColors.textSecondary,
+              color: theme.hintColor,
               fontSize: 13,
               height: 1.5,
             ),
@@ -1461,6 +1490,7 @@ class _FoodListSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final grouped = _groupByMealType();
     final hasFood = entries.isNotEmpty;
 
@@ -1469,26 +1499,26 @@ class _FoodListSection extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Text(
+            Text(
               'Makanan Hari Ini',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 15,
-                color: AppColors.textPrimary,
+                color: theme.textTheme.titleMedium?.color,
               ),
             ),
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
+                color: theme.primaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
                 '${entries.length} item',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
-                  color: AppColors.primary,
+                  color: theme.primaryColor,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -1519,33 +1549,34 @@ class _EmptyFoodState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 36),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5)),
       ),
       child: Column(
         children: [
           Icon(
             Icons.restaurant_menu_outlined,
             size: 48,
-            color: AppColors.textHint,
+            color: theme.hintColor,
           ),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'Belum ada makanan dicatat',
             style: TextStyle(
               fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
+              color: theme.hintColor,
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Tap tombol + untuk menambahkan',
-            style: TextStyle(fontSize: 12, color: AppColors.textHint),
+            style: TextStyle(fontSize: 12, color: theme.hintColor.withValues(alpha: 0.7)),
           ),
         ],
       ),
@@ -1581,6 +1612,7 @@ class _MealSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final subtotals = _calculateSubtotals();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1598,17 +1630,17 @@ class _MealSection extends StatelessWidget {
                   children: [
                     Text(
                       mealType.label,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                        color: theme.textTheme.bodyLarge?.color,
                       ),
                     ),
                     Text(
                       mealType.timeRange,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
-                        color: AppColors.textSecondary,
+                        color: theme.hintColor,
                       ),
                     ),
                   ],
@@ -1617,14 +1649,14 @@ class _MealSection extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
+                  color: theme.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   '${entries.length}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
-                    color: AppColors.primary,
+                    color: theme.primaryColor,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1645,24 +1677,24 @@ class _MealSection extends StatelessWidget {
           margin: const EdgeInsets.fromLTRB(0, 4, 0, 12),
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: AppColors.background,
+            color: theme.dividerColor.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.divider),
+            border: Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 'Subtotal Kalori: ${subtotals['energi']!.toStringAsFixed(0)} kkal',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: AppColors.textSecondary,
+                  color: theme.hintColor,
                 ),
               ),
               Text(
                 'Na: ${subtotals['natrium']!.toStringAsFixed(0)} mg  ·  P: ${subtotals['protein']!.toStringAsFixed(1)} g',
-                style: const TextStyle(fontSize: 11, color: AppColors.textHint),
+                style: TextStyle(fontSize: 11, color: theme.hintColor.withValues(alpha: 0.8)),
               ),
             ],
           ),
@@ -1685,14 +1717,16 @@ class _FoodEntryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(12),
+        border: theme.brightness == Brightness.dark ? Border.all(color: theme.dividerColor) : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: theme.brightness == Brightness.dark ? 0.2 : 0.04),
             blurRadius: 4,
             offset: const Offset(0, 1),
           ),
@@ -1716,15 +1750,15 @@ class _FoodEntryCard extends StatelessWidget {
         ),
         title: Text(
           entry.foodName,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 14,
-            color: AppColors.textPrimary,
+            color: theme.textTheme.bodyLarge?.color,
           ),
         ),
         subtitle: Text(
           '${entry.grams.toInt()} g  ·  ${entry.energi.toStringAsFixed(0)} kkal',
-          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          style: TextStyle(fontSize: 12, color: theme.hintColor),
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -1735,56 +1769,56 @@ class _FoodEntryCard extends StatelessWidget {
               children: [
                 Text(
                   'P: ${entry.protein.toStringAsFixed(1)} g',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10,
-                    color: AppColors.textSecondary,
+                    color: theme.hintColor,
                   ),
                 ),
                 Text(
                   'Na: ${entry.natrium.toStringAsFixed(1)} mg',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10,
-                    color: AppColors.textSecondary,
+                    color: theme.hintColor,
                   ),
                 ),
               ],
             ),
             PopupMenuButton<String>(
-              icon: const Icon(
+              icon: Icon(
                 Icons.more_vert,
                 size: 20,
-                color: AppColors.textSecondary,
+                color: theme.hintColor,
               ),
               onSelected: (val) {
                 if (val == 'edit') onEdit();
                 if (val == 'delete') onDelete();
               },
               itemBuilder: (_) => [
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'edit',
                   child: Row(
                     children: [
                       Icon(
                         Icons.edit_outlined,
                         size: 18,
-                        color: AppColors.primary,
+                        color: theme.primaryColor,
                       ),
-                      SizedBox(width: 10),
-                      Text('Edit Gram'),
+                      const SizedBox(width: 10),
+                      const Text('Edit Gram'),
                     ],
                   ),
                 ),
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'delete',
                   child: Row(
                     children: [
                       Icon(
                         Icons.delete_outline,
                         size: 18,
-                        color: AppColors.error,
+                        color: theme.colorScheme.error,
                       ),
-                      SizedBox(width: 10),
-                      Text('Hapus', style: TextStyle(color: AppColors.error)),
+                      const SizedBox(width: 10),
+                      Text('Hapus', style: TextStyle(color: theme.colorScheme.error)),
                     ],
                   ),
                 ),
@@ -1875,15 +1909,16 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
 
   /// Shows a dialog prompting the guest to login before they can save.
   void _showGuestLoginDialog() {
+    final theme = Theme.of(context);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
-          children: const [
-            Icon(Icons.lock_outline, color: AppColors.primary),
-            SizedBox(width: 10),
-            Text('Login Diperlukan'),
+          children: [
+            Icon(Icons.lock_outline, color: theme.primaryColor),
+            const SizedBox(width: 10),
+            const Text('Login Diperlukan'),
           ],
         ),
         content: const Text(
@@ -1933,6 +1968,7 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
 
   void _showGramDialog(FoodItem food) {
     final gramCtrl = TextEditingController(text: '100');
+    final theme = Theme.of(context);
 
     showDialog(
       context: context,
@@ -1957,9 +1993,9 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                 ),
                 Text(
                   food.kategori,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textSecondary,
+                    color: theme.hintColor,
                     fontWeight: FontWeight.normal,
                   ),
                 ),
@@ -1994,7 +2030,7 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.background,
+                      color: theme.dividerColor.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Column(
@@ -2050,6 +2086,7 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
     String unit, {
     bool isLast = false,
   }) {
+    final theme = Theme.of(context);
     return Padding(
       padding: EdgeInsets.only(bottom: isLast ? 0 : 6),
       child: Row(
@@ -2057,17 +2094,17 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              color: AppColors.textSecondary,
+              color: theme.hintColor,
             ),
           ),
           Text(
             '${value.toStringAsFixed(1)} $unit',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              color: theme.textTheme.bodyLarge?.color,
             ),
           ),
         ],
@@ -2077,6 +2114,7 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return DraggableScrollableSheet(
       initialChildSize: 0.85,
       minChildSize: 0.5,
@@ -2084,9 +2122,9 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
       expand: false,
       builder: (ctx, scrollCtrl) {
         return Container(
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          decoration: BoxDecoration(
+            color: theme.cardTheme.color,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: Column(
             children: [
@@ -2096,17 +2134,17 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.divider,
+                  color: theme.dividerColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               const SizedBox(height: 14),
-              const Text(
+              Text(
                 'Tambah Makanan',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  color: theme.textTheme.titleMedium?.color,
                 ),
               ),
               const SizedBox(height: 12),
@@ -2120,7 +2158,7 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                     hintText: 'Cari bahan makanan...',
                     prefixIcon: const Icon(Icons.search),
                     filled: true,
-                    fillColor: AppColors.background,
+                    fillColor: theme.dividerColor.withValues(alpha: 0.05),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
@@ -2156,13 +2194,13 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                             ),
                             decoration: BoxDecoration(
                               color: selected
-                                  ? AppColors.primary
-                                  : AppColors.background,
+                                  ? theme.primaryColor
+                                  : theme.dividerColor.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
                                 color: selected
-                                    ? AppColors.primary
-                                    : AppColors.border,
+                                    ? theme.primaryColor
+                                    : theme.dividerColor.withValues(alpha: 0.2),
                               ),
                             ),
                             child: Text(
@@ -2174,7 +2212,7 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                                     : FontWeight.w400,
                                 color: selected
                                     ? Colors.white
-                                    : AppColors.textSecondary,
+                                    : theme.hintColor,
                               ),
                             ),
                           ),
@@ -2187,12 +2225,12 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
               // Results
               Expanded(
                 child: _isSearching
-                    ? const Center(child: CircularProgressIndicator())
+                    ? Center(child: CircularProgressIndicator(color: theme.primaryColor))
                     : _results.isEmpty
                     ? Center(
                         child: Text(
                           'Tidak ditemukan',
-                          style: TextStyle(color: AppColors.textHint),
+                          style: TextStyle(color: theme.hintColor),
                         ),
                       )
                     : _filteredResults.isEmpty
@@ -2202,8 +2240,8 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                               ? 'Tidak ditemukan'
                               : 'Tidak ada makanan di kategori "$_selectedCategory"',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: AppColors.textHint,
+                          style: TextStyle(
+                            color: theme.hintColor,
                             fontSize: 13,
                           ),
                         ),
@@ -2215,7 +2253,7 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                           vertical: 4,
                         ),
                         itemCount: _filteredResults.length,
-                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        separatorBuilder: (_, __) => Divider(height: 1, color: theme.dividerColor),
                         itemBuilder: (_, i) {
                           final food = _filteredResults[i];
                           return ListTile(
@@ -2224,22 +2262,22 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                             ),
                             title: Text(
                               food.nama,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
-                                color: AppColors.textPrimary,
+                                color: theme.textTheme.bodyLarge?.color,
                               ),
                             ),
                             subtitle: Text(
                               '${food.energi.toInt()} kkal  ·  P: ${food.protein}g  ·  Na: ${food.natrium.toInt()}mg',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: AppColors.textSecondary,
+                                color: theme.hintColor,
                               ),
                             ),
-                            trailing: const Icon(
+                            trailing: Icon(
                               Icons.add_circle_outline,
-                              color: AppColors.primary,
+                              color: theme.primaryColor,
                             ),
                             onTap: () => _selectFood(food),
                           );
@@ -2310,31 +2348,36 @@ class _EditGramDialogState extends State<_EditGramDialog> {
     if (mounted) Navigator.of(context).pop();
   }
 
-  Widget _row(String label, String value) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 3),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
-        ),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+  Widget _row(String label, String value) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(fontSize: 13, color: theme.hintColor),
           ),
-        ),
-      ],
-    ),
-  );
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: theme.textTheme.bodyLarge?.color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final g = double.tryParse(_gramCtrl.text) ?? 0;
     return AlertDialog(
+      backgroundColor: theme.cardTheme.color,
       title: Text(
         'Edit ${widget.food.nama}',
         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -2346,7 +2389,7 @@ class _EditGramDialogState extends State<_EditGramDialog> {
           children: [
             Text(
               widget.food.satuanNama == 'Gelas' ? 'Jumlah (ml)' : 'Jumlah (gram)',
-              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 13, color: theme.hintColor),
             ),
             const SizedBox(height: 6),
             TextField(
@@ -2357,7 +2400,7 @@ class _EditGramDialogState extends State<_EditGramDialog> {
               decoration: InputDecoration(
                 suffixText: widget.food.satuanNama == 'Gelas' ? 'ml' : 'g',
                 filled: true,
-                fillColor: AppColors.background,
+                fillColor: theme.dividerColor.withValues(alpha: 0.05),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -2368,12 +2411,12 @@ class _EditGramDialogState extends State<_EditGramDialog> {
               const SizedBox(height: 14),
               const Divider(),
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 'Perkiraan Gizi',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  color: theme.textTheme.titleSmall?.color,
                 ),
               ),
               const SizedBox(height: 8),
@@ -2477,38 +2520,45 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
 
   Map<String, double> get _preview => widget.food.calcFor(_gramDimakan);
 
-  Widget _sectionLabel(String text) => Text(
-    text,
-    style: const TextStyle(
-      fontSize: 13,
-      fontWeight: FontWeight.w600,
-      color: AppColors.textPrimary,
-    ),
-  );
+  Widget _sectionLabel(BuildContext context, String text) {
+    final theme = Theme.of(context);
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: theme.textTheme.titleSmall?.color,
+      ),
+    );
+  }
 
-  Widget _previewRow(String label, double value, String unit) => Padding(
-    padding: const EdgeInsets.only(bottom: 3),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-        ),
-        Text(
-          '${value.toStringAsFixed(1)} $unit',
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+  Widget _previewRow(BuildContext context, String label, double value, String unit) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 3),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(fontSize: 12, color: theme.hintColor),
           ),
-        ),
-      ],
-    ),
-  );
+          Text(
+            '${value.toStringAsFixed(1)} $unit',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: theme.textTheme.bodyLarge?.color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final takaran = widget.food.takaranSaji;
     final gram = _gramDimakan;
     final preview = _preview;
@@ -2519,23 +2569,23 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Header ──────────────────────────────────────────────────
+          // ── Header ──
           Text(
             widget.food.nama,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: theme.textTheme.titleLarge?.color,
             ),
           ),
-          const Text(
+          Text(
             'Berapa yang kamu makan?',
-            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            style: TextStyle(fontSize: 13, color: theme.hintColor),
           ),
           const SizedBox(height: 18),
 
-          // ── Pilih ukuran takaran ─────────────────────────────────────
-          _sectionLabel('Ukuran ${widget.food.satuanNama}'),
+          // ── Pilih ukuran takaran ──
+          _sectionLabel(context, 'Ukuran ${widget.food.satuanNama}'),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -2555,11 +2605,11 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
                     ),
                     decoration: BoxDecoration(
                       color: sel
-                          ? AppColors.primary.withValues(alpha: 0.1)
-                          : Colors.grey.shade50,
+                          ? theme.primaryColor.withValues(alpha: 0.1)
+                          : theme.dividerColor.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: sel ? AppColors.primary : Colors.grey.shade200,
+                        color: sel ? theme.primaryColor : theme.dividerColor.withValues(alpha: 0.2),
                         width: sel ? 2 : 1,
                       ),
                     ),
@@ -2576,8 +2626,8 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
                           style: TextStyle(
                             fontSize: 10,
                             color: sel
-                                ? AppColors.primary
-                                : AppColors.textSecondary,
+                                ? theme.primaryColor
+                                : theme.hintColor,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -2588,7 +2638,7 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
-                            color: sel ? AppColors.primary : AppColors.textPrimary,
+                            color: sel ? theme.primaryColor : theme.textTheme.bodyLarge?.color,
                           ),
                         ),
                       ],
@@ -2600,15 +2650,15 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
           ),
           const SizedBox(height: 18),
 
-          // ── Jumlah takaran ───────────────────────────────────────────
-          _sectionLabel('Jumlah ${widget.food.satuanNama}'),
+          // ── Jumlah takaran ──
+          _sectionLabel(context, 'Jumlah ${widget.food.satuanNama}'),
           const SizedBox(height: 4),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               IconButton(
                 icon: const Icon(Icons.remove_circle_outline, size: 36),
-                color: _count > 1 ? AppColors.primary : Colors.grey.shade300,
+                color: _count > 1 ? theme.primaryColor : theme.hintColor.withValues(alpha: 0.3),
                 onPressed: _count > 1 ? () => setState(() => _count--) : null,
               ),
               SizedBox(
@@ -2616,24 +2666,24 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
                 child: Text(
                   '$_count',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 30,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: theme.textTheme.titleLarge?.color,
                   ),
                 ),
               ),
               IconButton(
                 icon: const Icon(Icons.add_circle_outline, size: 36),
-                color: AppColors.primary,
+                color: theme.primaryColor,
                 onPressed: () => setState(() => _count++),
               ),
             ],
           ),
           const SizedBox(height: 18),
 
-          // ── Sisa di piring ───────────────────────────────────────────
-          _sectionLabel(widget.food.satuanNama == 'Gelas' ? 'Sisa di Gelas' : 'Sisa di Piring'),
+          // ── Sisa di piring ──
+          _sectionLabel(context, widget.food.satuanNama == 'Gelas' ? 'Sisa di Gelas' : 'Sisa di Piring'),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -2651,7 +2701,7 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: sel ? AppColors.primary : Colors.grey.shade300,
+                          color: sel ? theme.primaryColor : theme.dividerColor.withValues(alpha: 0.3),
                           width: sel ? 2.5 : 1.5,
                         ),
                       ),
@@ -2659,7 +2709,7 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
                         child: CustomPaint(
                           painter: _PiePainter(
                             eatFraction: 1 - sisa / 100,
-                            color: AppColors.primary,
+                            color: theme.primaryColor,
                           ),
                         ),
                       ),
@@ -2672,8 +2722,8 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
                         fontSize: 9,
                         height: 1.2,
                         color: sel
-                            ? AppColors.primary
-                            : AppColors.textSecondary,
+                            ? theme.primaryColor
+                            : theme.hintColor,
                         fontWeight: sel ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),
@@ -2684,13 +2734,13 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
           ),
           const SizedBox(height: 18),
 
-          // ── Ringkasan gizi ───────────────────────────────────────────
+          // ── Ringkasan gizi ──
           if (gram > 0)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.07),
+                color: theme.primaryColor.withValues(alpha: 0.07),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -2700,21 +2750,21 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
                     widget.food.satuanNama == 'Gelas'
                         ? '${gram.toStringAsFixed(0)} ml diminum'
                         : '${gram.toStringAsFixed(0)} g dimakan',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
+                      color: theme.primaryColor,
                     ),
                   ),
                   const SizedBox(height: 6),
-                  _previewRow('Energi', preview['energi']!, 'kkal'),
-                  _previewRow('Protein', preview['protein']!, 'g'),
-                  _previewRow('Lemak', preview['lemak']!, 'g'),
-                  _previewRow('Karbohidrat', preview['karbohidrat']!, 'g'),
-                  _previewRow('Natrium', preview['natrium']!, 'mg'),
-                  _previewRow('Kalium', preview['kalium']!, 'mg'),
-                  _previewRow('Fosfor', preview['fosfor']!, 'mg'),
-                  _previewRow('Cairan', preview['air']!, 'ml'),
+                  _previewRow(context, 'Energi', preview['energi']!, 'kkal'),
+                  _previewRow(context, 'Protein', preview['protein']!, 'g'),
+                  _previewRow(context, 'Lemak', preview['lemak']!, 'g'),
+                  _previewRow(context, 'Karbohidrat', preview['karbohidrat']!, 'g'),
+                  _previewRow(context, 'Natrium', preview['natrium']!, 'mg'),
+                  _previewRow(context, 'Kalium', preview['kalium']!, 'mg'),
+                  _previewRow(context, 'Fosfor', preview['fosfor']!, 'mg'),
+                  _previewRow(context, 'Cairan', preview['air']!, 'ml'),
                 ],
               ),
             )
@@ -2723,14 +2773,14 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: theme.dividerColor.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Center(
+              child: Center(
                 child: Text(
                   'Makanan tidak dicatat (sisa 100%)',
                   style: TextStyle(
-                    color: AppColors.textSecondary,
+                    color: theme.hintColor,
                     fontSize: 13,
                   ),
                 ),
@@ -2738,7 +2788,7 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
             ),
           const SizedBox(height: 18),
 
-          // ── Tombol ───────────────────────────────────────────────────
+          // ── Tombol ──
           Row(
             children: [
               TextButton(
@@ -2789,7 +2839,7 @@ class _PiePainter extends CustomPainter {
     final rect = Rect.fromCircle(center: center, radius: radius);
 
     // Latar: bagian yang tidak dimakan (abu-abu)
-    canvas.drawCircle(center, radius, Paint()..color = Colors.grey.shade100);
+    canvas.drawCircle(center, radius, Paint()..color = Colors.grey.withValues(alpha: 0.1));
 
     // Bagian yang dimakan (warna primary)
     if (eatFraction > 0) {
@@ -2819,7 +2869,7 @@ class _DMDailyMealTable extends StatelessWidget {
 
   const _DMDailyMealTable({required this.entriesByMeal, required this.needs});
 
-  // DM meal distribution (20% + 15% + 30% + 10% + 25% = 100%)
+  // DM meal distribution
   static const List<MealType> _dmMealOrder = [
     MealType.sarapan,
     MealType.selinganPagi,
@@ -2926,6 +2976,7 @@ class _MealTableSection extends StatelessWidget {
   });
 
   void _showEnlargedMealTable(BuildContext context) {
+    final theme = Theme.of(context);
     final percentage = mealType.dmCaloriePercentage;
     final targetEnergi = totalNeeds.energi * percentage;
     final targetProtein = totalNeeds.protein * percentage;
@@ -2947,13 +2998,13 @@ class _MealTableSection extends StatelessWidget {
       context: context,
       builder: (ctx) => Dialog.fullscreen(
         child: Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: theme.scaffoldBackgroundColor,
           appBar: AppBar(
             title: Text('Rincian ${mealType.label}'),
-            backgroundColor: AppColors.background,
+            backgroundColor: theme.appBarTheme.backgroundColor,
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.close, color: AppColors.textPrimary),
+              icon: Icon(Icons.close, color: theme.appBarTheme.foregroundColor),
               onPressed: () => Navigator.pop(ctx),
             ),
           ),
@@ -2964,17 +3015,19 @@ class _MealTableSection extends StatelessWidget {
               children: [
                 _buildMealHeader(context, energiRatio, statusColor, isEnlarged: true),
                 const SizedBox(height: 32),
-                const Text('Daftar Makanan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                Text('Daftar Makanan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: theme.textTheme.titleLarge?.color)),
                 const SizedBox(height: 12),
-                _buildFoodTable(isEnlarged: true),
+                _buildFoodTable(context, isEnlarged: true),
                 const SizedBox(height: 32),
-                const Text('Ringkasan Gizi Harian', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                Text('Ringkasan Gizi Harian', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: theme.textTheme.titleLarge?.color)),
                 const SizedBox(height: 12),
                 _buildTotalsTable(
+                  context,
                   actualEnergi, actualProtein, actualLemak, actualKarbo, actualSerat,
                   targetEnergi, targetProtein, targetLemak, targetKarbo, targetSerat,
                   percentage, statusColor,
                   isEnlarged: true,
+                  fulfillmentRatio: energiRatio,
                 ),
                 const SizedBox(height: 60),
               ],
@@ -2986,6 +3039,7 @@ class _MealTableSection extends StatelessWidget {
   }
 
   Widget _buildMealHeader(BuildContext context, double ratio, Color statusColor, {bool isEnlarged = false}) {
+    final theme = Theme.of(context);
     return Container(
       padding: EdgeInsets.all(isEnlarged ? 16 : 12),
       decoration: BoxDecoration(
@@ -3007,13 +3061,14 @@ class _MealTableSection extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: isEnlarged ? 18 : 14,
+                    color: theme.textTheme.titleMedium?.color,
                   ),
                 ),
                 Text(
                   '${(mealType.dmCaloriePercentage * 100).toStringAsFixed(0)}% dari kebutuhan harian',
                   style: TextStyle(
                     fontSize: isEnlarged ? 14 : 12,
-                    color: Colors.grey.shade600,
+                    color: theme.hintColor,
                   ),
                 ),
               ],
@@ -3021,7 +3076,7 @@ class _MealTableSection extends StatelessWidget {
           ),
           if (!isEnlarged) ...[
             IconButton(
-              icon: const Icon(Icons.fullscreen, size: 24, color: AppColors.primary),
+              icon: Icon(Icons.fullscreen, size: 24, color: theme.primaryColor),
               onPressed: () => _showEnlargedMealTable(context),
             ),
           ],
@@ -3030,7 +3085,8 @@ class _MealTableSection extends StatelessWidget {
     );
   }
 
-  Widget _buildFoodTable({bool isEnlarged = false}) {
+  Widget _buildFoodTable(BuildContext context, {bool isEnlarged = false}) {
+    final theme = Theme.of(context);
     final colWidths = {
       0: FlexColumnWidth(isEnlarged ? 2.5 : 2),
       1: const FlexColumnWidth(1),
@@ -3048,17 +3104,17 @@ class _MealTableSection extends StatelessWidget {
           children: [
             TableRow(
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: theme.dividerColor.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(6),
               ),
               children: [
-                _tableHeaderCell('Menu', isEnlarged: isEnlarged),
-                _tableHeaderCell('Energi', isEnlarged: isEnlarged),
-                _tableHeaderCell('Prot', isEnlarged: isEnlarged),
-                _tableHeaderCell('Lemak', isEnlarged: isEnlarged),
-                _tableHeaderCell('Karbo', isEnlarged: isEnlarged),
-                _tableHeaderCell('Serat', isEnlarged: isEnlarged),
-                _tableHeaderCell('Berat', isEnlarged: isEnlarged),
+                _tableHeaderCell(context, 'Menu', isEnlarged: isEnlarged),
+                _tableHeaderCell(context, 'Energi', isEnlarged: isEnlarged),
+                _tableHeaderCell(context, 'Prot', isEnlarged: isEnlarged),
+                _tableHeaderCell(context, 'Lemak', isEnlarged: isEnlarged),
+                _tableHeaderCell(context, 'Karbo', isEnlarged: isEnlarged),
+                _tableHeaderCell(context, 'Serat', isEnlarged: isEnlarged),
+                _tableHeaderCell(context, 'Berat', isEnlarged: isEnlarged),
               ],
             ),
           ],
@@ -3066,7 +3122,7 @@ class _MealTableSection extends StatelessWidget {
         if (entries.isEmpty)
           Padding(
             padding: const EdgeInsets.all(12),
-            child: Text('Belum ada makanan', style: TextStyle(fontSize: isEnlarged ? 14 : 12, color: Colors.grey.shade500, fontStyle: FontStyle.italic)),
+            child: Text('Belum ada makanan', style: TextStyle(fontSize: isEnlarged ? 14 : 12, color: theme.hintColor, fontStyle: FontStyle.italic)),
           )
         else
           Table(
@@ -3075,13 +3131,13 @@ class _MealTableSection extends StatelessWidget {
               for (final entry in entries)
                 TableRow(
                   children: [
-                    _tableDataCell(entry.foodName, isBold: false, isEnlarged: isEnlarged),
-                    _tableDataCell(entry.energi.toStringAsFixed(0), isEnlarged: isEnlarged),
-                    _tableDataCell(entry.protein.toStringAsFixed(1), isEnlarged: isEnlarged),
-                    _tableDataCell(entry.lemak.toStringAsFixed(1), isEnlarged: isEnlarged),
-                    _tableDataCell(entry.karbohidrat.toStringAsFixed(1), isEnlarged: isEnlarged),
-                    _tableDataCell(entry.serat.toStringAsFixed(1), isEnlarged: isEnlarged),
-                    _tableDataCell(entry.grams.toStringAsFixed(0), isEnlarged: isEnlarged),
+                    _tableDataCell(context, entry.foodName, isBold: false, isEnlarged: isEnlarged),
+                    _tableDataCell(context, entry.energi.toStringAsFixed(0), isEnlarged: isEnlarged),
+                    _tableDataCell(context, entry.protein.toStringAsFixed(1), isEnlarged: isEnlarged),
+                    _tableDataCell(context, entry.lemak.toStringAsFixed(1), isEnlarged: isEnlarged),
+                    _tableDataCell(context, entry.karbohidrat.toStringAsFixed(1), isEnlarged: isEnlarged),
+                    _tableDataCell(context, entry.serat.toStringAsFixed(1), isEnlarged: isEnlarged),
+                    _tableDataCell(context, entry.grams.toStringAsFixed(0), isEnlarged: isEnlarged),
                   ],
                 ),
             ],
@@ -3091,11 +3147,13 @@ class _MealTableSection extends StatelessWidget {
   }
 
   Widget _buildTotalsTable(
+    BuildContext context,
     double actualEnergi, double actualProtein, double actualLemak, double actualKarbo, double actualSerat,
     double targetEnergi, double targetProtein, double targetLemak, double targetKarbo, double targetSerat,
     double percentage, Color statusColor,
     {bool isEnlarged = false, double fulfillmentRatio = 0.0}
   ) {
+    final theme = Theme.of(context);
     return Column(
       children: [
         Table(
@@ -3110,33 +3168,32 @@ class _MealTableSection extends StatelessWidget {
           },
           children: [
             TableRow(
-              decoration: BoxDecoration(color: Colors.grey.shade50),
+              decoration: BoxDecoration(color: theme.dividerColor.withValues(alpha: 0.03)),
               children: [
-                _tableDataCell('Total Asupan', isBold: true, isEnlarged: isEnlarged),
-                _tableDataCell(actualEnergi.toStringAsFixed(0), isBold: true, isEnlarged: isEnlarged),
-                _tableDataCell(actualProtein.toStringAsFixed(1), isBold: true, isEnlarged: isEnlarged),
-                _tableDataCell(actualLemak.toStringAsFixed(1), isBold: true, isEnlarged: isEnlarged),
-                _tableDataCell(actualKarbo.toStringAsFixed(1), isBold: true, isEnlarged: isEnlarged),
-                _tableDataCell(actualSerat.toStringAsFixed(1), isBold: true, isEnlarged: isEnlarged),
-                _tableDataCell('', isBold: true, isEnlarged: isEnlarged),
+                _tableDataCell(context, 'Total Asupan', isBold: true, isEnlarged: isEnlarged),
+                _tableDataCell(context, actualEnergi.toStringAsFixed(0), isBold: true, isEnlarged: isEnlarged),
+                _tableDataCell(context, actualProtein.toStringAsFixed(1), isBold: true, isEnlarged: isEnlarged),
+                _tableDataCell(context, actualLemak.toStringAsFixed(1), isBold: true, isEnlarged: isEnlarged),
+                _tableDataCell(context, actualKarbo.toStringAsFixed(1), isBold: true, isEnlarged: isEnlarged),
+                _tableDataCell(context, actualSerat.toStringAsFixed(1), isBold: true, isEnlarged: isEnlarged),
+                _tableDataCell(context, '', isBold: true, isEnlarged: isEnlarged),
               ],
             ),
             TableRow(
               decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.05)),
               children: [
-                _tableDataCell('Total Kebutuhan', isBold: true, color: statusColor, isEnlarged: isEnlarged),
-                _tableDataCell(targetEnergi.toStringAsFixed(0), isBold: true, color: statusColor, isEnlarged: isEnlarged),
-                _tableDataCell(targetProtein.toStringAsFixed(1), isBold: true, color: statusColor, isEnlarged: isEnlarged),
-                _tableDataCell(targetLemak.toStringAsFixed(1), isBold: true, color: statusColor, isEnlarged: isEnlarged),
-                _tableDataCell(targetKarbo.toStringAsFixed(1), isBold: true, color: statusColor, isEnlarged: isEnlarged),
-                _tableDataCell(targetSerat.toStringAsFixed(1), isBold: true, color: statusColor, isEnlarged: isEnlarged),
-                _tableDataCell('', isBold: true, isEnlarged: isEnlarged),
+                _tableDataCell(context, 'Total Kebutuhan', isBold: true, color: statusColor, isEnlarged: isEnlarged),
+                _tableDataCell(context, targetEnergi.toStringAsFixed(0), isBold: true, color: statusColor, isEnlarged: isEnlarged),
+                _tableDataCell(context, targetProtein.toStringAsFixed(1), isBold: true, color: statusColor, isEnlarged: isEnlarged),
+                _tableDataCell(context, targetLemak.toStringAsFixed(1), isBold: true, color: statusColor, isEnlarged: isEnlarged),
+                _tableDataCell(context, targetKarbo.toStringAsFixed(1), isBold: true, color: statusColor, isEnlarged: isEnlarged),
+                _tableDataCell(context, targetSerat.toStringAsFixed(1), isBold: true, color: statusColor, isEnlarged: isEnlarged),
+                _tableDataCell(context, '', isBold: true, isEnlarged: isEnlarged),
               ],
             ),
           ],
         ),
         const SizedBox(height: 12),
-        // FOOTER PERCENTAGE INDICATOR - DYNAMIC LABEL
         Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
@@ -3169,6 +3226,7 @@ class _MealTableSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final percentage = mealType.dmCaloriePercentage;
     final targetEnergi = totalNeeds.energi * percentage;
     final targetProtein = totalNeeds.protein * percentage;
@@ -3196,7 +3254,8 @@ class _MealTableSection extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300, width: 1),
+        color: theme.cardTheme.color,
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5), width: 1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -3205,12 +3264,13 @@ class _MealTableSection extends StatelessWidget {
           _buildMealHeader(context, totalFulfillmentRatio, statusColor),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-            child: _buildFoodTable(),
+            child: _buildFoodTable(context),
           ),
-          const Divider(height: 1),
+          Divider(height: 1, color: theme.dividerColor),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: _buildTotalsTable(
+              context,
               actualEnergi, actualProtein, actualLemak, actualKarbo, actualSerat,
               targetEnergi, targetProtein, targetLemak, targetKarbo, targetSerat,
               percentage, statusColor,
@@ -3222,7 +3282,8 @@ class _MealTableSection extends StatelessWidget {
     );
   }
 
-  Widget _tableHeaderCell(String text, {bool isEnlarged = false}) {
+  Widget _tableHeaderCell(BuildContext context, String text, {bool isEnlarged = false}) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
       child: Text(
@@ -3230,7 +3291,7 @@ class _MealTableSection extends StatelessWidget {
         style: TextStyle(
           fontWeight: FontWeight.bold,
           fontSize: isEnlarged ? 12 : 9,
-          color: Colors.grey.shade700,
+          color: theme.hintColor,
         ),
         textAlign: TextAlign.center,
         maxLines: 1,
@@ -3239,7 +3300,8 @@ class _MealTableSection extends StatelessWidget {
     );
   }
 
-  Widget _tableDataCell(String text, {bool isBold = false, Color? color, bool isEnlarged = false}) {
+  Widget _tableDataCell(BuildContext context, String text, {bool isBold = false, Color? color, bool isEnlarged = false}) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
       child: Text(
@@ -3247,7 +3309,7 @@ class _MealTableSection extends StatelessWidget {
         style: TextStyle(
           fontSize: isEnlarged ? 13 : 10,
           fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-          color: color ?? AppColors.textPrimary,
+          color: color ?? theme.textTheme.bodyLarge?.color,
         ),
         textAlign: TextAlign.center,
         maxLines: 1,
@@ -3256,6 +3318,10 @@ class _MealTableSection extends StatelessWidget {
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DAILY INTERPRETATION TABLE
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _DailyInterpretationTable extends StatelessWidget {
   final Map<MealType, List<FoodLogEntry>> entriesByMeal;
@@ -3282,17 +3348,19 @@ class _DailyInterpretationTable extends StatelessWidget {
       MealType.selinganMalam,
     ];
 
+    final theme = Theme.of(context);
+
     showDialog(
       context: context,
       builder: (ctx) => Dialog.fullscreen(
         child: Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: theme.scaffoldBackgroundColor,
           appBar: AppBar(
             title: const Text('Rincian Ketercapaian Harian'),
-            backgroundColor: AppColors.background,
+            backgroundColor: theme.appBarTheme.backgroundColor,
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.close, color: AppColors.textPrimary),
+              icon: Icon(Icons.close, color: theme.appBarTheme.foregroundColor),
               onPressed: () => Navigator.pop(ctx),
             ),
           ),
@@ -3301,13 +3369,13 @@ class _DailyInterpretationTable extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Ringkasan Per Waktu Makan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                Text('Ringkasan Per Waktu Makan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: theme.textTheme.titleLarge?.color)),
                 const SizedBox(height: 12),
-                _buildBaseTable(mealOrder, isPercentage: false),
+                _buildBaseTable(context, mealOrder, isPercentage: false),
                 const SizedBox(height: 32),
-                const Text('Persentase Ketercapaian Gizi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                Text('Persentase Ketercapaian Gizi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: theme.textTheme.titleLarge?.color)),
                 const SizedBox(height: 12),
-                _buildBaseTable(mealOrder, isPercentage: true),
+                _buildBaseTable(context, mealOrder, isPercentage: true),
                 const SizedBox(height: 60),
               ],
             ),
@@ -3317,7 +3385,8 @@ class _DailyInterpretationTable extends StatelessWidget {
     );
   }
 
-  Widget _buildBaseTable(List<MealType> mealOrder, {required bool isPercentage}) {
+  Widget _buildBaseTable(BuildContext context, List<MealType> mealOrder, {required bool isPercentage}) {
+    final theme = Theme.of(context);
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: ConstrainedBox(
@@ -3333,20 +3402,23 @@ class _DailyInterpretationTable extends StatelessWidget {
           },
           children: [
             TableRow(
-              decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(
+                color: theme.dividerColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
               children: [
-                _interpHeaderCell('Waktu Makan', isEnlarged: true),
-                _interpHeaderCell(isPercentage ? '% Energi' : 'Energi', isEnlarged: true),
-                _interpHeaderCell(isPercentage ? '% Prot' : 'Prot', isEnlarged: true),
-                _interpHeaderCell(isPercentage ? '% Lemak' : 'Lemak', isEnlarged: true),
-                _interpHeaderCell(isPercentage ? '% Karbo' : 'Karbo', isEnlarged: true),
-                _interpHeaderCell(isPercentage ? '% Serat' : 'Serat', isEnlarged: true),
+                _interpHeaderCell(context, 'Waktu Makan', isEnlarged: true),
+                _interpHeaderCell(context, isPercentage ? '% Energi' : 'Energi', isEnlarged: true),
+                _interpHeaderCell(context, isPercentage ? '% Prot' : 'Prot', isEnlarged: true),
+                _interpHeaderCell(context, isPercentage ? '% Lemak' : 'Lemak', isEnlarged: true),
+                _interpHeaderCell(context, isPercentage ? '% Karbo' : 'Karbo', isEnlarged: true),
+                _interpHeaderCell(context, isPercentage ? '% Serat' : 'Serat', isEnlarged: true),
               ],
             ),
             for (final meal in mealOrder)
               isPercentage 
-                ? _buildMealPercentageRow(meal, entriesByMeal[meal] ?? [], isEnlarged: true)
-                : _buildMealInterpretationRow(meal, entriesByMeal[meal] ?? [], isEnlarged: true),
+                ? _buildMealPercentageRow(context, meal, entriesByMeal[meal] ?? [], isEnlarged: true)
+                : _buildMealInterpretationRow(context, meal, entriesByMeal[meal] ?? [], isEnlarged: true),
           ],
         ),
       ),
@@ -3364,6 +3436,8 @@ class _DailyInterpretationTable extends StatelessWidget {
       MealType.selinganMalam,
     ];
 
+    final theme = Theme.of(context);
+
     final dailyTotals = calculateDailyTotals();
     final pE = totalNeeds.energi > 0 ? dailyTotals['energi']! / totalNeeds.energi : 0.0;
     final pP = totalNeeds.protein > 0 ? dailyTotals['protein']! / totalNeeds.protein : 0.0;
@@ -3373,7 +3447,8 @@ class _DailyInterpretationTable extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300, width: 1),
+        color: theme.cardTheme.color,
+        border: Border.all(color: theme.dividerColor, width: 1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -3383,7 +3458,7 @@ class _DailyInterpretationTable extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.blue.shade50,
+              color: theme.primaryColor.withValues(alpha: 0.1),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(12),
                 topRight: Radius.circular(12),
@@ -3392,12 +3467,16 @@ class _DailyInterpretationTable extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Ringkasan Per Waktu Makan',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold, 
+                    fontSize: 14,
+                    color: theme.textTheme.titleSmall?.color,
+                  ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.fullscreen, size: 20, color: AppColors.primary),
+                  icon: Icon(Icons.fullscreen, size: 20, color: theme.primaryColor),
                   onPressed: () => _showEnlargedInterpretationTable(context),
                 ),
               ],
@@ -3424,22 +3503,23 @@ class _DailyInterpretationTable extends StatelessWidget {
                     // Header row
                     TableRow(
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
+                        color: theme.dividerColor.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       children: [
-                        _interpHeaderCell('Waktu Makan'),
-                        _interpHeaderCell('Energi'),
-                        _interpHeaderCell('Prot'),
-                        _interpHeaderCell('Lemak'),
-                        _interpHeaderCell('Karbo'),
-                        _interpHeaderCell('Serat'),
+                        _interpHeaderCell(context, 'Waktu Makan'),
+                        _interpHeaderCell(context, 'Energi'),
+                        _interpHeaderCell(context, 'Prot'),
+                        _interpHeaderCell(context, 'Lemak'),
+                        _interpHeaderCell(context, 'Karbo'),
+                        _interpHeaderCell(context, 'Serat'),
                       ],
                     ),
 
                     // Meal rows
                     for (final meal in mealOrder)
                       _buildMealInterpretationRow(
+                        context,
                         meal,
                         entriesByMeal[meal] ?? [],
                       ),
@@ -3447,16 +3527,16 @@ class _DailyInterpretationTable extends StatelessWidget {
                     // Summary row (Daily percentage)
                     TableRow(
                       decoration: BoxDecoration(
-                        color: Colors.green.shade50,
-                        border: Border(top: BorderSide(color: Colors.grey.shade300, width: 2)),
+                        color: Colors.green.withValues(alpha: 0.1),
+                        border: Border(top: BorderSide(color: theme.dividerColor, width: 2)),
                       ),
                       children: [
-                        _interpDataCell('Total Ketercapaian (%)', isBold: true),
-                        _interpPercentageCell(pE),
-                        _interpPercentageCell(pP),
-                        _interpPercentageCell(pL),
-                        _interpPercentageCell(pK),
-                        _interpPercentageCell(pS),
+                        _interpDataCell(context, 'Total Ketercapaian (%)', isBold: true),
+                        _interpPercentageCell(context, pE),
+                        _interpPercentageCell(context, pP),
+                        _interpPercentageCell(context, pL),
+                        _interpPercentageCell(context, pK),
+                        _interpPercentageCell(context, pS),
                       ],
                     ),
                   ],
@@ -3470,6 +3550,7 @@ class _DailyInterpretationTable extends StatelessWidget {
   }
 
   TableRow _buildMealInterpretationRow(
+    BuildContext context,
     MealType meal,
     List<FoodLogEntry> entries,
     {bool isEnlarged = false}
@@ -3499,17 +3580,18 @@ class _DailyInterpretationTable extends StatelessWidget {
     return TableRow(
       decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.05)),
       children: [
-        _interpDataCell('${meal.emoji} ${meal.label}', isEnlarged: isEnlarged),
-        _interpDataCell('${actualEnergi.toInt()} / ${targetEnergi.toInt()}', isEnlarged: isEnlarged),
-        _interpDataCell('${actualProt.toStringAsFixed(1)} / ${targetProt.toStringAsFixed(1)}', isEnlarged: isEnlarged),
-        _interpDataCell('${actualLemak.toStringAsFixed(1)} / ${targetLemak.toStringAsFixed(1)}', isEnlarged: isEnlarged),
-        _interpDataCell('${actualKarbo.toStringAsFixed(1)} / ${targetKarbo.toStringAsFixed(1)}', isEnlarged: isEnlarged),
-        _interpDataCell('${actualSerat.toStringAsFixed(1)} / ${targetSerat.toStringAsFixed(1)}', isEnlarged: isEnlarged),
+        _interpDataCell(context, '${meal.emoji} ${meal.label}', isEnlarged: isEnlarged),
+        _interpDataCell(context, '${actualEnergi.toInt()} / ${targetEnergi.toInt()}', isEnlarged: isEnlarged),
+        _interpDataCell(context, '${actualProt.toStringAsFixed(1)} / ${targetProt.toStringAsFixed(1)}', isEnlarged: isEnlarged),
+        _interpDataCell(context, '${actualLemak.toStringAsFixed(1)} / ${targetLemak.toStringAsFixed(1)}', isEnlarged: isEnlarged),
+        _interpDataCell(context, '${actualKarbo.toStringAsFixed(1)} / ${targetKarbo.toStringAsFixed(1)}', isEnlarged: isEnlarged),
+        _interpDataCell(context, '${actualSerat.toStringAsFixed(1)} / ${targetSerat.toStringAsFixed(1)}', isEnlarged: isEnlarged),
       ],
     );
   }
 
   TableRow _buildMealPercentageRow(
+    BuildContext context,
     MealType meal,
     List<FoodLogEntry> entries,
     {bool isEnlarged = false}
@@ -3539,17 +3621,17 @@ class _DailyInterpretationTable extends StatelessWidget {
     return TableRow(
       decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.05)),
       children: [
-        _interpDataCell('${meal.emoji} ${meal.label}', isEnlarged: isEnlarged),
-        _interpPercentageCell(pE, isEnlarged: isEnlarged),
-        _interpPercentageCell(pP, isEnlarged: isEnlarged),
-        _interpPercentageCell(pL, isEnlarged: isEnlarged),
-        _interpPercentageCell(pK, isEnlarged: isEnlarged),
-        _interpPercentageCell(pS, isEnlarged: isEnlarged),
+        _interpDataCell(context, '${meal.emoji} ${meal.label}', isEnlarged: isEnlarged),
+        _interpPercentageCell(context, pE, isEnlarged: isEnlarged),
+        _interpPercentageCell(context, pP, isEnlarged: isEnlarged),
+        _interpPercentageCell(context, pL, isEnlarged: isEnlarged),
+        _interpPercentageCell(context, pK, isEnlarged: isEnlarged),
+        _interpPercentageCell(context, pS, isEnlarged: isEnlarged),
       ],
     );
   }
 
-  Widget _interpPercentageCell(double ratio, {bool isEnlarged = false}) {
+  Widget _interpPercentageCell(BuildContext context, double ratio, {bool isEnlarged = false}) {
     final statusColor = getStatusColor(ratio);
     return Padding(
       padding: EdgeInsets.symmetric(vertical: isEnlarged ? 12 : 8, horizontal: 4),
@@ -3562,17 +3644,18 @@ class _DailyInterpretationTable extends StatelessWidget {
         ),
         child: Text(
           formatPercentage(ratio),
-          style: TextStyle(
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
-            fontSize: isEnlarged ? 12 : 10,
+            fontSize: 10,
           ),
         ),
       ),
     );
   }
 
-  Widget _interpHeaderCell(String text, {bool isEnlarged = false}) {
+  Widget _interpHeaderCell(BuildContext context, String text, {bool isEnlarged = false}) {
+    final theme = Theme.of(context);
     return Padding(
       padding: EdgeInsets.symmetric(vertical: isEnlarged ? 12 : 8, horizontal: 4),
       child: Text(
@@ -3580,7 +3663,7 @@ class _DailyInterpretationTable extends StatelessWidget {
         style: TextStyle(
           fontWeight: FontWeight.bold,
           fontSize: isEnlarged ? 13 : 11,
-          color: Colors.grey,
+          color: theme.hintColor,
         ),
         textAlign: TextAlign.center,
         maxLines: 1,
@@ -3589,7 +3672,8 @@ class _DailyInterpretationTable extends StatelessWidget {
     );
   }
 
-  Widget _interpDataCell(String text, {bool isBold = false, Color? color, bool isEnlarged = false}) {
+  Widget _interpDataCell(BuildContext context, String text, {bool isBold = false, Color? color, bool isEnlarged = false}) {
+    final theme = Theme.of(context);
     return Padding(
       padding: EdgeInsets.symmetric(vertical: isEnlarged ? 12 : 8, horizontal: 4),
       child: Text(
@@ -3597,7 +3681,7 @@ class _DailyInterpretationTable extends StatelessWidget {
         style: TextStyle(
           fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
           fontSize: isEnlarged ? 13 : 11,
-          color: color ?? Colors.black87,
+          color: color ?? theme.textTheme.bodyLarge?.color,
         ),
         textAlign: TextAlign.center,
       ),
@@ -3645,14 +3729,17 @@ class _GlycemicLoadChart extends StatelessWidget {
   }
 
   void _showEnlargedChart(BuildContext context) {
+    final theme = Theme.of(context);
     showDialog(
       context: context,
       builder: (ctx) => Dialog.fullscreen(
         child: Scaffold(
+          backgroundColor: theme.scaffoldBackgroundColor,
           appBar: AppBar(
             title: const Text('Grafik Glycemic Load'),
+            backgroundColor: theme.appBarTheme.backgroundColor,
             leading: IconButton(
-              icon: const Icon(Icons.close),
+              icon: Icon(Icons.close, color: theme.appBarTheme.foregroundColor),
               onPressed: () => Navigator.pop(ctx),
             ),
           ),
@@ -3663,7 +3750,7 @@ class _GlycemicLoadChart extends StatelessWidget {
                 const SizedBox(height: 20),
                 SizedBox(
                   height: 500, // Ukuran jauh lebih besar untuk lansia
-                  child: _buildChart(isEnlarged: true),
+                  child: _buildChart(context, isEnlarged: true),
                 ),
                 const SizedBox(height: 40),
                 _buildLegend(),
@@ -3679,20 +3766,21 @@ class _GlycemicLoadChart extends StatelessWidget {
   Widget _buildLegend() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: Row(
+      child: const Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _LegendItem(label: 'Rendah (<10)', color: const Color(0xFF4CAF50)),
-          const SizedBox(width: 8),
-          _LegendItem(label: 'Sedang (11-19)', color: const Color(0xFFFFC107)),
-          const SizedBox(width: 8),
-          _LegendItem(label: 'Tinggi (>20)', color: const Color(0xFFF44336)),
+          _LegendItem(label: 'Rendah (<10)', color: Color(0xFF4CAF50)),
+          SizedBox(width: 8),
+          _LegendItem(label: 'Sedang (11-19)', color: Color(0xFFFFC107)),
+          SizedBox(width: 8),
+          _LegendItem(label: 'Tinggi (>20)', color: Color(0xFFF44336)),
         ],
       ),
     );
   }
 
-  Widget _buildChart({bool isEnlarged = false}) {
+  Widget _buildChart(BuildContext context, {bool isEnlarged = false}) {
+    final theme = Theme.of(context);
     final mealGL = _calculateMealGL();
     double maxGL = -1;
     for (final meal in mealGL.keys) {
@@ -3747,39 +3835,36 @@ class _GlycemicLoadChart extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: isEnlarged ? 11 : 9,
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
+                      color: theme.hintColor,
                     ),
                   ),
                 );
               },
-              reservedSize: isEnlarged ? 40 : 32,
             ),
           ),
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: isEnlarged ? 40 : 28,
+              reservedSize: 30,
               getTitlesWidget: (value, meta) {
                 return Text(
                   value.toInt().toString(),
                   style: TextStyle(
-                    fontSize: isEnlarged ? 12 : 10,
-                    color: AppColors.textHint,
+                    fontSize: isEnlarged ? 11 : 9,
+                    color: theme.hintColor,
                   ),
                 );
               },
             ),
           ),
-          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
-          horizontalInterval: 10,
           getDrawingHorizontalLine: (value) => FlLine(
-            color: Colors.grey.withValues(alpha: 0.1),
+            color: theme.dividerColor.withValues(alpha: 0.1),
             strokeWidth: 1,
           ),
         ),
@@ -3793,7 +3878,12 @@ class _GlycemicLoadChart extends StatelessWidget {
                 toY: gl,
                 color: _getGLColor(gl),
                 width: isEnlarged ? 30 : 16,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+                backDrawRodData: BackgroundBarChartRodData(
+                  show: true,
+                  toY: (maxGL < 25) ? 25 : (maxGL * 1.2),
+                  color: theme.dividerColor.withValues(alpha: 0.05),
+                ),
               ),
             ],
           );
@@ -3804,6 +3894,7 @@ class _GlycemicLoadChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final mealGL = _calculateMealGL();
     final totalGL = mealGL.values.fold(0.0, (sum, gl) => sum + gl);
     final totalPercentage = (totalGL / 120.0 * 100).toStringAsFixed(0);
@@ -3825,11 +3916,14 @@ class _GlycemicLoadChart extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(16),
+        border: theme.brightness == Brightness.dark 
+            ? Border.all(color: theme.dividerColor)
+            : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: theme.brightness == Brightness.dark ? 0.2 : 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -3853,18 +3947,18 @@ class _GlycemicLoadChart extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Grafik Glycemic Load (Estimasi)',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
-                    color: AppColors.textPrimary,
+                    color: theme.textTheme.titleMedium?.color,
                   ),
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.fullscreen, color: AppColors.primary),
+                icon: Icon(Icons.fullscreen, color: theme.primaryColor),
                 onPressed: () => _showEnlargedChart(context),
                 tooltip: 'Perbesar Grafik',
               ),
@@ -3873,9 +3967,9 @@ class _GlycemicLoadChart extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             'Total GL hari ini: ${totalGL.toStringAsFixed(1)} ($totalPercentage%) • $peakInfo',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
-              color: AppColors.textSecondary,
+              color: theme.hintColor,
             ),
           ),
           const SizedBox(height: 20),
@@ -3883,7 +3977,7 @@ class _GlycemicLoadChart extends StatelessWidget {
           // Chart
           SizedBox(
             height: 200,
-            child: _buildChart(),
+            child: _buildChart(context),
           ),
           
           const SizedBox(height: 20),

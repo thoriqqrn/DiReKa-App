@@ -146,11 +146,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final theme = Theme.of(context);
 
     return LoadingOverlay(
       isLoading: auth.isLoading,
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(title: const Text('Edit Profil')),
         body: SafeArea(
           child: SingleChildScrollView(
@@ -266,8 +267,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   padding: const EdgeInsets.all(12),
                                   child: Text(
                                     _ageString,
-                                    style: const TextStyle(
-                                      color: AppColors.primary,
+                                    style: TextStyle(
+                                      color: theme.primaryColor,
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -350,13 +351,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       },
                     ),
                     const SizedBox(height: 6),
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.symmetric(horizontal: 4),
                       child: Text(
                         'Jumlah urin 24 jam terakhir. Mempengaruhi target cairan harian. Kosongkan jika belum diketahui.',
                         style: TextStyle(
                           fontSize: 11,
-                          color: AppColors.textHint,
+                          color: theme.hintColor,
                           height: 1.5,
                         ),
                       ),
@@ -389,8 +390,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           vertical: 12,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          border: Border.all(color: AppColors.border),
+                          color: theme.cardTheme.color ?? theme.cardColor,
+                          border: Border.all(color: theme.dividerColor),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -399,11 +400,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
+                                Text(
                                   'Bulan Mulai',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: AppColors.textSecondary,
+                                    color: theme.hintColor,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -414,16 +415,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                           'id_ID',
                                         ).format(_hdStartDate!)
                                       : 'Pilih bulan & tahun',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
+                                    color: theme.textTheme.bodyLarge?.color,
                                   ),
                                 ),
                               ],
                             ),
-                            const Icon(
+                            Icon(
                               Icons.calendar_today_outlined,
-                              color: AppColors.primary,
+                              color: theme.primaryColor,
                             ),
                           ],
                         ),
@@ -432,11 +434,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     const SizedBox(height: 14),
                     // Tanggal berakhir dihapus
                     const SizedBox(height: 14),
-                    const Text(
+                    Text(
                       'Jadwal Dialisis',
                       style: TextStyle(
                         fontSize: 13,
-                        color: AppColors.textSecondary,
+                        color: theme.hintColor,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -462,11 +464,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             decoration: BoxDecoration(
                               color: isSelected
                                   ? AppColors.primary
-                                  : AppColors.surface,
+                                  : (theme.cardTheme.color ?? theme.cardColor),
                               border: Border.all(
                                 color: isSelected
                                     ? AppColors.primary
-                                    : AppColors.border,
+                                    : theme.dividerColor,
                                 width: 2,
                               ),
                               borderRadius: BorderRadius.circular(8),
@@ -480,7 +482,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   fontWeight: FontWeight.w600,
                                   color: isSelected
                                       ? Colors.white
-                                      : AppColors.textPrimary,
+                                      : (theme.textTheme.bodyLarge?.color ??
+                                          AppColors.textPrimary),
                                 ),
                               ),
                             ),
@@ -576,15 +579,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       vertical: 14,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: theme.cardTheme.color ?? theme.cardColor,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.border),
+                      border: Border.all(color: theme.dividerColor),
                     ),
                     child: Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.medical_services_outlined,
-                          color: AppColors.textHint,
+                          color: theme.hintColor,
                           size: 22,
                         ),
                         const SizedBox(width: 14),
@@ -594,27 +597,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             children: [
                               Text(
                                 _diseaseType?.label ?? '-',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w500,
-                                  color: AppColors.textPrimary,
+                                  color: theme.textTheme.bodyLarge?.color,
                                 ),
                               ),
                               const SizedBox(height: 2),
-                              const Text(
+                              Text(
                                 'Kondisi penyakit tidak dapat diubah',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: AppColors.textHint,
+                                  color: theme.hintColor,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        const Icon(
+                        Icon(
                           Icons.lock_outline,
                           size: 16,
-                          color: AppColors.textHint,
+                          color: theme.hintColor,
                         ),
                       ],
                     ),
@@ -723,12 +726,13 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Text(
       label,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w600,
-        color: AppColors.textSecondary,
+        color: theme.hintColor,
         letterSpacing: 0.5,
       ),
     );
@@ -862,6 +866,7 @@ class _GenderOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -869,10 +874,10 @@ class _GenderOption extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected
               ? AppColors.primary.withValues(alpha: 0.08)
-              : AppColors.surface,
+              : (theme.cardTheme.color ?? theme.cardColor),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: selected ? AppColors.primary : AppColors.border,
+            color: selected ? AppColors.primary : theme.dividerColor,
             width: selected ? 1.5 : 1,
           ),
         ),
@@ -882,7 +887,10 @@ class _GenderOption extends StatelessWidget {
             Icon(
               icon,
               size: 20,
-              color: selected ? AppColors.primary : AppColors.textSecondary,
+              color: selected
+                  ? AppColors.primary
+                  : (theme.textTheme.bodyMedium?.color ??
+                      AppColors.textSecondary),
             ),
             const SizedBox(width: 8),
             Text(
@@ -890,7 +898,10 @@ class _GenderOption extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-                color: selected ? AppColors.primary : AppColors.textSecondary,
+                color: selected
+                    ? AppColors.primary
+                    : (theme.textTheme.bodyMedium?.color ??
+                        AppColors.textSecondary),
               ),
             ),
           ],
@@ -909,6 +920,7 @@ class _ActivityLevelSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: ActivityLevel.values.map((level) {
@@ -921,10 +933,10 @@ class _ActivityLevelSelector extends StatelessWidget {
             decoration: BoxDecoration(
               color: sel
                   ? AppColors.diabetesColor.withValues(alpha: 0.08)
-                  : AppColors.surface,
+                  : (theme.cardTheme.color ?? theme.cardColor),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: sel ? AppColors.diabetesColor : AppColors.border,
+                color: sel ? AppColors.diabetesColor : theme.dividerColor,
                 width: sel ? 1.5 : 1,
               ),
             ),
@@ -936,7 +948,7 @@ class _ActivityLevelSelector extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: sel ? AppColors.diabetesColor : AppColors.border,
+                      color: sel ? AppColors.diabetesColor : theme.dividerColor,
                       width: sel ? 6 : 2,
                     ),
                   ),
@@ -953,14 +965,15 @@ class _ActivityLevelSelector extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                           color: sel
                               ? AppColors.diabetesColor
-                              : AppColors.textPrimary,
+                              : (theme.textTheme.bodyLarge?.color ??
+                                  AppColors.textPrimary),
                         ),
                       ),
                       Text(
                         level.description,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
-                          color: AppColors.textSecondary,
+                          color: theme.hintColor,
                         ),
                       ),
                     ],

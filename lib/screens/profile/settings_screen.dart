@@ -14,6 +14,8 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final theme = Theme.of(context);
+    final ext = theme.extension<AppThemeExtension>();
     final guestDisease = context.watch<DiseaseProvider>().selectedDisease;
     final user = auth.userModel;
     final disease = auth.isAuthenticated && user != null
@@ -21,7 +23,7 @@ class SettingsScreen extends StatelessWidget {
         : guestDisease;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(title: const Text('Pengaturan')),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -217,7 +219,7 @@ class SettingsScreen extends StatelessWidget {
                     _SettingsTile(
                       icon: Icons.logout,
                       label: 'Keluar',
-                      color: AppColors.error,
+                      color: theme.colorScheme.error,
                       onTap: () => _confirmLogout(context),
                     ),
                   ] else ...[
@@ -246,11 +248,11 @@ class SettingsScreen extends StatelessWidget {
                   title: 'Akun Keluarga Aktif',
                   children: [
                     if (auth.linkedFamilyAccounts.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.all(16),
+                      Padding(
+                        padding: const EdgeInsets.all(16),
                         child: Text(
                           'Belum ada akun keluarga yang ditautkan.',
-                          style: TextStyle(color: AppColors.textSecondary),
+                          style: TextStyle(color: theme.hintColor),
                         ),
                       )
                     else
@@ -264,16 +266,16 @@ class SettingsScreen extends StatelessWidget {
                                 horizontal: 16,
                                 vertical: 4,
                               ),
-                              leading: const Icon(
+                              leading: Icon(
                                 Icons.family_restroom,
-                                color: AppColors.diabetesColor,
+                                color: ext?.diabetesColor ?? theme.primaryColor,
                               ),
                               title: Text(item.name),
                               subtitle: Text(
                                 '${item.email}\n${item.lastLoginDate != null ? 'Terakhir login: ${_formatDate(item.lastLoginDate!)}' : 'Belum ada riwayat login'}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
-                                  color: AppColors.textSecondary,
+                                  color: theme.textTheme.bodySmall?.color,
                                 ),
                               ),
                               isThreeLine: true,
@@ -284,8 +286,8 @@ class SettingsScreen extends StatelessWidget {
                                 ),
                                 decoration: BoxDecoration(
                                   color: item.isActive
-                                      ? AppColors.success.withValues(alpha: 0.12)
-                                      : AppColors.warning.withValues(alpha: 0.12),
+                                      ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                                      : theme.colorScheme.error.withValues(alpha: 0.12),
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                                 child: Text(
@@ -294,8 +296,8 @@ class SettingsScreen extends StatelessWidget {
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
                                     color: item.isActive
-                                        ? AppColors.success
-                                        : AppColors.warning,
+                                        ? theme.colorScheme.primary
+                                        : theme.colorScheme.error,
                                   ),
                                 ),
                               ),
@@ -310,10 +312,10 @@ class SettingsScreen extends StatelessWidget {
               ],
 
               const SizedBox(height: 32),
-              const Center(
+              Center(
                 child: Text(
                   'Direka v1.0.0',
-                  style: TextStyle(color: AppColors.textHint, fontSize: 12),
+                  style: TextStyle(color: theme.hintColor, fontSize: 12),
                 ),
               ),
             ],
@@ -331,6 +333,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _showCreateFamilyAccountDialog(BuildContext context) {
+    final theme = Theme.of(context);
     final nameController = TextEditingController();
     final emailController = TextEditingController();
     final passwordController = TextEditingController();
@@ -352,12 +355,15 @@ class SettingsScreen extends StatelessWidget {
                       width: double.infinity,
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
+                        color: theme.primaryColor.withValues(alpha: 0.14),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Akun keluarga akan dibuat dengan fitur yang sama dan data profil kesehatan disalin dari akun utama.',
-                        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.textTheme.bodyMedium?.color,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -502,11 +508,12 @@ class _ProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.primary, AppColors.accent],
+        gradient: LinearGradient(
+          colors: [theme.primaryColor, theme.colorScheme.secondary],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -568,37 +575,39 @@ class _GuestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final ext = theme.extension<AppThemeExtension>();
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.primaryLight,
+        color: ext?.primaryLight.withValues(alpha: 0.3) ?? theme.primaryColorLight.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
-          const CircleAvatar(
+          CircleAvatar(
             radius: 28,
-            backgroundColor: AppColors.primary,
-            child: Icon(Icons.person, color: Colors.white, size: 30),
+            backgroundColor: theme.primaryColor,
+            child: const Icon(Icons.person, color: Colors.white, size: 30),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Mode Tamu',
                   style: TextStyle(
-                    color: AppColors.primary,
+                    color: theme.primaryColor,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   'Masuk atau daftar untuk menyimpan data Anda.',
                   style: TextStyle(
-                    color: AppColors.primaryDark,
+                    color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
                     fontSize: 12,
                     height: 1.4,
                   ),
@@ -620,24 +629,26 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final ext = theme.extension<AppThemeExtension>();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
+            color: theme.hintColor,
             letterSpacing: 0.5,
           ),
         ),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: theme.cardTheme.color,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: ext?.border ?? theme.dividerColor),
           ),
           child: Column(children: children),
         ),
@@ -659,12 +670,13 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: AppColors.primary),
+          Icon(icon, size: 20, color: theme.primaryColor),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -672,18 +684,18 @@ class _InfoRow extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: AppColors.textSecondary,
+                    color: theme.hintColor,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    color: theme.textTheme.bodyLarge?.color,
                     height: 1.35,
                   ),
                 ),
@@ -709,24 +721,28 @@ class _InfoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final iconColor = theme.brightness == Brightness.dark
+        ? theme.colorScheme.secondary
+        : theme.hintColor;
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      leading: Icon(icon, color: AppColors.textHint, size: 22),
+      leading: Icon(icon, color: iconColor, size: 22),
       title: Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 14,
-          color: AppColors.textPrimary,
+          color: theme.textTheme.bodyLarge?.color,
           fontWeight: FontWeight.w500,
         ),
       ),
       subtitle: Text(
         subtitle,
-        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+        style: TextStyle(fontSize: 12, color: theme.hintColor),
       ),
-      trailing: const Icon(
+      trailing: Icon(
         Icons.lock_outline,
-        color: AppColors.textHint,
+        color: iconColor.withValues(alpha: 0.9),
         size: 18,
       ),
     );
@@ -750,10 +766,15 @@ class _SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = color ?? AppColors.textPrimary;
+    final theme = Theme.of(context);
+    final c = color ?? theme.textTheme.bodyLarge?.color;
+    final iconColor = color ??
+        (theme.brightness == Brightness.dark
+            ? theme.colorScheme.secondary
+            : theme.primaryColor);
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      leading: Icon(icon, color: c, size: 22),
+      leading: Icon(icon, color: iconColor, size: 22),
       title: Text(
         label,
         style: TextStyle(fontSize: 14, color: c, fontWeight: FontWeight.w500),
@@ -761,15 +782,15 @@ class _SettingsTile extends StatelessWidget {
       subtitle: subtitle != null
           ? Text(
               subtitle!,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: AppColors.textSecondary,
+                color: theme.hintColor,
               ),
             )
           : null,
-      trailing: const Icon(
+      trailing: Icon(
         Icons.chevron_right,
-        color: AppColors.textHint,
+        color: theme.hintColor,
         size: 20,
       ),
       onTap: onTap,

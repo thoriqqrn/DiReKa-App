@@ -220,15 +220,6 @@ class AdminSettingsScreen extends StatelessWidget {
     );
   }
 
-  void _showSoon(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Fitur ini akan segera hadir'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-  }
-
   void _confirmLogout(BuildContext context) {
     showDialog(
       context: context,
@@ -382,7 +373,6 @@ class _SettingsTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final String subtitle;
-  final bool isSoon;
   final VoidCallback onTap;
 
   const _SettingsTile({
@@ -390,7 +380,6 @@ class _SettingsTile extends StatelessWidget {
     required this.label,
     required this.subtitle,
     required this.onTap,
-    this.isSoon = false,
   });
 
   @override
@@ -402,15 +391,13 @@ class _SettingsTile extends StatelessWidget {
         width: 38,
         height: 38,
         decoration: BoxDecoration(
-          color: isSoon
-              ? AppColors.textHint.withValues(alpha: 0.1)
-              : AppColors.primary.withValues(alpha: 0.1),
+          color: AppColors.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(
           icon,
           size: 20,
-          color: isSoon ? AppColors.textHint : AppColors.primary,
+          color: AppColors.primary,
         ),
       ),
       title: Text(
@@ -418,32 +405,18 @@ class _SettingsTile extends StatelessWidget {
         style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w500,
-          color: isSoon ? AppColors.textSecondary : AppColors.textPrimary,
+          color: AppColors.textPrimary,
         ),
       ),
       subtitle: Text(
         subtitle,
         style: const TextStyle(fontSize: 12, color: AppColors.textHint),
       ),
-      trailing: isSoon
-          ? Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: AppColors.textHint.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Text(
-                'Soon',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: AppColors.textHint,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            )
-          : const Icon(Icons.chevron_right,
-              color: AppColors.textHint, size: 20),
+      trailing: const Icon(
+        Icons.chevron_right,
+        color: AppColors.textHint,
+        size: 20,
+      ),
       onTap: onTap,
     );
   }

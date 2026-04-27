@@ -45,10 +45,7 @@ class FoodLogEntry {
 
   /// Hitung Glycemic Load (GL) untuk entri ini: (GI * Karbohidrat) / 100
   double get glycemicLoad {
-    // Defense against any potential non-double values in memory
-    final gi = (indeksGlikemik is double) ? indeksGlikemik : 0.0;
-    final carb = (karbohidrat is double) ? karbohidrat : 0.0;
-    return (gi * carb) / 100.0;
+    return (indeksGlikemik * karbohidrat) / 100.0;
   }
 
   /// Buat entri baru dari [food] dan jumlah [grams].
