@@ -488,6 +488,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
       case DiabetesInputType.aktivitas:
         updated = await _showDiabetesActivityDialog(existing: record);
         break;
+      case DiabetesInputType.obat:
+        updated = await _showDiabetesMedicationDialog(existing: record);
+        break;
     }
     if (updated != null) {
       await _updateDmRecord(updated);
@@ -549,6 +552,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
         break;
       case DiabetesInputType.aktivitas:
         record = await _showDiabetesActivityDialog();
+        break;
+      case DiabetesInputType.obat:
+        record = await _showDiabetesMedicationDialog();
         break;
     }
 
@@ -2167,6 +2173,193 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
       createdAt: existing?.createdAt ?? DateTime.now(),
     );
   }
+
+  Future<DiabetesHealthRecord?> _showDiabetesMedicationDialog({
+    DiabetesHealthRecord? existing,
+  }) {
+    final payload = existing?.payload ?? {};
+    DateTime date = existing?.date ?? DateTime.now();
+    final nameController = TextEditingController(text: (payload['name'] ?? '').toString());
+    final doseFreqController = TextEditingController(
+      text: (payload['doseFreq'] ?? '1').toString(),
+    );
+    final doseQtyController = TextEditingController(
+      text: (payload['doseQty'] ?? '1').toString(),
+    );
+    final doseStrengthController = TextEditingController(
+      text: (payload['doseStrength'] ?? '').toString(),
+    );
+    final noteController = TextEditingController(text: (payload['note'] ?? '').toString());
+    String formType = (payload['form'] ?? 'Tablet').toString();
+    String doseUnit = (payload['doseUnit'] ?? 'mg').toString();
+    String period = (payload['period'] ?? 'Pagi').toString();
+    String consumed = (payload['consumed'] ?? 'Ya').toString();
+
+    if (!['Tablet', 'Kapsul', 'Sirup'].contains(formType)) {
+      formType = 'Tablet';
+    }
+    if (!['mg', 'ml', 'g'].contains(doseUnit)) {
+      doseUnit = 'mg';
+    }
+
+    return showDialog<DiabetesHealthRecord>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocalState) => AlertDialog(
+          insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          title: Text(existing == null ? 'Input Obat Diabetes' : 'Edit Obat Diabetes'),
+          content: SizedBox(
+            width: 420,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _DatePickerField(
+                    label: 'Tanggal',
+                    value: _dateFmt.format(date),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: date,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now().add(Duration(days: 1)),
+                      );
+                      if (picked != null) setLocalState(() => date = picked);
+                    },
+                  ),
+                  SizedBox(height: 10),
+                  TextField(
+                    controller: nameController,
+                    decoration: InputDecoration(labelText: 'Nama obat'),
+                  ),
+                  SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    initialValue: formType,
+                    isExpanded: true,
+                    decoration: InputDecoration(labelText: 'Bentuk'),
+                    items: [
+                      DropdownMenuItem(value: 'Tablet', child: Text('Tablet')),
+                      DropdownMenuItem(value: 'Kapsul', child: Text('Kapsul')),
+                      DropdownMenuItem(value: 'Sirup', child: Text('Sirup')),
+                    ],
+                    onChanged: (v) {
+                      if (v != null) setLocalState(() => formType = v);
+                    },
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Format dosis: ... x ... (... mg/ml/g)',
+                    style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodyMedium?.color),
+                  ),
+                  SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: doseFreqController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(labelText: 'Frekuensi'),
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Text('x'),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: doseQtyController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(labelText: 'Jumlah'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: doseStrengthController,
+                          keyboardType: TextInputType.numberWithOptions(decimal: true),
+                          decoration: InputDecoration(labelText: 'Kadar'),
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      SizedBox(
+                        width: 110,
+                        child: DropdownButtonFormField<String>(
+                          initialValue: doseUnit,
+                          decoration: InputDecoration(labelText: 'Satuan'),
+                          items: [
+                            DropdownMenuItem(value: 'mg', child: Text('mg')),
+                            DropdownMenuItem(value: 'ml', child: Text('ml')),
+                            DropdownMenuItem(value: 'g', child: Text('g')),
+                          ],
+                          onChanged: (v) {
+                            if (v != null) setLocalState(() => doseUnit = v);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  _HeartOptionField(
+                    label: 'Waktu minum',
+                    value: period,
+                    options: ['Pagi', 'Siang', 'Malam'],
+                    onChanged: (v) => setLocalState(() => period = v),
+                  ),
+                  SizedBox(height: 8),
+                  _HeartOptionField(
+                    label: 'Sudah diminum',
+                    value: consumed,
+                    options: ['Ya', 'Tidak'],
+                    onChanged: (v) => setLocalState(() => consumed = v),
+                  ),
+                  SizedBox(height: 8),
+                  TextField(
+                    controller: noteController,
+                    decoration: InputDecoration(labelText: 'Catatan'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Batal')),
+            ElevatedButton(
+              onPressed: () {
+                if (nameController.text.trim().isEmpty) return;
+                Navigator.pop(
+                  ctx,
+                  DiabetesHealthRecord(
+                    id: existing?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
+                    type: DiabetesInputType.obat,
+                    date: DateTime(date.year, date.month, date.day),
+                    payload: {
+                      'name': nameController.text.trim(),
+                      'form': formType,
+                      'dose':
+                          '${doseFreqController.text.trim()} x ${doseQtyController.text.trim()} (${doseStrengthController.text.trim()} $doseUnit)',
+                      'doseFreq': doseFreqController.text.trim(),
+                      'doseQty': doseQtyController.text.trim(),
+                      'doseStrength': doseStrengthController.text.trim(),
+                      'doseUnit': doseUnit,
+                      'period': period,
+                      'consumed': consumed,
+                      'note': noteController.text.trim(),
+                    },
+                    createdAt: existing?.createdAt ?? DateTime.now(),
+                  ),
+                );
+              },
+              child: Text('Simpan'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
   void _showNormalValuesDialog(DiseaseType diseaseType) {
     showDialog(
       context: context,
@@ -3073,6 +3266,8 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
         return Icons.calculate_outlined;
       case DiabetesInputType.aktivitas:
         return Icons.directions_walk_outlined;
+      case DiabetesInputType.obat:
+        return Icons.medication_outlined;
     }
   }
 
@@ -3231,6 +3426,12 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
 
   List<DiabetesHealthRecord> get _dmActivityRecords {
     final list = _dmRecords.where((e) => e.type == DiabetesInputType.aktivitas).toList();
+    list.sort((a, b) => b.date.compareTo(a.date));
+    return list;
+  }
+
+  List<DiabetesHealthRecord> get _dmMedicationRecords {
+    final list = _dmRecords.where((e) => e.type == DiabetesInputType.obat).toList();
     list.sort((a, b) => b.date.compareTo(a.date));
     return list;
   }
@@ -3453,6 +3654,17 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                           )
                         : _DiabetesActivityTable(
                             records: _dmActivityRecords,
+                            dateFmt: _dateFmt,
+                            onEdit: _editDmRecord,
+                            onDelete: _deleteDmRecord,
+                          ),
+                    SizedBox(height: 16),
+                    _dmMedicationRecords.isEmpty
+                        ? _EmptyTableState(
+                            message: 'Belum ada input obat diabetes.',
+                          )
+                        : _DiabetesMedicationTable(
+                            records: _dmMedicationRecords,
                             dateFmt: _dateFmt,
                             onEdit: _editDmRecord,
                             onDelete: _deleteDmRecord,
@@ -5985,6 +6197,76 @@ class _DiabetesActivityTable extends StatelessWidget {
                         ],
                       ),
                     ),
+                  ]);
+                }).toList(),
+              ),
+            ),
+    );
+  }
+}
+
+class _DiabetesMedicationTable extends StatelessWidget {
+  final List<DiabetesHealthRecord> records;
+  final DateFormat dateFmt;
+  final void Function(DiabetesHealthRecord) onEdit;
+  final void Function(DiabetesHealthRecord) onDelete;
+
+  const _DiabetesMedicationTable({
+    required this.records,
+    required this.dateFmt,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _TableCard(
+      title: 'Tabel riwayat konsumsi obat',
+      child: records.isEmpty
+          ? Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                'Belum ada input obat.',
+                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
+              ),
+            )
+          : SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                columnSpacing: 16,
+                columns: [
+                  DataColumn(label: Text('Tgl')),
+                  DataColumn(label: Text('Nama\nobat')),
+                  DataColumn(label: Text('Dosis')),
+                  DataColumn(label: Text('Waktu\nminum')),
+                  DataColumn(label: Text('Sudah\ndiminum')),
+                  DataColumn(label: Text('Catatan')),
+                  DataColumn(label: Text('Aksi')),
+                ],
+                rows: records.map((r) {
+                  final p = r.payload;
+                  return DataRow(cells: [
+                    DataCell(Text(dateFmt.format(r.date))),
+                    DataCell(Text((p['name'] ?? '-').toString())),
+                    DataCell(Text((p['dose'] ?? '-').toString())),
+                    DataCell(Text((p['period'] ?? '-').toString())),
+                    DataCell(Text((p['consumed'] ?? '-').toString())),
+                    DataCell(Text((p['note'] ?? '-').toString())),
+                    DataCell(Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          icon: Icon(Icons.edit_outlined, size: 18),
+                          onPressed: () => onEdit(r),
+                        ),
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          icon: Icon(Icons.delete_outline, size: 18, color: AppColors.error),
+                          onPressed: () => onDelete(r),
+                        ),
+                      ],
+                    )),
                   ]);
                 }).toList(),
               ),

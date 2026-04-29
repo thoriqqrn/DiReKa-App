@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum DiabetesInputType { pemeriksaan, insulin, aktivitas }
+enum DiabetesInputType { pemeriksaan, insulin, aktivitas, obat }
 
 extension DiabetesInputTypeExtension on DiabetesInputType {
   String get value {
@@ -11,6 +11,8 @@ extension DiabetesInputTypeExtension on DiabetesInputType {
         return 'insulin';
       case DiabetesInputType.aktivitas:
         return 'aktivitas';
+      case DiabetesInputType.obat:
+        return 'obat';
     }
   }
 
@@ -22,6 +24,8 @@ extension DiabetesInputTypeExtension on DiabetesInputType {
         return 'Analisis Insulin';
       case DiabetesInputType.aktivitas:
         return 'Aktivitas';
+      case DiabetesInputType.obat:
+        return 'Obat';
     }
   }
 }
@@ -34,6 +38,8 @@ DiabetesInputType diabetesInputTypeFromValue(String value) {
       return DiabetesInputType.insulin;
     case 'aktivitas':
       return DiabetesInputType.aktivitas;
+    case 'obat':
+      return DiabetesInputType.obat;
     default:
       return DiabetesInputType.pemeriksaan;
   }
