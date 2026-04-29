@@ -444,6 +444,7 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
           lineColor: Colors.orange.shade700,
           getActual: (data) => data.lemak,
           getTarget: (data) => data.targetLemak,
+          showTargetLine: false,
         ),
         const SizedBox(height: 12),
         // Natrium Chart
@@ -467,12 +468,18 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
     required Color lineColor,
     required double Function(DailyNutrition) getActual,
     required double Function(DailyNutrition) getTarget,
+    bool showTargetLine = true,
   }) {
     final actualMax = weeklyData.fold<double>(
       0,
       (max, data) => getActual(data) > max ? getActual(data) : max,
     );
-    final safeMaxY = actualMax <= 0 ? 10.0 : (actualMax * 1.2);
+    final targetMax = weeklyData.fold<double>(
+      0,
+      (max, data) => getTarget(data) > max ? getTarget(data) : max,
+    );
+    final peakValue = actualMax > targetMax ? actualMax : targetMax;
+    final safeMaxY = peakValue <= 0 ? 10.0 : (peakValue * 1.15);
 
     return NutritionLineChart(
       title: title,
@@ -481,6 +488,7 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
       lineColor: lineColor,
       getActual: getActual,
       getTarget: getTarget,
+      showTargetLine: showTargetLine,
       minY: 0,
       maxY: safeMaxY,
     );

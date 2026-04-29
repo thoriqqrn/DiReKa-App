@@ -13,6 +13,7 @@ class NutritionLineChart extends StatelessWidget {
   final double Function(DailyNutrition) getTarget;
   final double minY;
   final double maxY;
+  final bool showTargetLine;
 
   const NutritionLineChart({
     super.key,
@@ -24,6 +25,7 @@ class NutritionLineChart extends StatelessWidget {
     required this.getTarget,
     this.minY = 0,
     this.maxY = 100,
+    this.showTargetLine = true,
   });
 
   @override
@@ -80,7 +82,6 @@ class NutritionLineChart extends StatelessWidget {
                 ),
                 Row(
                   children: [
-                    // Actual legend
                     Container(
                       width: 8,
                       height: 8,
@@ -98,25 +99,26 @@ class NutritionLineChart extends StatelessWidget {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    // Target legend
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.redAccent.shade100 : Colors.red,
-                        shape: BoxShape.circle,
+                    if (showTargetLine) ...[
+                      const SizedBox(width: 12),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.redAccent.shade100 : Colors.red,
+                          shape: BoxShape.circle,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Target',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: theme.hintColor,
-                        fontWeight: FontWeight.w500,
+                      const SizedBox(width: 4),
+                      Text(
+                        'Target',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: theme.hintColor,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ],
@@ -217,7 +219,6 @@ class NutritionLineChart extends StatelessWidget {
                   minY: minY,
                   maxY: maxY,
                   lineBarsData: [
-                    // Actual line (solid, thicker)
                     LineChartBarData(
                       spots: actualSpots,
                       isCurved: true,
@@ -240,25 +241,25 @@ class NutritionLineChart extends StatelessWidget {
                         color: lineColor.withValues(alpha: 0.08),
                       ),
                     ),
-                    // Target line (dashed, red, thinner)
-                    LineChartBarData(
-                      spots: targetSpots,
-                      isCurved: false,
-                      color: isDark ? Colors.redAccent.shade100 : Colors.red.shade400,
-                      barWidth: 1.8,
-                      dotData: FlDotData(
-                        show: true,
-                        getDotPainter: (spot, percent, barData, index) {
-                          return FlDotCirclePainter(
-                            radius: 3.5,
-                            color: isDark ? Colors.redAccent.shade100 : Colors.red.shade400,
-                            strokeWidth: 0,
-                          );
-                        },
+                    if (showTargetLine)
+                      LineChartBarData(
+                        spots: targetSpots,
+                        isCurved: false,
+                        color: isDark ? Colors.redAccent.shade100 : Colors.red.shade400,
+                        barWidth: 1.8,
+                        dotData: FlDotData(
+                          show: true,
+                          getDotPainter: (spot, percent, barData, index) {
+                            return FlDotCirclePainter(
+                              radius: 3.5,
+                              color: isDark ? Colors.redAccent.shade100 : Colors.red.shade400,
+                              strokeWidth: 0,
+                            );
+                          },
+                        ),
+                        dashArray: [4, 3],
+                        belowBarData: BarAreaData(show: false),
                       ),
-                      dashArray: [4, 3],
-                      belowBarData: BarAreaData(show: false),
-                    ),
                   ],
                 ),
               ),
