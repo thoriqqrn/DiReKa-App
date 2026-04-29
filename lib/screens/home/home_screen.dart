@@ -217,27 +217,34 @@ class _GuestInteractiveGuideState extends State<_GuestInteractiveGuide> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final step = _steps[_currentPage];
     final isLastPage = _currentPage == _steps.length - 1;
+    final guestActionTextStyle = TextStyle(
+      inherit: true,
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      color: theme.colorScheme.primary,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Tur Singkat Aplikasi',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
+            color: theme.textTheme.titleMedium?.color,
           ),
         ),
         const SizedBox(height: 6),
-        const Text(
+        Text(
           'Geser kartunya atau pakai tombol Lanjut untuk lihat semua fitur, lalu buka menu yang ingin kamu coba.',
           style: TextStyle(
             fontSize: 13,
             height: 1.45,
-            color: AppColors.textSecondary,
+            color: theme.hintColor,
           ),
         ),
         const SizedBox(height: 14),
@@ -245,9 +252,9 @@ class _GuestInteractiveGuideState extends State<_GuestInteractiveGuide> {
           width: double.infinity,
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: theme.cardTheme.color,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: theme.dividerColor),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -277,13 +284,13 @@ class _GuestInteractiveGuideState extends State<_GuestInteractiveGuide> {
                       color: isStepActive
                           ? AppColors.primary
                           : isCurrentTab
-                          ? AppColors.primaryLight
-                          : AppColors.background,
+                          ? AppColors.primaryLight.withValues(alpha: 0.35)
+                          : theme.scaffoldBackgroundColor,
                       borderRadius: BorderRadius.circular(999),
                       border: Border.all(
                         color: isStepActive || isCurrentTab
                             ? AppColors.primary
-                            : AppColors.border,
+                            : theme.dividerColor,
                       ),
                     ),
                     child: Text(
@@ -296,8 +303,8 @@ class _GuestInteractiveGuideState extends State<_GuestInteractiveGuide> {
                         color: isStepActive
                             ? Colors.white
                             : isCurrentTab
-                            ? AppColors.primaryDark
-                            : AppColors.textSecondary,
+                            ? theme.colorScheme.primary
+                            : theme.hintColor,
                       ),
                     ),
                   );
@@ -353,6 +360,10 @@ class _GuestInteractiveGuideState extends State<_GuestInteractiveGuide> {
               children: [
                 if (_currentPage > 0)
                   TextButton(
+                    style: TextButton.styleFrom(
+                      textStyle: guestActionTextStyle,
+                      foregroundColor: theme.colorScheme.primary,
+                    ),
                     onPressed: () {
                       _pageController.previousPage(
                         duration: const Duration(milliseconds: 260),
@@ -362,6 +373,11 @@ class _GuestInteractiveGuideState extends State<_GuestInteractiveGuide> {
                     child: const Text('Sebelumnya'),
                   ),
                 OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: theme.colorScheme.primary,
+                    textStyle: guestActionTextStyle,
+                    side: BorderSide(color: theme.colorScheme.primary),
+                  ),
                   onPressed: () {
                     if (isLastPage) {
                       widget.onNavigateToTab?.call(step.tabIndex);
@@ -381,6 +397,10 @@ class _GuestInteractiveGuideState extends State<_GuestInteractiveGuide> {
                   label: Text(isLastPage ? 'Selesai' : 'Lanjut'),
                 ),
                 TextButton.icon(
+                  style: TextButton.styleFrom(
+                    textStyle: guestActionTextStyle,
+                    foregroundColor: theme.colorScheme.primary,
+                  ),
                   onPressed: () => widget.onNavigateToTab?.call(step.tabIndex),
                   icon: const Icon(Icons.open_in_new, size: 18),
                   label: Text(step.buttonLabel),
@@ -407,6 +427,7 @@ class _GuideFeatureCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return AnimatedContainer(
       duration: const Duration(milliseconds: 220),
       width: double.infinity,
@@ -535,8 +556,8 @@ class _GuideFeatureCard extends StatelessWidget {
                       child: ElevatedButton.icon(
                         onPressed: onOpen,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: AppColors.textPrimary,
+                          backgroundColor: theme.cardTheme.color,
+                          foregroundColor: theme.textTheme.bodyLarge?.color,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
@@ -654,33 +675,45 @@ class _GuestPromptCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.primaryLight,
+        color: theme.brightness == Brightness.dark
+            ? theme.colorScheme.primary.withValues(alpha: 0.16)
+            : AppColors.primaryLight,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.brightness == Brightness.dark
+              ? theme.colorScheme.primary.withValues(alpha: 0.28)
+              : Colors.transparent,
+        ),
       ),
       child: Row(
         children: [
-          const Icon(Icons.info_outline, color: AppColors.primary, size: 28),
+          Icon(
+            Icons.info_outline,
+            color: theme.colorScheme.primary,
+            size: 28,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Mode Tamu',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
+                    color: theme.colorScheme.primary,
                     fontSize: 14,
                   ),
                 ),
                 const SizedBox(height: 2),
-                const Text(
+                Text(
                   'Masuk untuk mencatat dan menyimpan data kesehatan Anda.',
                   style: TextStyle(
-                    color: AppColors.primaryDark,
+                    color: theme.textTheme.bodyMedium?.color,
                     fontSize: 12,
                     height: 1.4,
                   ),
@@ -716,7 +749,7 @@ class _GuestPromptCard extends StatelessWidget {
                           horizontal: 12,
                           vertical: 6,
                         ),
-                        foregroundColor: AppColors.primary,
+                        foregroundColor: theme.colorScheme.primary,
                       ),
                       child: const Text('Daftar'),
                     ),

@@ -43,15 +43,19 @@ class AuthProvider extends ChangeNotifier {
       _firebaseUser = user;
       try {
         if (user != null) {
-          await _loadUserModel(user.uid);
+          _status = AuthStatus.loading;
+          notifyListeners();
+
+          await _loadUserModel(
+            user.uid,
+          ).timeout(const Duration(seconds: 10), onTimeout: () {});
           _listenUserModel(user.uid);
-          await loadLinkedFamilyAccounts();
-          if (_userModel != null) {
-            await _authService.syncLinkedFamilyAllData(_userModel!);
-          }
           _status = AuthStatus.authenticated;
+          notifyListeners();
+
+          unawaited(_postLoginBootstrap());
           // Update day streak saat user login
-          await _updateDayStreak();
+          unawaited(_updateDayStreak());
         } else {
           await _userModelSubscription?.cancel();
           _userModelSubscription = null;
@@ -77,6 +81,23 @@ class AuthProvider extends ChangeNotifier {
       _status = AuthStatus.unauthenticated;
       notifyListeners();
     });
+  }
+
+  Future<void> _postLoginBootstrap() async {
+    try {
+      await loadLinkedFamilyAccounts().timeout(
+        const Duration(seconds: 8),
+        onTimeout: () {},
+      );
+      if (_userModel != null) {
+        await _authService.syncLinkedFamilyAllData(_userModel!).timeout(
+          const Duration(seconds: 8),
+          onTimeout: () {},
+        );
+      }
+    } catch (_) {
+      // Sinkronisasi tambahan gagal tidak boleh memblokir login utama.
+    }
   }
 
   Future<void> _loadUserModel(String uid) async {

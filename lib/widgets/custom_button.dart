@@ -22,9 +22,7 @@ class CustomButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final bgColor = backgroundColor ?? theme.primaryColor;
-    final fgColor = theme.brightness == Brightness.dark && backgroundColor == null
-        ? const Color(0xFF000621)
-        : Colors.white;
+    final fgColor = Colors.white;
 
     final child = isLoading
         ? SizedBox(

@@ -30,157 +30,213 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return LoadingOverlay(
       isLoading: auth.isLoading,
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
           title: const Text('Masuk'),
-          backgroundColor: AppColors.background,
+          backgroundColor: theme.scaffoldBackgroundColor,
           elevation: 0,
         ),
         body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Selamat Datang Kembali 👋',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
+          child: Stack(
+            children: [
+              Positioned(
+                top: -60,
+                right: -30,
+                child: _AuthBackdropBlob(
+                  size: 180,
+                  color: theme.colorScheme.primary.withValues(
+                    alpha: isDark ? 0.18 : 0.12,
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Masuk untuk mulai memantau kesehatan Anda.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 36),
-
-                  // Error message
-                  if (auth.errorMessage != null) ...[
-                    _ErrorBanner(message: auth.errorMessage!),
-                    const SizedBox(height: 16),
-                  ],
-
-                  CustomTextField(
-                    label: 'Email',
-                    controller: _emailCtrl,
-                    keyboardType: TextInputType.emailAddress,
-                    prefixIcon: const Icon(Icons.email_outlined),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Email wajib diisi';
-                      if (!v.contains('@')) return 'Format email tidak valid';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  CustomTextField(
-                    label: 'Kata Sandi',
-                    controller: _passwordCtrl,
-                    obscureText: true,
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) {
-                        return 'Kata sandi wajib diisi';
-                      }
-                      if (v.length < 6) return 'Kata sandi minimal 6 karakter';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: _onLupaPassword,
-                      child: const Text('Lupa kata sandi?'),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Tombol Masuk
-                  CustomButton(
-                    label: 'Masuk',
-                    onPressed: _onLogin,
-                    isLoading: auth.isLoading,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Divider
-                  const Row(
-                    children: [
-                      Expanded(child: Divider()),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12),
-                        child: Text(
-                          'atau',
-                          style: TextStyle(color: AppColors.textSecondary),
-                        ),
-                      ),
-                      Expanded(child: Divider()),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Tombol Google
-                  CustomButton(
-                    label: 'Masuk dengan Google',
-                    isOutlined: true,
-                    onPressed: _onGoogleSignIn,
-                    icon: Image.network(
-                      'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
-                      height: 20,
-                      width: 20,
-                      errorBuilder: (_, __, ___) =>
-                          const Icon(Icons.g_mobiledata, size: 24),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Daftar
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        'Belum punya akun? ',
-                        style: TextStyle(color: AppColors.textSecondary),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pushReplacementNamed(
-                          context,
-                          AppConstants.routeRegister,
-                        ),
-                        child: const Text('Daftar Sekarang'),
-                      ),
-                    ],
-                  ),
-
-                  // Skip (lanjut sebagai tamu)
-                  Center(
-                    child: TextButton(
-                      onPressed: () => Navigator.pushReplacementNamed(
-                        context,
-                        AppConstants.routeMain,
-                      ),
-                      child: const Text(
-                        'Lanjutkan tanpa akun',
-                        style: TextStyle(color: AppColors.textSecondary),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
+              Positioned(
+                top: 120,
+                left: -40,
+                child: _AuthBackdropBlob(
+                  size: 140,
+                  color: theme.colorScheme.secondary.withValues(
+                    alpha: isDark ? 0.16 : 0.10,
+                  ),
+                ),
+              ),
+              SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 12),
+                      const Center(
+                        child: _AnimatedPulseIcon(
+                          icon: Icons.lock_open_rounded,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Selamat Datang Kembali',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: theme.textTheme.titleLarge?.color,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Masuk untuk mulai memantau kesehatan Anda.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: theme.hintColor,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: theme.cardTheme.color,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: theme.dividerColor.withValues(
+                              alpha: isDark ? 0.55 : 0.20,
+                            ),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(
+                                alpha: isDark ? 0.18 : 0.06,
+                              ),
+                              blurRadius: 24,
+                              offset: const Offset(0, 12),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (auth.errorMessage != null) ...[
+                              _ErrorBanner(message: auth.errorMessage!),
+                              const SizedBox(height: 16),
+                            ],
+                            CustomTextField(
+                              label: 'Email',
+                              controller: _emailCtrl,
+                              keyboardType: TextInputType.emailAddress,
+                              prefixIcon: const Icon(Icons.email_outlined),
+                              validator: (v) {
+                                if (v == null || v.isEmpty) {
+                                  return 'Email wajib diisi';
+                                }
+                                if (!v.contains('@')) {
+                                  return 'Format email tidak valid';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            CustomTextField(
+                              label: 'Kata Sandi',
+                              controller: _passwordCtrl,
+                              obscureText: true,
+                              prefixIcon: const Icon(Icons.lock_outline),
+                              validator: (v) {
+                                if (v == null || v.isEmpty) {
+                                  return 'Kata sandi wajib diisi';
+                                }
+                                if (v.length < 6) {
+                                  return 'Kata sandi minimal 6 karakter';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 8),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton(
+                                onPressed: _onLupaPassword,
+                                child: const Text('Lupa kata sandi?'),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            CustomButton(
+                              label: 'Masuk',
+                              onPressed: _onLogin,
+                              isLoading: auth.isLoading,
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(child: Divider(color: theme.dividerColor)),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
+                                  child: Text(
+                                    'atau',
+                                    style: TextStyle(
+                                      color: theme.hintColor,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(child: Divider(color: theme.dividerColor)),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            CustomButton(
+                              label: 'Masuk dengan Google',
+                              isOutlined: true,
+                              onPressed: _onGoogleSignIn,
+                              icon: Image.network(
+                                'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
+                                height: 20,
+                                width: 20,
+                                errorBuilder: (_, __, ___) =>
+                                    const Icon(Icons.g_mobiledata, size: 24),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Belum punya akun? ',
+                            style: TextStyle(color: theme.hintColor),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pushReplacementNamed(
+                              context,
+                              AppConstants.routeRegister,
+                            ),
+                            child: const Text('Daftar Sekarang'),
+                          ),
+                        ],
+                      ),
+                      Center(
+                        child: TextButton(
+                          onPressed: () => Navigator.pushReplacementNamed(
+                            context,
+                            AppConstants.routeMain,
+                          ),
+                          child: Text(
+                            'Lanjutkan tanpa akun',
+                            style: TextStyle(color: theme.hintColor),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -289,6 +345,84 @@ class _ErrorBanner extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AuthBackdropBlob extends StatelessWidget {
+  final double size;
+  final Color color;
+
+  const _AuthBackdropBlob({required this.size, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [color, color.withValues(alpha: 0)],
+        ),
+      ),
+    );
+  }
+}
+
+class _AnimatedPulseIcon extends StatefulWidget {
+  final IconData icon;
+
+  const _AnimatedPulseIcon({required this.icon});
+
+  @override
+  State<_AnimatedPulseIcon> createState() => _AnimatedPulseIconState();
+}
+
+class _AnimatedPulseIconState extends State<_AnimatedPulseIcon>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    )..repeat(reverse: true);
+    _animation = Tween<double>(begin: 1.0, end: 1.14).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ScaleTransition(
+      scale: _animation,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.primary.withValues(alpha: 0.12),
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: theme.colorScheme.primary.withValues(alpha: 0.22),
+            width: 2,
+          ),
+        ),
+        child: Icon(
+          widget.icon,
+          size: 40,
+          color: theme.colorScheme.primary,
+        ),
       ),
     );
   }

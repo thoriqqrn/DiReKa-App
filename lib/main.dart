@@ -24,7 +24,15 @@ import 'screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    debugPrint('Firebase initialized: ${Firebase.app().options.projectId}');
+  } catch (e, st) {
+    debugPrint('Firebase init error: $e');
+    debugPrint(st.toString());
+  }
   runApp(const DiRekaApp());
 }
 

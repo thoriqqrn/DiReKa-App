@@ -71,7 +71,7 @@ class NotificationInfoScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             _buildDiseaseSection(
-              title: 'Gagal Jantung (HF)',
+              title: 'Jantung Koroner',
               color: AppColors.heartColor,
               notifications: [
                 _NotifDetail(

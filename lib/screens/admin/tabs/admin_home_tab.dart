@@ -15,6 +15,21 @@ class AdminHomeTab extends StatefulWidget {
 }
 
 class _AdminHomeTabState extends State<AdminHomeTab> {
+  static const Color _diseaseGreen = Color(0xFF34A853);
+  static const Color _diseaseBlue = Color(0xFF4285F4);
+  static const Color _diseaseYellow = Color(0xFFFBBC04);
+
+  Color _diseaseChartColor(DiseaseType disease) {
+    switch (disease) {
+      case DiseaseType.chronicKidneyDisease:
+        return _diseaseGreen;
+      case DiseaseType.type2DiabetesMellitus:
+        return _diseaseBlue;
+      case DiseaseType.heartFailure:
+        return _diseaseYellow;
+    }
+  }
+
   bool _isLoading = false;
   String? _error;
   int _totalUsers = 0;
@@ -172,12 +187,7 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                               final count = _usersByDisease[disease] ?? 0;
                               final percentage = _totalUsers > 0 ? (count / _totalUsers * 100) : 0.0;
                               
-                              Color color;
-                              switch (disease) {
-                                case DiseaseType.chronicKidneyDisease: color = AppColors.kidneyColor; break;
-                                case DiseaseType.type2DiabetesMellitus: color = AppColors.diabetesColor; break;
-                                case DiseaseType.heartFailure: color = AppColors.heartColor; break;
-                              }
+                              final color = _diseaseChartColor(disease);
 
                               return PieChartSectionData(
                                 color: color,
@@ -202,12 +212,7 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: DiseaseType.values.map((disease) {
                             final count = _usersByDisease[disease] ?? 0;
-                            Color color;
-                            switch (disease) {
-                              case DiseaseType.chronicKidneyDisease: color = AppColors.kidneyColor; break;
-                              case DiseaseType.type2DiabetesMellitus: color = AppColors.diabetesColor; break;
-                              case DiseaseType.heartFailure: color = AppColors.heartColor; break;
-                            }
+                            final color = _diseaseChartColor(disease);
                             return Padding(
                               padding: const EdgeInsets.symmetric(vertical: 4),
                               child: Row(

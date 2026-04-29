@@ -671,12 +671,15 @@ class _InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final iconColor = theme.brightness == Brightness.dark
+        ? theme.colorScheme.secondary
+        : theme.primaryColor;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: theme.primaryColor),
+          Icon(icon, size: 20, color: iconColor),
           const SizedBox(width: 14),
           Expanded(
             child: Column(

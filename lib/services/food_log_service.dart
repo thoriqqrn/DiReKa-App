@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../models/food_log_entry.dart';
 import 'family_link_service.dart';
 
@@ -48,13 +49,19 @@ class FoodLogService {
   /// Ambil semua entri makanan untuk [uid] pada [date].
   static Future<List<FoodLogEntry>> getEntries(
       String uid, DateTime date) async {
-    final doc =
-        await _db.collection('food_logs').doc(_docId(uid, date)).get();
-    if (!doc.exists) return [];
-    final entries = doc.data()!['entries'] as List<dynamic>? ?? [];
-    return entries
-        .map((e) => FoodLogEntry.fromMap(e as Map<String, dynamic>))
-        .toList();
+    try {
+      final doc =
+          await _db.collection('food_logs').doc(_docId(uid, date)).get();
+      if (!doc.exists) return [];
+      final entries = doc.data()!['entries'] as List<dynamic>? ?? [];
+      return entries
+          .map((e) => FoodLogEntry.fromMap(e as Map<String, dynamic>))
+          .toList();
+    } on FirebaseException catch (e) {
+      debugPrint('FoodLogService.getEntries error: ${e.code} ${e.message}');
+      // Saat backend unavailable, kembalikan list kosong agar UI tidak crash.
+      return [];
+    }
   }
 
   /// Tambah satu entri makanan ke log hari [date].

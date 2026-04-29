@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 import '../core/app_constants.dart';
 import '../models/disease_type.dart';
@@ -81,7 +84,8 @@ class AdminService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  CollectionReference get _users => _db.collection(AppConstants.colUsers);
+  CollectionReference<Map<String, dynamic>> get _users =>
+      _db.collection(AppConstants.colUsers);
   CollectionReference<Map<String, dynamic>> get _foodLogs =>
       _db.collection('food_logs');
   CollectionReference<Map<String, dynamic>> get _educationPosts =>
@@ -89,34 +93,42 @@ class AdminService {
 
   /// Total jumlah user terdaftar
   Future<int> getTotalUsers() async {
-    final snapshot = await _users.count().get();
-    return snapshot.count ?? 0;
+    final snapshot = await _getWithFallback(_users);
+    return snapshot.docs.length;
   }
 
   /// Jumlah user per jenis penyakit
   Future<Map<DiseaseType, int>> getUsersByDisease() async {
-    final result = <DiseaseType, int>{};
-    for (final disease in DiseaseType.values) {
-      final snapshot = await _users
-          .where('diseaseType', isEqualTo: disease.value)
-          .count()
-          .get();
-      result[disease] = snapshot.count ?? 0;
+    final result = <DiseaseType, int>{
+      for (final disease in DiseaseType.values) disease: 0,
+    };
+    final snapshot = await _getWithFallback(_users);
+    for (final doc in snapshot.docs) {
+      final diseaseRaw = (doc.data()['diseaseType'] ?? '').toString();
+      for (final disease in DiseaseType.values) {
+        if (disease.value == diseaseRaw) {
+          result[disease] = (result[disease] ?? 0) + 1;
+          break;
+        }
+      }
     }
     return result;
   }
 
   /// Ambil semua user (untuk tabel)
   Future<List<UserModel>> getAllUsers() async {
-    final snapshot = await _users.orderBy('createdAt', descending: true).get();
+    final snapshot = await _getWithFallback(
+      _users.orderBy('createdAt', descending: true),
+    );
     return snapshot.docs
-        .map((doc) => UserModel.fromMap(doc.data() as Map<String, dynamic>))
+        .map((doc) => UserModel.fromMap(doc.data()))
         .toList();
   }
 
   Future<List<AdminFoodLogSummary>> getRecentFoodLogs({int limit = 50}) async {
-    final snapshot =
-        await _foodLogs.orderBy('date', descending: true).limit(limit).get();
+    final snapshot = await _getWithFallback(
+      _foodLogs.orderBy('date', descending: true).limit(limit),
+    );
     final usersMap = await _fetchUsersByUid();
 
     return snapshot.docs.map((doc) {
@@ -142,34 +154,34 @@ class AdminService {
     int perUserLimit = 5,
     int maxUsers = 40,
   }) async {
-    final users = await _users.limit(maxUsers).get();
+    final users = await _getWithFallback(_users.limit(maxUsers));
     final futures = users.docs.map((doc) async {
-      final userData = doc.data() as Map<String, dynamic>;
+      final userData = doc.data();
       final uid = doc.id;
       final userName = (userData['name'] ?? uid).toString();
       final userEmail = (userData['email'] ?? '-').toString();
 
-      final diabetesSnap = await _db
+      final diabetesSnap = await _getWithFallback(_db
           .collection(AppConstants.colUsers)
           .doc(uid)
           .collection('diabetes_health_records')
           .orderBy('date', descending: true)
           .limit(perUserLimit)
-          .get();
-      final kidneySnap = await _db
+      );
+      final kidneySnap = await _getWithFallback(_db
           .collection(AppConstants.colUsers)
           .doc(uid)
           .collection('kidney_health_records')
           .orderBy('date', descending: true)
           .limit(perUserLimit)
-          .get();
-      final heartSnap = await _db
+      );
+      final heartSnap = await _getWithFallback(_db
           .collection(AppConstants.colUsers)
           .doc(uid)
           .collection('heart_health_records')
           .orderBy('date', descending: true)
           .limit(perUserLimit)
-          .get();
+      );
 
       return <AdminHealthRecordSummary>[
         ...diabetesSnap.docs
@@ -240,10 +252,9 @@ class AdminService {
   }
 
   Future<List<EducationPost>> getEducationPosts({int limit = 50}) async {
-    final snapshot = await _educationPosts
-        .orderBy('createdAt', descending: true)
-        .limit(limit)
-        .get();
+    final snapshot = await _getWithFallback(
+      _educationPosts.orderBy('createdAt', descending: true).limit(limit),
+    );
 
     return snapshot.docs.map((doc) {
       final data = doc.data();
@@ -318,17 +329,36 @@ class AdminService {
   }
 
   Future<Map<String, _UserIdentity>> _fetchUsersByUid() async {
-    final snapshot = await _users.get();
+    final snapshot = await _getWithFallback(_users);
     return {
       for (final doc in snapshot.docs)
-        ((doc.data() as Map<String, dynamic>)['uid'] ?? doc.id).toString(): _UserIdentity(
-          uid: ((doc.data() as Map<String, dynamic>)['uid'] ?? doc.id)
-              .toString(),
-          name: ((doc.data() as Map<String, dynamic>)['name'] ?? doc.id)
-              .toString(),
-          email: ((doc.data() as Map<String, dynamic>)['email'] ?? '-')
-              .toString(),
+        (doc.data()['uid'] ?? doc.id).toString(): _UserIdentity(
+          uid: (doc.data()['uid'] ?? doc.id).toString(),
+          name: (doc.data()['name'] ?? doc.id).toString(),
+          email: (doc.data()['email'] ?? '-').toString(),
         ),
     };
+  }
+
+  Future<QuerySnapshot<Map<String, dynamic>>> _getWithFallback(
+    Query<Map<String, dynamic>> query, {
+    Duration timeout = const Duration(seconds: 10),
+  }) async {
+    try {
+      return await query
+          .get(const GetOptions(source: Source.serverAndCache))
+          .timeout(timeout);
+    } on TimeoutException {
+      return query.get(const GetOptions(source: Source.cache));
+    } on FirebaseException catch (e) {
+      final shouldFallbackToCache = e.code == 'unavailable' ||
+          e.code == 'deadline-exceeded' ||
+          e.code == 'failed-precondition';
+      if (shouldFallbackToCache) {
+        debugPrint('AdminService fallback cache: ${e.code} ${e.message}');
+        return query.get(const GetOptions(source: Source.cache));
+      }
+      rethrow;
+    }
   }
 }

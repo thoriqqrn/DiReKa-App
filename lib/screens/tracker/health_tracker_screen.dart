@@ -3141,7 +3141,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
       case 'gdp':
         return fromRange(min: 70, max: 110);
       case 'gds':
-        return fromRange(min: 70, max: 200);
+        return fromRange(max: 200);
       case 'hba1c':
         return fromRange(max: 5.7);
       case 'ureum':
@@ -4896,17 +4896,33 @@ class _ExamReference {
 }
 
 List<_ExamReference> _examReferenceCatalog = [
-  _ExamReference(id: "bb", group: "Fisik", name: "Berat Badan", unit: "kg", normal: "-", forKidney: false, forHeart: true, forDiabetes: true),
-  _ExamReference(id: "td", group: "Fisik", name: "Tekanan Darah", unit: "mmHg", normal: "90/60 - 120/80", forKidney: true, forHeart: true, forDiabetes: true),
-  _ExamReference(id: "nadi", group: "Fisik", name: "Denyut Nadi", unit: "x/mnt", normal: "60 - 100", forKidney: true, forHeart: true, forDiabetes: true),
-  _ExamReference(id: "suhu", group: "Fisik", name: "Suhu Tubuh", unit: "°C", normal: "36,5 - 37,5", forKidney: true, forHeart: true, forDiabetes: true),
+  _ExamReference(id: "bb", group: "Fisik", name: "Berat Badan", unit: "kg", normal: "-", forKidney: true, forHeart: true, forDiabetes: true),
+  _ExamReference(id: "tb", group: "Fisik", name: "Tinggi Badan", unit: "cm", normal: "-", forKidney: true, forHeart: true, forDiabetes: true),
+  _ExamReference(id: "suhu", group: "Fisik", name: "Suhu", unit: "°C", normal: "36,5 - 37,5", forKidney: true, forHeart: true, forDiabetes: true),
+  _ExamReference(id: "td", group: "Fisik", name: "Tekanan Darah", unit: "mmHg", normal: "< 120/80", forKidney: true, forHeart: true, forDiabetes: true),
   _ExamReference(id: "spo2", group: "Fisik", name: "Saturasi Oksigen", unit: "%", normal: "95 - 100", forKidney: true, forHeart: true, forDiabetes: true),
+  _ExamReference(id: "nadi", group: "Fisik", name: "Denyut Nadi", unit: "x/mnt", normal: "60 - 100", forKidney: true, forHeart: true, forDiabetes: true),
+
+  _ExamReference(id: "urin_protein", group: "Urin", name: "Protein", unit: "", normal: "Negatif", forKidney: true, forHeart: false, forDiabetes: false),
+  _ExamReference(id: "urin_ph", group: "Urin", name: "pH", unit: "", normal: "4,5 - 8,0", forKidney: true, forHeart: false, forDiabetes: false),
+  _ExamReference(id: "urin_hb", group: "Urin", name: "Hb", unit: "", normal: "Negatif", forKidney: true, forHeart: false, forDiabetes: false),
+
+  _ExamReference(id: "chol_total", group: "Darah", name: "Kolesterol Total", unit: "mg/dL", normal: "< 200", forKidney: true, forHeart: true, forDiabetes: true),
+  _ExamReference(id: "hdl", group: "Darah", name: "HDL", unit: "mg/dL", normal: "< 4,5", forKidney: true, forHeart: true, forDiabetes: true),
+  _ExamReference(id: "ldl", group: "Darah", name: "LDL", unit: "mg/dL", normal: "< 100", forKidney: true, forHeart: true, forDiabetes: true),
+  _ExamReference(id: "trigliserida", group: "Darah", name: "Trigliserida", unit: "mg/dL", normal: "< 150", forKidney: true, forHeart: true, forDiabetes: true),
+  _ExamReference(id: "bun", group: "Darah", name: "BUN", unit: "mg/dL", normal: "-", forKidney: true, forHeart: true, forDiabetes: true),
+  _ExamReference(id: "natrium", group: "Darah", name: "Natrium", unit: "mmol/L", normal: "135 - 145", forKidney: true, forHeart: true, forDiabetes: true),
   _ExamReference(id: "gdp", group: "Darah", name: "Gula darah puasa", unit: "mg/dL", normal: "70 - 110", forKidney: true, forHeart: true, forDiabetes: true),
-  _ExamReference(id: "gds", group: "Darah", name: "Gula darah sewaktu", unit: "mg/dL", normal: "70 - 200", forKidney: true, forHeart: true, forDiabetes: true),
-  _ExamReference(id: "hba1c", group: "Darah", name: "HbA1c", unit: "%", normal: "< 5,7", forKidney: true, forHeart: true, forDiabetes: true),
+  _ExamReference(id: "gds", group: "Darah", name: "Gula darah sewaktu", unit: "mg/dL", normal: "< 200", forKidney: true, forHeart: true, forDiabetes: true),
+  _ExamReference(id: "hba1c", group: "Darah", name: "HbA1c", unit: "%", normal: "< 5,7%", forKidney: true, forHeart: true, forDiabetes: true),
   _ExamReference(id: "ureum", group: "Darah", name: "Ureum", unit: "mg/dL", normal: "10 - 50", forKidney: true, forHeart: true, forDiabetes: true),
-  _ExamReference(id: "kreatinin", group: "Darah", name: "Kreatinin", unit: "mg/dL", normal: "0,6 - 1,3", forKidney: true, forHeart: true, forDiabetes: true),
+  _ExamReference(id: "kreatinin", group: "Darah", name: "Kreatinin", unit: "mg/dL", normal: "L: 0,7 - 1,3 | P: 0,6 - 1,1", forKidney: true, forHeart: true, forDiabetes: true),
   _ExamReference(id: "kalium", group: "Darah", name: "Kalium", unit: "mmol/L", normal: "3,5 - 5,1", forKidney: true, forHeart: true, forDiabetes: true),
+  _ExamReference(id: "fosfat", group: "Darah", name: "Fosfat", unit: "mg/dL", normal: "2,5 - 4,5", forKidney: true, forHeart: true, forDiabetes: true),
+  _ExamReference(id: "albumin", group: "Darah", name: "Albumin", unit: "g/dL", normal: "3,5 - 5,0", forKidney: true, forHeart: true, forDiabetes: true),
+  _ExamReference(id: "hb_darah", group: "Darah", name: "Hemoglobin (Hb)", unit: "g/dL", normal: "L: 13,0 - 16,0 | P: 12,0 - 14,0", forKidney: true, forHeart: true, forDiabetes: true),
+  _ExamReference(id: "ht", group: "Darah", name: "Hematokrit (Ht)", unit: "%", normal: "L: 40 - 50 | P: 36 - 44", forKidney: true, forHeart: true, forDiabetes: true),
 ];
 
 List<_ExamReference> _examReferencesForDiseaseType(DiseaseType diseaseType) {

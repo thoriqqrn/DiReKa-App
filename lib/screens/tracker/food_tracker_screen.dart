@@ -155,6 +155,10 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
       if (mounted) setState(() => _entries = entries);
       // Sinkronkan ulang data mingguan agar chart ikut terupdate (terutama untuk ginjal dan jantung)
       await _loadWeeklyData();
+    } catch (e) {
+      if (mounted) {
+        setState(() => _entries = []);
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -2183,6 +2187,7 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                       itemBuilder: (_, i) {
                         final cat = _categories[i];
                         final selected = cat == _selectedCategory;
+                        final isDark = theme.brightness == Brightness.dark;
                         return GestureDetector(
                           onTap: () =>
                               setState(() => _selectedCategory = cat),
@@ -2194,14 +2199,31 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                             ),
                             decoration: BoxDecoration(
                               color: selected
-                                  ? theme.primaryColor
-                                  : theme.dividerColor.withValues(alpha: 0.1),
+                                  ? theme.primaryColor.withValues(
+                                      alpha: isDark ? 0.9 : 1,
+                                    )
+                                  : theme.dividerColor.withValues(
+                                      alpha: isDark ? 0.16 : 0.1,
+                                    ),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
                                 color: selected
                                     ? theme.primaryColor
-                                    : theme.dividerColor.withValues(alpha: 0.2),
+                                    : theme.dividerColor.withValues(
+                                        alpha: isDark ? 0.35 : 0.2,
+                                      ),
                               ),
+                              boxShadow: selected
+                                  ? [
+                                      BoxShadow(
+                                        color: theme.primaryColor.withValues(
+                                          alpha: isDark ? 0.28 : 0.12,
+                                        ),
+                                        blurRadius: 12,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ]
+                                  : null,
                             ),
                             child: Text(
                               cat,
@@ -2559,6 +2581,7 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final takaran = widget.food.takaranSaji;
     final gram = _gramDimakan;
     final preview = _preview;
@@ -2598,18 +2621,27 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
                 width: 96,
                 child: GestureDetector(
                   onTap: () => setState(() => _takaranIdx = i),
-                  child: Container(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 140),
                     padding: const EdgeInsets.symmetric(
                       vertical: 10,
                       horizontal: 4,
                     ),
                     decoration: BoxDecoration(
                       color: sel
-                          ? theme.primaryColor.withValues(alpha: 0.1)
-                          : theme.dividerColor.withValues(alpha: 0.05),
+                          ? theme.primaryColor.withValues(
+                              alpha: isDark ? 0.28 : 0.12,
+                            )
+                          : theme.dividerColor.withValues(
+                              alpha: isDark ? 0.14 : 0.05,
+                            ),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: sel ? theme.primaryColor : theme.dividerColor.withValues(alpha: 0.2),
+                        color: sel
+                            ? theme.primaryColor
+                            : theme.dividerColor.withValues(
+                                alpha: isDark ? 0.45 : 0.2,
+                              ),
                         width: sel ? 2 : 1,
                       ),
                     ),
@@ -2626,7 +2658,7 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
                           style: TextStyle(
                             fontSize: 10,
                             color: sel
-                                ? theme.primaryColor
+                                ? (isDark ? Colors.white : theme.primaryColor)
                                 : theme.hintColor,
                             fontWeight: FontWeight.w500,
                           ),
@@ -2638,7 +2670,9 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
-                            color: sel ? theme.primaryColor : theme.textTheme.bodyLarge?.color,
+                            color: sel
+                                ? (isDark ? Colors.white : theme.primaryColor)
+                                : theme.textTheme.bodyLarge?.color,
                           ),
                         ),
                       ],
@@ -2656,10 +2690,26 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              IconButton(
-                icon: const Icon(Icons.remove_circle_outline, size: 36),
-                color: _count > 1 ? theme.primaryColor : theme.hintColor.withValues(alpha: 0.3),
-                onPressed: _count > 1 ? () => setState(() => _count--) : null,
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 140),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _count > 1
+                      ? theme.primaryColor
+                      : theme.dividerColor.withValues(alpha: isDark ? 0.18 : 0.08),
+                  border: Border.all(
+                    color: _count > 1
+                        ? theme.primaryColor
+                        : theme.dividerColor.withValues(alpha: isDark ? 0.35 : 0.2),
+                  ),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.remove, size: 24),
+                  color: _count > 1
+                      ? Colors.white
+                      : theme.hintColor.withValues(alpha: isDark ? 0.7 : 0.45),
+                  onPressed: _count > 1 ? () => setState(() => _count--) : null,
+                ),
               ),
               SizedBox(
                 width: 60,
@@ -2673,10 +2723,20 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
                   ),
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.add_circle_outline, size: 36),
-                color: theme.primaryColor,
-                onPressed: () => setState(() => _count++),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 140),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: theme.primaryColor,
+                  border: Border.all(
+                    color: theme.primaryColor,
+                  ),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.add, size: 24),
+                  color: Colors.white,
+                  onPressed: () => setState(() => _count++),
+                ),
               ),
             ],
           ),
@@ -2685,8 +2745,10 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
           // ── Sisa di piring ──
           _sectionLabel(context, widget.food.satuanNama == 'Gelas' ? 'Sisa di Gelas' : 'Sisa di Piring'),
           const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          Wrap(
+            alignment: WrapAlignment.spaceEvenly,
+            spacing: 10,
+            runSpacing: 10,
             children: List.generate(_sisaPercentages.length, (i) {
               final sisa = _sisaPercentages[i];
               final label = _sisaLabels[i];
@@ -2694,14 +2756,27 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
               return GestureDetector(
                 onTap: () => setState(() => _sisaPercent = sisa),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      width: 42,
-                      height: 42,
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 140),
+                      width: 46,
+                      height: 46,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
+                        color: sel
+                            ? theme.primaryColor.withValues(
+                                alpha: isDark ? 0.28 : 0.12,
+                              )
+                            : theme.cardColor.withValues(
+                                alpha: isDark ? 0.78 : 1,
+                              ),
                         border: Border.all(
-                          color: sel ? theme.primaryColor : theme.dividerColor.withValues(alpha: 0.3),
+                          color: sel
+                              ? theme.primaryColor
+                              : theme.dividerColor.withValues(
+                                  alpha: isDark ? 0.5 : 0.3,
+                                ),
                           width: sel ? 2.5 : 1.5,
                         ),
                       ),
@@ -2710,6 +2785,9 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
                           painter: _PiePainter(
                             eatFraction: 1 - sisa / 100,
                             color: theme.primaryColor,
+                            backgroundColor: isDark
+                                ? Colors.white.withValues(alpha: 0.2)
+                                : Colors.grey.withValues(alpha: 0.12),
                           ),
                         ),
                       ),
@@ -2722,7 +2800,7 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
                         fontSize: 9,
                         height: 1.2,
                         color: sel
-                            ? theme.primaryColor
+                            ? (isDark ? Colors.white : theme.primaryColor)
                             : theme.hintColor,
                         fontWeight: sel ? FontWeight.bold : FontWeight.normal,
                       ),
@@ -2829,8 +2907,13 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
 class _PiePainter extends CustomPainter {
   final double eatFraction; // 1.0 = habis semua, 0.0 = tidak dimakan
   final Color color;
+  final Color backgroundColor;
 
-  const _PiePainter({required this.eatFraction, required this.color});
+  const _PiePainter({
+    required this.eatFraction,
+    required this.color,
+    required this.backgroundColor,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -2839,7 +2922,7 @@ class _PiePainter extends CustomPainter {
     final rect = Rect.fromCircle(center: center, radius: radius);
 
     // Latar: bagian yang tidak dimakan (abu-abu)
-    canvas.drawCircle(center, radius, Paint()..color = Colors.grey.withValues(alpha: 0.1));
+    canvas.drawCircle(center, radius, Paint()..color = backgroundColor);
 
     // Bagian yang dimakan (warna primary)
     if (eatFraction > 0) {
@@ -2856,7 +2939,10 @@ class _PiePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_PiePainter old) => old.eatFraction != eatFraction;
+  bool shouldRepaint(_PiePainter old) =>
+      old.eatFraction != eatFraction ||
+      old.color != color ||
+      old.backgroundColor != backgroundColor;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3040,6 +3126,9 @@ class _MealTableSection extends StatelessWidget {
 
   Widget _buildMealHeader(BuildContext context, double ratio, Color statusColor, {bool isEnlarged = false}) {
     final theme = Theme.of(context);
+    final actionIconColor = theme.brightness == Brightness.dark
+        ? theme.colorScheme.onSurface
+        : theme.primaryColor;
     return Container(
       padding: EdgeInsets.all(isEnlarged ? 16 : 12),
       decoration: BoxDecoration(
@@ -3076,7 +3165,7 @@ class _MealTableSection extends StatelessWidget {
           ),
           if (!isEnlarged) ...[
             IconButton(
-              icon: Icon(Icons.fullscreen, size: 24, color: theme.primaryColor),
+              icon: Icon(Icons.fullscreen, size: 24, color: actionIconColor),
               onPressed: () => _showEnlargedMealTable(context),
             ),
           ],
@@ -3154,6 +3243,12 @@ class _MealTableSection extends StatelessWidget {
     {bool isEnlarged = false, double fulfillmentRatio = 0.0}
   ) {
     final theme = Theme.of(context);
+    final pE = targetEnergi > 0 ? actualEnergi / targetEnergi : 0.0;
+    final pP = targetProtein > 0 ? actualProtein / targetProtein : 0.0;
+    final pL = targetLemak > 0 ? actualLemak / targetLemak : 0.0;
+    final pK = targetKarbo > 0 ? actualKarbo / targetKarbo : 0.0;
+    final pS = targetSerat > 0 ? actualSerat / targetSerat : 0.0;
+
     return Column(
       children: [
         Table(
@@ -3191,34 +3286,26 @@ class _MealTableSection extends StatelessWidget {
                 _tableDataCell(context, '', isBold: true, isEnlarged: isEnlarged),
               ],
             ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-          decoration: BoxDecoration(
-            color: statusColor,
-            borderRadius: isEnlarged 
-              ? BorderRadius.circular(12)
-              : const BorderRadius.only(bottomLeft: Radius.circular(12), bottomRight: Radius.circular(12)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  'Status Ketercapaian Kebutuhan ${mealType.label}:',
-                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+            TableRow(
+              decoration: BoxDecoration(
+                color: theme.primaryColor.withValues(alpha: 0.05),
+              ),
+              children: [
+                _tableDataCell(
+                  context,
+                  'Ketercapaian (%)',
+                  isBold: true,
+                  isEnlarged: isEnlarged,
                 ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                formatPercentage(fulfillmentRatio),
-                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
+                _tablePercentageCell(context, pE, isEnlarged: isEnlarged),
+                _tablePercentageCell(context, pP, isEnlarged: isEnlarged),
+                _tablePercentageCell(context, pL, isEnlarged: isEnlarged),
+                _tablePercentageCell(context, pK, isEnlarged: isEnlarged),
+                _tablePercentageCell(context, pS, isEnlarged: isEnlarged),
+                _tableDataCell(context, '', isEnlarged: isEnlarged),
+              ],
+            ),
+          ],
         ),
       ],
     );
@@ -3317,6 +3404,38 @@ class _MealTableSection extends StatelessWidget {
       ),
     );
   }
+
+  Widget _tablePercentageCell(
+    BuildContext context,
+    double ratio, {
+    bool isEnlarged = false,
+  }) {
+    final statusColor = getStatusColor(ratio);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+      child: Center(
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: isEnlarged ? 8 : 6,
+            vertical: isEnlarged ? 6 : 4,
+          ),
+          decoration: BoxDecoration(
+            color: statusColor,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            formatPercentage(ratio),
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: isEnlarged ? 12 : 10,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3369,7 +3488,7 @@ class _DailyInterpretationTable extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Ringkasan Per Waktu Makan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: theme.textTheme.titleLarge?.color)),
+                Text('Ringkasan Makan Sehari', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: theme.textTheme.titleLarge?.color)),
                 const SizedBox(height: 12),
                 _buildBaseTable(context, mealOrder, isPercentage: false),
                 const SizedBox(height: 32),
@@ -3437,6 +3556,9 @@ class _DailyInterpretationTable extends StatelessWidget {
     ];
 
     final theme = Theme.of(context);
+    final actionIconColor = theme.brightness == Brightness.dark
+        ? theme.colorScheme.onSurface
+        : theme.primaryColor;
 
     final dailyTotals = calculateDailyTotals();
     final pE = totalNeeds.energi > 0 ? dailyTotals['energi']! / totalNeeds.energi : 0.0;
@@ -3468,7 +3590,7 @@ class _DailyInterpretationTable extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Ringkasan Per Waktu Makan',
+                  'Ringkasan Makan Sehari',
                   style: TextStyle(
                     fontWeight: FontWeight.bold, 
                     fontSize: 14,
@@ -3476,7 +3598,7 @@ class _DailyInterpretationTable extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.fullscreen, size: 20, color: theme.primaryColor),
+                  icon: Icon(Icons.fullscreen, size: 20, color: actionIconColor),
                   onPressed: () => _showEnlargedInterpretationTable(context),
                 ),
               ],
@@ -3895,6 +4017,9 @@ class _GlycemicLoadChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final actionIconColor = theme.brightness == Brightness.dark
+        ? theme.colorScheme.onSurface
+        : theme.primaryColor;
     final mealGL = _calculateMealGL();
     final totalGL = mealGL.values.fold(0.0, (sum, gl) => sum + gl);
     final totalPercentage = (totalGL / 120.0 * 100).toStringAsFixed(0);
@@ -3958,7 +4083,7 @@ class _GlycemicLoadChart extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: Icon(Icons.fullscreen, color: theme.primaryColor),
+                icon: Icon(Icons.fullscreen, color: actionIconColor),
                 onPressed: () => _showEnlargedChart(context),
                 tooltip: 'Perbesar Grafik',
               ),

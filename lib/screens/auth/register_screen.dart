@@ -112,71 +112,118 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return LoadingOverlay(
       isLoading: auth.isLoading,
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
           title: const Text('Daftar Akun'),
-          backgroundColor: AppColors.background,
+          backgroundColor: theme.scaffoldBackgroundColor,
         ),
         body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: _AnimatedPulseIcon(),
+          child: Stack(
+            children: [
+              Positioned(
+                top: -70,
+                left: -30,
+                child: _AuthBackdropBlob(
+                  size: 200,
+                  color: theme.colorScheme.primary.withValues(
+                    alpha: isDark ? 0.18 : 0.12,
                   ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Buat Akun Baru',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
+                ),
+              ),
+              Positioned(
+                top: 180,
+                right: -40,
+                child: _AuthBackdropBlob(
+                  size: 160,
+                  color: theme.colorScheme.secondary.withValues(
+                    alpha: isDark ? 0.16 : 0.10,
                   ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Lengkapi data diri Anda untuk melanjutkan.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 28),
+                ),
+              ),
+              SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Center(
+                        child: _AnimatedPulseIcon(),
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Buat Akun Baru',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: theme.textTheme.titleLarge?.color,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Lengkapi data diri Anda untuk melanjutkan.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: theme.hintColor,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: theme.cardTheme.color,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: theme.dividerColor.withValues(
+                              alpha: isDark ? 0.55 : 0.20,
+                            ),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(
+                                alpha: isDark ? 0.18 : 0.06,
+                              ),
+                              blurRadius: 24,
+                              offset: const Offset(0, 12),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
 
-                  // Error
-                  if (auth.errorMessage != null) ...[
-                    _ErrorBanner(message: auth.errorMessage!),
-                    const SizedBox(height: 16),
-                  ],
+                            // Error
+                            if (auth.errorMessage != null) ...[
+                              _ErrorBanner(message: auth.errorMessage!),
+                              const SizedBox(height: 16),
+                            ],
 
-                  // Pilih Penyakit
-                  _SectionLabel(label: 'Kondisi Kesehatan'),
-                  const SizedBox(height: 10),
-                  _DiseaseDropdown(
-                    value: _diseaseType,
-                    onChanged: (v) => setState(() => _diseaseType = v),
-                  ),
-                  const SizedBox(height: 20),
+                            // Pilih Penyakit
+                            _SectionLabel(label: 'Kondisi Kesehatan'),
+                            const SizedBox(height: 10),
+                            _DiseaseDropdown(
+                              value: _diseaseType,
+                              onChanged: (v) => setState(() => _diseaseType = v),
+                            ),
+                            const SizedBox(height: 20),
 
-                  // Data Diri
-                  _SectionLabel(label: 'Data Diri'),
-                  const SizedBox(height: 10),
-                  CustomTextField(
-                    label: 'Nama Lengkap',
-                    controller: _nameCtrl,
-                    prefixIcon: const Icon(Icons.person_outline),
-                    validator: (v) =>
-                        v == null || v.isEmpty ? 'Nama wajib diisi' : null,
-                  ),
-                  const SizedBox(height: 14),
+                            // Data Diri
+                            _SectionLabel(label: 'Data Diri'),
+                            const SizedBox(height: 10),
+                            CustomTextField(
+                              label: 'Nama Lengkap',
+                              controller: _nameCtrl,
+                              prefixIcon: const Icon(Icons.person_outline),
+                              validator: (v) =>
+                                  v == null || v.isEmpty ? 'Nama wajib diisi' : null,
+                            ),
+                            const SizedBox(height: 14),
 
                   // Gender
                   _GenderSelector(
@@ -324,9 +371,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: Colors.orange.shade50,
+                        color: Colors.orange.withValues(
+                          alpha: theme.brightness == Brightness.dark
+                              ? 0.12
+                              : 0.08,
+                        ),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.orange.shade200),
+                        border: Border.all(
+                          color: Colors.orange.withValues(
+                            alpha: theme.brightness == Brightness.dark
+                                ? 0.35
+                                : 0.22,
+                          ),
+                        ),
                       ),
                       child: Row(
                         children: [
@@ -334,12 +391,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
+                                Text(
                                   'Apakah ada riwayat pembengkakan?',
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
-                                    color: AppColors.textPrimary,
+                                    color: theme.textTheme.bodyLarge?.color,
                                   ),
                                 ),
                                 const SizedBox(height: 6),
@@ -398,8 +455,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           vertical: 12,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          border: Border.all(color: AppColors.border),
+                          color: theme.cardTheme.color,
+                          border: Border.all(color: theme.dividerColor),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -408,11 +465,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
+                                Text(
                                   'Tanggal Mulai',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: AppColors.textSecondary,
+                                    color: theme.hintColor,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -423,16 +480,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           'id_ID',
                                         ).format(_hdStartDate!)
                                       : 'Pilih bulan & tahun',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
+                                    color: theme.textTheme.bodyLarge?.color,
                                   ),
                                 ),
                               ],
                             ),
-                            const Icon(
+                            Icon(
                               Icons.calendar_today_outlined,
-                              color: AppColors.primary,
+                              color: theme.colorScheme.primary,
                             ),
                           ],
                         ),
@@ -441,11 +499,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 14),
                     // (Tanggal berakhir dihapus sesuai requirement)
                     const SizedBox(height: 14),
-                    const Text(
+                    Text(
                       'Jadwal Dialisis (Bisa pilih lebih dari satu)',
                       style: TextStyle(
                         fontSize: 13,
-                        color: AppColors.textSecondary,
+                        color: theme.hintColor,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -471,11 +529,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             decoration: BoxDecoration(
                               color: isSelected
                                   ? AppColors.primary
-                                  : AppColors.surface,
+                                  : theme.cardTheme.color,
                               border: Border.all(
                                 color: isSelected
                                     ? AppColors.primary
-                                    : AppColors.border,
+                                    : theme.dividerColor,
                                 width: 2,
                               ),
                               borderRadius: BorderRadius.circular(8),
@@ -489,7 +547,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   fontWeight: FontWeight.w600,
                                   color: isSelected
                                       ? Colors.white
-                                      : AppColors.textPrimary,
+                                      : theme.textTheme.bodyLarge?.color,
                                 ),
                               ),
                             ),
@@ -623,34 +681,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 32),
-
-                  CustomButton(
-                    label: 'Daftar',
-                    onPressed: _onRegister,
-                    isLoading: auth.isLoading,
-                  ),
-                  const SizedBox(height: 20),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        'Sudah punya akun? ',
-                        style: TextStyle(color: AppColors.textSecondary),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pushReplacementNamed(
-                          context,
-                          AppConstants.routeLogin,
+                            const SizedBox(height: 32),
+                            CustomButton(
+                              label: 'Daftar',
+                              onPressed: _onRegister,
+                              isLoading: auth.isLoading,
+                            ),
+                          ],
                         ),
-                        child: const Text('Masuk'),
+                      ),
+                      const SizedBox(height: 20),
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 2,
+                        children: [
+                          Text(
+                            'Sudah punya akun?',
+                            style: TextStyle(color: theme.hintColor),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pushReplacementNamed(
+                              context,
+                              AppConstants.routeLogin,
+                            ),
+                            child: const Text('Masuk'),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),
@@ -767,12 +830,13 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Text(
       label,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w600,
-        color: AppColors.textSecondary,
+        color: theme.hintColor,
         letterSpacing: 0.5,
       ),
     );
@@ -786,20 +850,23 @@ class _DiseaseDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return DropdownButtonFormField<DiseaseType>(
       initialValue: value,
+      isExpanded: true,
+      menuMaxHeight: 320,
       decoration: InputDecoration(
         labelText: 'Kondisi Penyakit',
         prefixIcon: const Icon(Icons.medical_services_outlined),
         filled: true,
-        fillColor: AppColors.surface,
+        fillColor: theme.inputDecorationTheme.fillColor,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: theme.dividerColor),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: theme.dividerColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -807,7 +874,28 @@ class _DiseaseDropdown extends StatelessWidget {
         ),
       ),
       items: DiseaseType.values
-          .map((d) => DropdownMenuItem(value: d, child: Text(d.label)))
+          .map(
+            (d) => DropdownMenuItem(
+              value: d,
+              child: Text(
+                d.label,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ),
+          )
+          .toList(),
+      selectedItemBuilder: (context) => DiseaseType.values
+          .map(
+            (d) => Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                d.label,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ),
+          )
           .toList(),
       onChanged: onChanged,
       validator: (v) => v == null ? 'Pilih kondisi penyakit' : null,
@@ -821,6 +909,7 @@ class _UrinOutputField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -843,11 +932,15 @@ class _UrinOutputField extends StatelessWidget {
         const SizedBox(height: 6),
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 4),
+          child: SizedBox.shrink(),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Text(
             'Jumlah urin yang dikeluarkan dalam 24 jam terakhir. Digunakan untuk menghitung kebutuhan cairan harian. Kosongkan jika belum diketahui (default 300 ml).',
             style: TextStyle(
               fontSize: 11,
-              color: AppColors.textHint,
+              color: theme.hintColor,
               height: 1.5,
             ),
           ),
@@ -886,16 +979,27 @@ class _BmiInfo extends StatelessWidget {
         children: [
           Icon(Icons.calculate_outlined, color: _color, size: 20),
           const SizedBox(width: 10),
-          Text(
-            'IMT: ${bmi.toStringAsFixed(1)}',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: _color,
-              fontSize: 14,
+          Expanded(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 2,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(
+                  'IMT: ${bmi.toStringAsFixed(1)}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: _color,
+                    fontSize: 14,
+                  ),
+                ),
+                Text(
+                  '($_category)',
+                  style: TextStyle(color: _color, fontSize: 13),
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 8),
-          Text('($_category)', style: TextStyle(color: _color, fontSize: 13)),
         ],
       ),
     );
@@ -982,6 +1086,7 @@ class _GenderOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -989,7 +1094,7 @@ class _GenderOption extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected
               ? AppColors.primary.withValues(alpha: 0.08)
-              : AppColors.surface,
+              : theme.cardTheme.color,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: selected ? AppColors.primary : AppColors.border,
@@ -1002,15 +1107,21 @@ class _GenderOption extends StatelessWidget {
             Icon(
               icon,
               size: 20,
-              color: selected ? AppColors.primary : AppColors.textSecondary,
+              color: selected ? AppColors.primary : theme.hintColor,
             ),
             const SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-                color: selected ? AppColors.primary : AppColors.textSecondary,
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                  color: selected
+                      ? AppColors.primary
+                      : theme.textTheme.bodyLarge?.color,
+                ),
               ),
             ),
           ],
@@ -1029,6 +1140,7 @@ class _ActivityLevelSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: ActivityLevel.values.map((level) {
@@ -1041,7 +1153,7 @@ class _ActivityLevelSelector extends StatelessWidget {
             decoration: BoxDecoration(
               color: sel
                   ? AppColors.diabetesColor.withValues(alpha: 0.08)
-                  : AppColors.surface,
+                  : theme.cardTheme.color,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: sel ? AppColors.diabetesColor : AppColors.border,
@@ -1073,14 +1185,14 @@ class _ActivityLevelSelector extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                           color: sel
                               ? AppColors.diabetesColor
-                              : AppColors.textPrimary,
+                              : theme.textTheme.bodyLarge?.color,
                         ),
                       ),
                       Text(
                         level.description,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
-                          color: AppColors.textSecondary,
+                          color: theme.hintColor,
                         ),
                       ),
                     ],
@@ -1096,6 +1208,8 @@ class _ActivityLevelSelector extends StatelessWidget {
 }
 
 class _AnimatedPulseIcon extends StatefulWidget {
+  const _AnimatedPulseIcon();
+
   @override
   State<_AnimatedPulseIcon> createState() => _AnimatedPulseIconState();
 }
@@ -1124,19 +1238,44 @@ class _AnimatedPulseIconState extends State<_AnimatedPulseIcon> with SingleTicke
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return ScaleTransition(
       scale: _animation,
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AppColors.primary.withValues(alpha: 0.1),
+          color: theme.colorScheme.primary.withValues(alpha: 0.14),
           shape: BoxShape.circle,
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 2),
+          border: Border.all(
+            color: theme.colorScheme.primary.withValues(alpha: 0.24),
+            width: 2,
+          ),
         ),
-        child: const Icon(
+        child: Icon(
           Icons.monitor_heart_rounded,
           size: 40,
-          color: AppColors.primary,
+          color: theme.colorScheme.primary,
+        ),
+      ),
+    );
+  }
+}
+
+class _AuthBackdropBlob extends StatelessWidget {
+  final double size;
+  final Color color;
+
+  const _AuthBackdropBlob({required this.size, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [color, color.withValues(alpha: 0)],
         ),
       ),
     );

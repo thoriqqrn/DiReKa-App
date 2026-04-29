@@ -14,6 +14,8 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
+  static const Duration _authWaitTimeout = Duration(seconds: 10);
+
   late AnimationController _logoController;
   late AnimationController _textController;
   
@@ -114,16 +116,23 @@ class _SplashScreenState extends State<SplashScreen>
     final authProvider = context.read<AuthProvider>();
     final diseaseProvider = context.read<DiseaseProvider>();
 
-    // Tunggu auth state selesai
-    await Future.doWhile(() async {
+    // Tunggu auth state selesai, tapi jangan tanpa batas agar splash tidak freeze.
+    final startedAt = DateTime.now();
+    while (mounted &&
+        (authProvider.status == AuthStatus.initial ||
+            authProvider.status == AuthStatus.loading)) {
+      if (DateTime.now().difference(startedAt) >= _authWaitTimeout) {
+        break;
+      }
       await Future.delayed(const Duration(milliseconds: 100));
-      return authProvider.status == AuthStatus.initial ||
-          authProvider.status == AuthStatus.loading;
-    });
+    }
 
     if (!mounted) return;
 
-    if (authProvider.isAuthenticated) {
+    // Fallback: bila timeout tapi Firebase user sudah ada, lanjut ke main.
+    final isSignedIn =
+        authProvider.isAuthenticated || authProvider.firebaseUser != null;
+    if (isSignedIn) {
       Navigator.pushReplacementNamed(context, AppConstants.routeMain);
     } else if (diseaseProvider.selectedDisease == null) {
       Navigator.pushReplacementNamed(
