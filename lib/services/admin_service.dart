@@ -62,6 +62,7 @@ class EducationPost {
   final String id;
   final String title;
   final String content;
+  final String? contentType;
   final String? contentDelta;
   final String? sourceUrl;
   final String previewType;
@@ -72,12 +73,18 @@ class EducationPost {
     required this.id,
     required this.title,
     required this.content,
+    this.contentType,
     required this.contentDelta,
     required this.sourceUrl,
     required this.previewType,
     required this.createdAt,
     required this.createdBy,
   });
+
+  String get safeContentType {
+    final raw = (contentType ?? '').trim().toLowerCase();
+    return raw == 'booklet' ? 'booklet' : 'artikel';
+  }
 }
 
 class AdminService {
@@ -203,6 +210,7 @@ class AdminService {
   Future<void> uploadEducationPost({
     required String title,
     required String content,
+    String contentType = 'artikel',
     String? contentDelta,
     String? sourceUrl,
     String previewType = 'auto',
@@ -210,6 +218,7 @@ class AdminService {
     await _educationPosts.add({
       'title': title.trim(),
       'content': content.trim(),
+      'contentType': contentType,
       'contentDelta':
           (contentDelta == null || contentDelta.trim().isEmpty)
               ? null
@@ -227,6 +236,7 @@ class AdminService {
     required String postId,
     required String title,
     required String content,
+    String contentType = 'artikel',
     String? contentDelta,
     String? sourceUrl,
     String previewType = 'auto',
@@ -234,6 +244,7 @@ class AdminService {
     await _educationPosts.doc(postId).set({
       'title': title.trim(),
       'content': content.trim(),
+      'contentType': contentType,
       'contentDelta':
           (contentDelta == null || contentDelta.trim().isEmpty)
               ? null
@@ -262,6 +273,7 @@ class AdminService {
         id: doc.id,
         title: (data['title'] ?? '').toString(),
         content: (data['content'] ?? '').toString(),
+        contentType: (data['contentType'] ?? 'artikel').toString(),
         contentDelta: (data['contentDelta'] as String?)?.trim().isEmpty == true
             ? null
             : data['contentDelta'] as String?,

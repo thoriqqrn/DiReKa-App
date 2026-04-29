@@ -101,12 +101,29 @@ class _EducationScreenState extends State<EducationScreen> {
                             final post = _posts[index];
                             return _EducationPostCard(
                               post: post,
-                              onTap: () {
+                              onTap: () async {
+                                if (post.safeContentType == 'booklet') {
+                                  final preview = _resolvePreview(
+                                    post.sourceUrl,
+                                    post.previewType,
+                                  );
+                                  final targetUrl = preview?.url ?? post.sourceUrl;
+                                  if (targetUrl != null && targetUrl.trim().isNotEmpty) {
+                                    await _openPreviewUrl(targetUrl);
+                                  } else if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Link booklet belum tersedia.'),
+                                      ),
+                                    );
+                                  }
+                                  return;
+                                }
+                                if (!context.mounted) return;
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) =>
-                                        _EducationDetailPage(post: post),
+                                    builder: (_) => _EducationDetailPage(post: post),
                                   ),
                                 );
                               },
@@ -176,6 +193,30 @@ class _EducationPostCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
+                    ),
+                    SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: post.safeContentType == 'booklet'
+                                ? Colors.orange.withValues(alpha: 0.15)
+                                : AppColors.primary.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            post.safeContentType == 'booklet' ? 'Booklet' : 'Artikel',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: post.safeContentType == 'booklet'
+                                  ? Colors.orange.shade800
+                                  : AppColors.primary,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     SizedBox(height: 8),
                     Text(

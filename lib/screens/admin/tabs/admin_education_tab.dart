@@ -21,6 +21,7 @@ class _AdminEducationTabState extends State<AdminEducationTab> {
   final _titleCtrl = TextEditingController();
   final _contentCtrl = TextEditingController();
   final _sourceUrlCtrl = TextEditingController();
+  String _contentType = 'artikel';
 
   @override
   void initState() {
@@ -60,17 +61,25 @@ class _AdminEducationTabState extends State<AdminEducationTab> {
       );
       return;
     }
+    if (_contentType == 'booklet' && _sourceUrlCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Link booklet wajib diisi untuk tipe Booklet.'))
+      );
+      return;
+    }
 
     setState(() => _isUploading = true);
     try {
       await widget.adminService.uploadEducationPost(
         title: _titleCtrl.text.trim(),
         content: _contentCtrl.text.trim(),
+        contentType: _contentType,
         sourceUrl: _sourceUrlCtrl.text.trim(),
       );
       _titleCtrl.clear();
       _contentCtrl.clear();
       _sourceUrlCtrl.clear();
+      _contentType = 'artikel';
       await _loadData();
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal: $e')));
@@ -106,6 +115,7 @@ class _AdminEducationTabState extends State<AdminEducationTab> {
     final editTitleCtrl = TextEditingController(text: post.title);
     final editContentCtrl = TextEditingController(text: post.content);
     final editSourceUrlCtrl = TextEditingController(text: post.sourceUrl ?? '');
+    String editContentType = post.safeContentType;
     bool isSaving = false;
 
     showDialog(
@@ -120,12 +130,20 @@ class _AdminEducationTabState extends State<AdminEducationTab> {
                 TextButton(
                   onPressed: isSaving ? null : () async {
                     if (editTitleCtrl.text.isEmpty || editContentCtrl.text.isEmpty) return;
+                    if (editContentType == 'booklet' &&
+                        editSourceUrlCtrl.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        const SnackBar(content: Text('Link booklet wajib diisi untuk tipe Booklet.')),
+                      );
+                      return;
+                    }
                     setLocal(() => isSaving = true);
                     try {
                       await widget.adminService.updateEducationPost(
                         postId: post.id,
                         title: editTitleCtrl.text.trim(),
                         content: editContentCtrl.text.trim(),
+                        contentType: editContentType,
                         sourceUrl: editSourceUrlCtrl.text.trim(),
                       );
                       await _loadData();
@@ -157,9 +175,30 @@ class _AdminEducationTabState extends State<AdminEducationTab> {
                   decoration: const InputDecoration(labelText: 'Isi Konten', border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  initialValue: editContentType,
+                  decoration: const InputDecoration(
+                    labelText: 'Tipe Konten',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'artikel', child: Text('Artikel')),
+                    DropdownMenuItem(value: 'booklet', child: Text('Booklet')),
+                  ],
+                  onChanged: (v) {
+                    if (v == null) return;
+                    setLocal(() => editContentType = v);
+                  },
+                ),
+                const SizedBox(height: 16),
                 TextField(
                   controller: editSourceUrlCtrl,
-                  decoration: const InputDecoration(labelText: 'Link Sumber (URL)', border: OutlineInputBorder()),
+                  decoration: InputDecoration(
+                    labelText: editContentType == 'booklet'
+                        ? 'Link Booklet (URL/PDF) *'
+                        : 'Link Sumber (URL)',
+                    border: const OutlineInputBorder(),
+                  ),
                 ),
               ],
             ),
@@ -204,12 +243,30 @@ class _AdminEducationTabState extends State<AdminEducationTab> {
                   decoration: const InputDecoration(labelText: 'Isi Konten', border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: _contentType,
+                  decoration: const InputDecoration(
+                    labelText: 'Tipe Konten',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'artikel', child: Text('Artikel')),
+                    DropdownMenuItem(value: 'booklet', child: Text('Booklet')),
+                  ],
+                  onChanged: (v) {
+                    if (v == null) return;
+                    setState(() => _contentType = v);
+                  },
+                ),
+                const SizedBox(height: 12),
                 TextField(
                   controller: _sourceUrlCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Link Sumber (URL)', 
+                  decoration: InputDecoration(
+                    labelText: _contentType == 'booklet'
+                        ? 'Link Booklet (URL/PDF) *'
+                        : 'Link Sumber (URL)',
                     hintText: 'https://...',
-                    border: OutlineInputBorder()
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 20),
