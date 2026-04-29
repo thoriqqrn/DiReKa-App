@@ -3412,6 +3412,8 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                         ),
                       ),
                     if (_dmError != null) SizedBox(height: 14),
+                    _DiabetesCheckupTrendCards(records: _dmCheckupRecords),
+                    SizedBox(height: 16),
                     _DiabetesInsulinSummaryTable(
                       records: _dmInsulinRecords,
                       dateFmt: _dateFmt,
@@ -5562,6 +5564,351 @@ class _DiabetesCheckupTable extends StatelessWidget {
               ),
             ),
           ),
+    );
+  }
+}
+
+class _DiabetesCheckupTrendCards extends StatelessWidget {
+  final List<DiabetesHealthRecord> records;
+
+  const _DiabetesCheckupTrendCards({required this.records});
+
+  double? _readNumericResult(Map<String, dynamic> payload) {
+    final raw = (payload['result'] ?? '').toString().trim();
+    if (raw.isEmpty) return null;
+    final normalized = raw.replaceAll(',', '.');
+    final match = RegExp(r'-?\d+(?:\.\d+)?').firstMatch(normalized);
+    return match == null ? null : double.tryParse(match.group(0)!);
+  }
+
+  DateTime _dayOnly(DateTime value) => DateTime(value.year, value.month, value.day);
+
+  @override
+  Widget build(BuildContext context) {
+    final sorted = List<DiabetesHealthRecord>.from(records)
+      ..sort((a, b) => a.date.compareTo(b.date));
+
+    final Map<DateTime, double> gdpByDay = {};
+    final Map<DateTime, double> gdsByDay = {};
+    final Map<DateTime, double> hba1cByDay = {};
+
+    for (final r in sorted) {
+      final examId = (r.payload['examId'] ?? '').toString();
+      final value = _readNumericResult(r.payload);
+      if (value == null) continue;
+      final day = _dayOnly(r.date);
+      if (examId == 'gdp') gdpByDay[day] = value;
+      if (examId == 'gds') gdsByDay[day] = value;
+      if (examId == 'hba1c') hba1cByDay[day] = value;
+    }
+
+    final glucoseDates = {...gdpByDay.keys, ...gdsByDay.keys}.toList()
+      ..sort((a, b) => a.compareTo(b));
+    final visibleGlucoseDates = glucoseDates.length > 7
+        ? glucoseDates.sublist(glucoseDates.length - 7)
+        : glucoseDates;
+
+    final glucoseSpotsGdp = <FlSpot>[];
+    final glucoseSpotsGds = <FlSpot>[];
+    for (int i = 0; i < visibleGlucoseDates.length; i++) {
+      final day = visibleGlucoseDates[i];
+      final gdp = gdpByDay[day];
+      final gds = gdsByDay[day];
+      if (gdp != null) glucoseSpotsGdp.add(FlSpot(i.toDouble(), gdp));
+      if (gds != null) glucoseSpotsGds.add(FlSpot(i.toDouble(), gds));
+    }
+
+    final hba1cDates = hba1cByDay.keys.toList()..sort((a, b) => a.compareTo(b));
+    final visibleHba1cDates = hba1cDates.length > 7
+        ? hba1cDates.sublist(hba1cDates.length - 7)
+        : hba1cDates;
+    final hba1cSpots = <FlSpot>[];
+    for (int i = 0; i < visibleHba1cDates.length; i++) {
+      final day = visibleHba1cDates[i];
+      final value = hba1cByDay[day];
+      if (value != null) hba1cSpots.add(FlSpot(i.toDouble(), value));
+    }
+
+    return Column(
+      children: [
+        _GlucoseTrendCard(
+          dates: visibleGlucoseDates,
+          gdpSpots: glucoseSpotsGdp,
+          gdsSpots: glucoseSpotsGds,
+        ),
+        const SizedBox(height: 16),
+        _Hba1cTrendCard(
+          dates: visibleHba1cDates,
+          spots: hba1cSpots,
+        ),
+      ],
+    );
+  }
+}
+
+class _GlucoseTrendCard extends StatelessWidget {
+  final List<DateTime> dates;
+  final List<FlSpot> gdpSpots;
+  final List<FlSpot> gdsSpots;
+
+  const _GlucoseTrendCard({
+    required this.dates,
+    required this.gdpSpots,
+    required this.gdsSpots,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (gdpSpots.isEmpty && gdsSpots.isEmpty) {
+      return _TableCard(
+        title: 'Grafik Tren Gula Darah (GDP & GDS)',
+        child: const Padding(
+          padding: EdgeInsets.all(14),
+          child: _EmptyTableState(
+            message: 'Belum ada data GDP/GDS untuk ditampilkan.',
+          ),
+        ),
+      );
+    }
+
+    final allY = [
+      ...gdpSpots.map((e) => e.y),
+      ...gdsSpots.map((e) => e.y),
+    ];
+    final maxY = allY.reduce((a, b) => a > b ? a : b);
+    final safeMaxY = maxY <= 0 ? 10.0 : maxY * 1.15;
+    final interval = safeMaxY <= 50 ? 10.0 : (safeMaxY / 5).ceilToDouble();
+
+    return _TableCard(
+      title: 'Grafik Tren Gula Darah (GDP & GDS)',
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(10, 8, 10, 14),
+        child: Column(
+          children: [
+            SizedBox(
+              height: 190,
+              child: LineChart(
+                LineChartData(
+                  minX: 0,
+                  maxX: (dates.length - 1).toDouble(),
+                  minY: 0,
+                  maxY: safeMaxY,
+                  gridData: FlGridData(
+                    show: true,
+                    horizontalInterval: interval,
+                    drawVerticalLine: false,
+                    getDrawingHorizontalLine: (value) => FlLine(
+                      color: Theme.of(context).dividerColor.withValues(alpha: 0.25),
+                      strokeWidth: 0.8,
+                    ),
+                  ),
+                  titlesData: FlTitlesData(
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 34,
+                        interval: interval,
+                        getTitlesWidget: (value, meta) => Text(
+                          value.toInt().toString(),
+                          style: TextStyle(fontSize: 10, color: Theme.of(context).hintColor),
+                        ),
+                      ),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 28,
+                        getTitlesWidget: (value, meta) {
+                          final idx = value.toInt();
+                          if (idx < 0 || idx >= dates.length) return const SizedBox.shrink();
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Text(
+                              DateFormat('d/M').format(dates[idx]),
+                              style: TextStyle(fontSize: 10, color: Theme.of(context).hintColor),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  borderData: FlBorderData(
+                    show: true,
+                    border: Border(
+                      left: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.3)),
+                      bottom: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.3)),
+                    ),
+                  ),
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: gdpSpots,
+                      isCurved: true,
+                      color: Colors.blue.shade600,
+                      barWidth: 2.4,
+                      dotData: FlDotData(show: true),
+                    ),
+                    LineChartBarData(
+                      spots: gdsSpots,
+                      isCurved: true,
+                      color: Colors.orange.shade700,
+                      barWidth: 2.4,
+                      dotData: FlDotData(show: true),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _LegendDot(color: Colors.blue.shade600, label: 'GDP'),
+                const SizedBox(width: 16),
+                _LegendDot(color: Colors.orange.shade700, label: 'GDS'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Hba1cTrendCard extends StatelessWidget {
+  final List<DateTime> dates;
+  final List<FlSpot> spots;
+
+  const _Hba1cTrendCard({required this.dates, required this.spots});
+
+  @override
+  Widget build(BuildContext context) {
+    if (spots.isEmpty) {
+      return _TableCard(
+        title: 'Grafik Tren HbA1c',
+        child: const Padding(
+          padding: EdgeInsets.all(14),
+          child: _EmptyTableState(
+            message: 'Belum ada data HbA1c untuk ditampilkan.',
+          ),
+        ),
+      );
+    }
+
+    final minPoint = spots.map((e) => e.y).reduce((a, b) => a < b ? a : b);
+    final maxPoint = spots.map((e) => e.y).reduce((a, b) => a > b ? a : b);
+    final safeMinY = (minPoint - 1.0).clamp(0.0, 20.0);
+    final safeMaxY = (maxPoint + 1.0).clamp(3.0, 25.0);
+    final interval = ((safeMaxY - safeMinY) / 4).clamp(0.5, 5.0);
+
+    return _TableCard(
+      title: 'Grafik Tren HbA1c',
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(10, 8, 10, 14),
+        child: SizedBox(
+          height: 190,
+          child: LineChart(
+            LineChartData(
+              minX: 0,
+              maxX: (dates.length - 1).toDouble(),
+              minY: safeMinY.toDouble(),
+              maxY: safeMaxY.toDouble(),
+              gridData: FlGridData(
+                show: true,
+                horizontalInterval: interval.toDouble(),
+                drawVerticalLine: false,
+                getDrawingHorizontalLine: (value) => FlLine(
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.25),
+                  strokeWidth: 0.8,
+                ),
+              ),
+              titlesData: FlTitlesData(
+                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 34,
+                    interval: interval.toDouble(),
+                    getTitlesWidget: (value, meta) => Text(
+                      value.toStringAsFixed(1),
+                      style: TextStyle(fontSize: 10, color: Theme.of(context).hintColor),
+                    ),
+                  ),
+                ),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 28,
+                    getTitlesWidget: (value, meta) {
+                      final idx = value.toInt();
+                      if (idx < 0 || idx >= dates.length) return const SizedBox.shrink();
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text(
+                          DateFormat('d/M').format(dates[idx]),
+                          style: TextStyle(fontSize: 10, color: Theme.of(context).hintColor),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              borderData: FlBorderData(
+                show: true,
+                border: Border(
+                  left: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.3)),
+                  bottom: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.3)),
+                ),
+              ),
+              lineBarsData: [
+                LineChartBarData(
+                  spots: spots,
+                  isCurved: true,
+                  color: Colors.green.shade600,
+                  barWidth: 2.6,
+                  dotData: FlDotData(show: true),
+                  belowBarData: BarAreaData(
+                    show: true,
+                    color: Colors.green.shade600.withValues(alpha: 0.08),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LegendDot extends StatelessWidget {
+  final Color color;
+  final String label;
+
+  const _LegendDot({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).textTheme.bodyMedium?.color,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 }
