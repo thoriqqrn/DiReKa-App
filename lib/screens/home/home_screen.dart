@@ -51,7 +51,11 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
 
           if (auth.isAuthenticated && auth.currentUser != null) ...[
-            DayStreakCard(user: auth.currentUser!),
+            DayStreakCard(
+              user: auth.currentUser!,
+              onInputFood: () => widget.onNavigateToTab?.call(1),
+              onInputHealth: () => widget.onNavigateToTab?.call(2),
+            ),
             const SizedBox(height: 20),
           ],
           if (!auth.isAuthenticated) ...[

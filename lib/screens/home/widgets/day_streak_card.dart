@@ -4,7 +4,14 @@ import '../../../models/user_model.dart';
 
 class DayStreakCard extends StatelessWidget {
   final UserModel user;
-  const DayStreakCard({super.key, required this.user});
+  final VoidCallback? onInputFood;
+  final VoidCallback? onInputHealth;
+  const DayStreakCard({
+    super.key,
+    required this.user,
+    this.onInputFood,
+    this.onInputHealth,
+  });
 
   int _getDaysInMonth(int year, int month) {
     return DateTime(year, month + 1, 0).day;
@@ -26,6 +33,8 @@ class DayStreakCard extends StatelessWidget {
     // Generate semua hari dalam bulan ini
     final daysInMonth = _getDaysInMonth(currentYear, currentMonth);
     final firstDayOfWeek = DateTime(currentYear, currentMonth, 1).weekday;
+    final hasStreak = user.currentStreak > 0;
+    final hasInputToday = thisMonthLogins.any((d) => d.day == now.day);
 
     return Container(
       width: double.infinity,
@@ -34,7 +43,7 @@ class DayStreakCard extends StatelessWidget {
         gradient: LinearGradient(
           colors: isDark 
               ? [const Color(0xFF0D1B3E), const Color(0xFF000621)]
-              : [const Color(0xFF87CEEB), const Color(0xFFB0E0E6)],
+              : [const Color(0xFF0B3C8A), const Color(0xFF1E5BB8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -76,28 +85,44 @@ class DayStreakCard extends StatelessWidget {
                       color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 8,
                     ),
+                    if (hasInputToday)
+                      BoxShadow(
+                        color: const Color(0xFFFF6D00).withValues(alpha: 0.35),
+                        blurRadius: 14,
+                        spreadRadius: 0.2,
+                        offset: const Offset(0, 2),
+                      ),
                   ],
                 ),
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const Text('🔥', style: TextStyle(fontSize: 24)),
+                    Text(
+                      hasStreak ? '🔥' : '⚪',
+                      style: TextStyle(
+                        fontSize: 24,
+                        color: hasStreak ? null : Colors.grey.shade500,
+                      ),
+                    ),
                     const SizedBox(width: 8),
                     Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const Text(
+                        Text(
                           'Hari',
                           style: TextStyle(
                             fontSize: 11,
-                            color: Colors.white70,
+                            color: Colors.grey.shade600,
                           ),
                         ),
                         Text(
                           '${user.currentStreak}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: Colors.redAccent,
+                            color: hasStreak
+                                ? Colors.redAccent
+                                : Colors.grey.shade500,
                           ),
                         ),
                       ],
@@ -136,17 +161,30 @@ class DayStreakCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // Motivation text
-          Text(
-            user.currentStreak > 0
-                ? 'Jaga api tetap menyala! 🔥'
-                : 'Mulai sekarang! Konsistensi adalah kunci kesuksesan.',
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-              height: 1.4,
-            ),
+          // Motivation + Quick Actions
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              const Text(
+                'Tambah catatan untuk menyalakan api',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                  height: 1.4,
+                ),
+              ),
+              _quickActionButton(
+                label: 'Input Makanan',
+                onTap: onInputFood,
+              ),
+              _quickActionButton(
+                label: 'Input Health Track',
+                onTap: onInputHealth,
+              ),
+            ],
           ),
           const SizedBox(height: 16),
 
@@ -171,7 +209,9 @@ class DayStreakCard extends StatelessWidget {
                     width: 12,
                     height: 12,
                     decoration: BoxDecoration(
-                      color: Colors.red.withValues(alpha: 0.5),
+                      color: hasStreak
+                          ? Colors.red.withValues(alpha: 0.5)
+                          : Colors.grey.withValues(alpha: 0.55),
                       borderRadius: BorderRadius.circular(3),
                     ),
                   ),
@@ -197,6 +237,32 @@ class DayStreakCard extends StatelessWidget {
           // Daily reward badges
           _RewardBadges(currentMonth: currentMonth, loginDays: thisMonthLogins),
         ],
+      ),
+    );
+  }
+
+  Widget _quickActionButton({
+    required String label,
+    VoidCallback? onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(999),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.16),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
       ),
     );
   }

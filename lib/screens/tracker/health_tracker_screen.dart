@@ -36,10 +36,6 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     'Bersepeda',
     'Berenang',
     'Jogging/Lari',
-    'Memasak',
-    'Pekerjaan rumah tangga',
-    'Berkebun',
-    'Lainnya',
   ];
   static final List<String> _activityComplaintOptions = [
     'Normal',
@@ -498,6 +494,8 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   }
 
   Future<void> _showDmInputTypeSheet() async {
+    final usesInsulinTherapy =
+        context.read<AuthProvider>().currentUser?.usesInsulinTherapy ?? false;
     final type = await showModalBottomSheet<DiabetesInputType>(
       context: context,
       shape: RoundedRectangleBorder(
@@ -523,7 +521,13 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               SizedBox(height: 8),
-              ...DiabetesInputType.values.map(
+              ...DiabetesInputType.values
+                  .where(
+                    (t) =>
+                        usesInsulinTherapy ||
+                        t != DiabetesInputType.insulin,
+                  )
+                  .map(
                 (t) => ListTile(
                   leading: CircleAvatar(
                     backgroundColor: AppColors.diabetesColor.withValues(alpha: 0.12),
@@ -548,6 +552,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
         record = await _showDiabetesCheckupDialog();
         break;
       case DiabetesInputType.insulin:
+        if (!usesInsulinTherapy) break;
         record = await _showInsulinAnalysisDialog();
         break;
       case DiabetesInputType.aktivitas:
@@ -2010,7 +2015,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     String activity = (payload['activityName'] ?? _activityOptions.first).toString();
     // Ensure the initial value exists in options to prevent DropdownButton error
     if (!_activityOptions.contains(activity)) {
-      activity = 'Lainnya';
+      activity = _activityOptions.first;
     }
 
     String complaint = (payload['complaint'] ?? _activityComplaintOptions.first).toString();
@@ -3578,6 +3583,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
             if (_isDmLoading) {
               return Center(child: CircularProgressIndicator());
             }
+            final usesInsulinTherapy = auth.currentUser?.usesInsulinTherapy ?? false;
 
             return RefreshIndicator(
               onRefresh: _loadDmRecords,
@@ -3614,15 +3620,17 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       ),
                     if (_dmError != null) SizedBox(height: 14),
                     _DiabetesCheckupTrendCards(records: _dmCheckupRecords),
-                    SizedBox(height: 16),
-                    _DiabetesInsulinSummaryTable(
-                      records: _dmInsulinRecords,
-                      dateFmt: _dateFmt,
-                      uid: _uid,
-                      onDataChanged: _loadDmRecords,
-                      onEdit: _editDmRecord,
-                      onDelete: _deleteDmRecord,
-                    ),
+                    if (usesInsulinTherapy) ...[
+                      SizedBox(height: 16),
+                      _DiabetesInsulinSummaryTable(
+                        records: _dmInsulinRecords,
+                        dateFmt: _dateFmt,
+                        uid: _uid,
+                        onDataChanged: _loadDmRecords,
+                        onEdit: _editDmRecord,
+                        onDelete: _deleteDmRecord,
+                      ),
+                    ],
                     SizedBox(height: 16),
                     // Activity Gauge for Diabetes
                     () {
@@ -3682,8 +3690,10 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                           ),
                       SizedBox(height: 16),
                       _NormalValuesButtonCard(onTap: () => _showNormalValuesDialog(DiseaseType.type2DiabetesMellitus)),
-                      SizedBox(height: 16),
-                      _InsulinGuideButtonCard(onTap: _showInsulinGuideDialog),
+                      if (usesInsulinTherapy) ...[
+                        SizedBox(height: 16),
+                        _InsulinGuideButtonCard(onTap: _showInsulinGuideDialog),
+                      ],
                     ],
                   ),
                 ),

@@ -54,8 +54,6 @@ class AuthProvider extends ChangeNotifier {
           notifyListeners();
 
           unawaited(_postLoginBootstrap());
-          // Update day streak saat user login
-          unawaited(_updateDayStreak());
         } else {
           await _userModelSubscription?.cancel();
           _userModelSubscription = null;
@@ -114,60 +112,50 @@ class AuthProvider extends ChangeNotifier {
     });
   }
 
-  /// Update day streak: increment jika login hari ini, reset jika kemarin tidak login
+  /// Update streak hanya saat ada aktivitas input (makanan/health).
+  /// Tidak otomatis bertambah saat login aplikasi.
+  /// Tidak melakukan reset otomatis saat ada hari yang terlewat.
   Future<void> _updateDayStreak() async {
     if (_userModel == null) return;
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final lastLogin = _userModel!.lastLoginDate;
-    final yesterday = today.subtract(const Duration(days: 1));
+    final lastActivityDate = _userModel!.lastLoginDate;
 
     int newStreak = _userModel!.currentStreak;
     int newLongest = _userModel!.longestStreak;
     List<DateTime> updatedLogins = [..._userModel!.loginDates];
 
-    // Cek apakah sudah login hari ini
-    final hasLoginToday =
-        lastLogin != null &&
-        lastLogin.year == today.year &&
-        lastLogin.month == today.month &&
-        lastLogin.day == today.day;
+    // Cegah duplikasi: aktivitas di hari yang sama tidak menambah streak lagi.
+    final hasActivityToday =
+        lastActivityDate != null &&
+        lastActivityDate.year == today.year &&
+        lastActivityDate.month == today.month &&
+        lastActivityDate.day == today.day;
 
-    if (!hasLoginToday) {
-      // Belum login hari ini
-      if (lastLogin != null &&
-          lastLogin.year == yesterday.year &&
-          lastLogin.month == yesterday.month &&
-          lastLogin.day == yesterday.day) {
-        // Login kemarin → increment streak
-        newStreak++;
-      } else {
-        // Tidak login kemarin atau pertama kali → reset streak ke 1
-        newStreak = 1;
-      }
+    if (hasActivityToday) return;
 
-      // Update longest streak jika perlu
-      if (newStreak > newLongest) {
-        newLongest = newStreak;
-      }
+    // Tambah streak satu kali saat ada input di hari ini.
+    newStreak = (newStreak <= 0) ? 1 : newStreak + 1;
 
-      // Tambah hari ini ke loginDates
-      updatedLogins.add(today);
-
-      // Update userModel
-      final updated = _userModel!.copyWith(
-        currentStreak: newStreak,
-        longestStreak: newLongest,
-        lastLoginDate: today,
-        loginDates: updatedLogins,
-      );
-
-      // Simpan ke Firestore
-      await _userService.updateUser(updated);
-      _userModel = updated;
-      notifyListeners();
+    // Update longest streak jika perlu.
+    if (newStreak > newLongest) {
+      newLongest = newStreak;
     }
+
+    // Simpan tanggal aktivitas harian untuk kalender streak.
+    updatedLogins.add(today);
+
+    final updated = _userModel!.copyWith(
+      currentStreak: newStreak,
+      longestStreak: newLongest,
+      lastLoginDate: today,
+      loginDates: updatedLogins,
+    );
+
+    await _userService.updateUser(updated);
+    _userModel = updated;
+    notifyListeners();
   }
 
   Future<bool> login({required String email, required String password}) async {

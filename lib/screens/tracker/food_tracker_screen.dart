@@ -145,11 +145,17 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
   }
 
   Future<void> _loadEntries() async {
+    await _loadEntriesInternal(showFullScreenLoading: true);
+  }
+
+  Future<void> _loadEntriesInternal({required bool showFullScreenLoading}) async {
     if (_uid.isEmpty) {
       setState(() => _isLoading = false);
       return;
     }
-    setState(() => _isLoading = true);
+    if (showFullScreenLoading) {
+      setState(() => _isLoading = true);
+    }
     try {
       final entries = await FoodLogService.getEntries(_uid, _selectedDate);
       if (mounted) setState(() => _entries = entries);
@@ -160,7 +166,7 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
         setState(() => _entries = []);
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (showFullScreenLoading && mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -168,7 +174,8 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
     final newDate = _selectedDate.add(Duration(days: days));
     if (newDate.isBefore(DateTime.now().add(const Duration(days: 1)))) {
       setState(() => _selectedDate = newDate);
-      _loadEntries();
+      // Jangan tampilkan full-screen loading saat ganti tanggal agar posisi scroll tidak reset.
+      _loadEntriesInternal(showFullScreenLoading: false);
     }
   }
 
@@ -566,6 +573,8 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
                               _DMDailyMealTable(
                                 entriesByMeal: _groupEntriesByMeal(_entries),
                                 needs: needs,
+                                onEditEntry: _editEntry,
+                                onDeleteEntry: _deleteEntry,
                               ),
                             ]
                             // 3. Other patients: Show nutrition summary
@@ -579,11 +588,13 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
                           ] else
                             const _NoFormulaCard(),
                           const SizedBox(height: 16),
-                          _FoodListSection(
-                            entries: _entries,
-                            onDelete: _deleteEntry,
-                            onEdit: _editEntry,
-                          ),
+                          if (auth.currentUser?.diseaseType !=
+                              DiseaseType.type2DiabetesMellitus)
+                            _FoodListSection(
+                              entries: _entries,
+                              onDelete: _deleteEntry,
+                              onEdit: _editEntry,
+                            ),
                         ],
                       ),
                     ),
@@ -655,13 +666,14 @@ class _DateHeader extends StatelessWidget {
 
     return Container(
       color: theme.cardTheme.color,
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: Row(
         children: [
-          IconButton(
-            onPressed: onPrev,
-            icon: const Icon(Icons.chevron_left),
-            color: theme.textTheme.bodyLarge?.color,
+          _navCircleButton(
+            context: context,
+            onTap: onPrev,
+            icon: Icons.chevron_left,
+            fillColor: const Color(0xFF64B5F6).withValues(alpha: 0.52), // light blue transparent
           ),
           Expanded(
             child: Text(
@@ -674,12 +686,49 @@ class _DateHeader extends StatelessWidget {
               ),
             ),
           ),
-          IconButton(
-            onPressed: canGoNext ? onNext : null,
-            icon: const Icon(Icons.chevron_right),
-            color: canGoNext ? theme.textTheme.bodyLarge?.color : theme.hintColor,
+          _navCircleButton(
+            context: context,
+            onTap: canGoNext ? onNext : null,
+            icon: Icons.chevron_right,
+            fillColor: canGoNext
+                ? const Color(0xFF64B5F6).withValues(alpha: 0.52) // light blue transparent
+                : const Color(0xFFE5EAF1), // light gray when disabled
+            iconColor: canGoNext ? Colors.white : const Color(0xFF9AA4B2),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _navCircleButton({
+    required BuildContext context,
+    required VoidCallback? onTap,
+    required IconData icon,
+    required Color fillColor,
+    Color? iconColor,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(999),
+      child: Container(
+        width: 30,
+        height: 30,
+        decoration: BoxDecoration(
+          color: fillColor,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.18),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Icon(
+          icon,
+          color: iconColor ?? Colors.white,
+          size: 18,
+        ),
       ),
     );
   }
@@ -2960,8 +3009,15 @@ class _PiePainter extends CustomPainter {
 class _DMDailyMealTable extends StatelessWidget {
   final Map<MealType, List<FoodLogEntry>> entriesByMeal;
   final NutritionNeeds needs;
+  final Future<void> Function(FoodLogEntry) onEditEntry;
+  final Future<void> Function(FoodLogEntry) onDeleteEntry;
 
-  const _DMDailyMealTable({required this.entriesByMeal, required this.needs});
+  const _DMDailyMealTable({
+    required this.entriesByMeal,
+    required this.needs,
+    required this.onEditEntry,
+    required this.onDeleteEntry,
+  });
 
   // DM meal distribution
   static const List<MealType> _dmMealOrder = [
@@ -3043,6 +3099,8 @@ class _DMDailyMealTable extends StatelessWidget {
             mealType: mealType,
             entries: entriesByMeal[mealType] ?? [],
             totalNeeds: needs,
+            onEditEntry: onEditEntry,
+            onDeleteEntry: onDeleteEntry,
             getStatusColor: _getStatusColor,
             formatPercentage: _formatPercentage,
             calculateMealTotals: _calculateMealTotals,
@@ -3056,6 +3114,8 @@ class _MealTableSection extends StatelessWidget {
   final MealType mealType;
   final List<FoodLogEntry> entries;
   final NutritionNeeds totalNeeds;
+  final Future<void> Function(FoodLogEntry) onEditEntry;
+  final Future<void> Function(FoodLogEntry) onDeleteEntry;
   final Color Function(double) getStatusColor;
   final String Function(double) formatPercentage;
   final Map<String, double> Function(List<FoodLogEntry>) calculateMealTotals;
@@ -3064,6 +3124,8 @@ class _MealTableSection extends StatelessWidget {
     required this.mealType,
     required this.entries,
     required this.totalNeeds,
+    required this.onEditEntry,
+    required this.onDeleteEntry,
     required this.getStatusColor,
     required this.formatPercentage,
     required this.calculateMealTotals,
@@ -3134,20 +3196,49 @@ class _MealTableSection extends StatelessWidget {
 
   Widget _buildMealHeader(BuildContext context, double ratio, Color statusColor, {bool isEnlarged = false}) {
     final theme = Theme.of(context);
-    final actionIconColor = theme.brightness == Brightness.dark
-        ? theme.colorScheme.onSurface
-        : theme.primaryColor;
-    return Container(
-      padding: EdgeInsets.all(isEnlarged ? 16 : 12),
-      decoration: BoxDecoration(
-        color: statusColor.withValues(alpha: 0.1),
-        borderRadius: isEnlarged 
-          ? BorderRadius.circular(16)
-          : const BorderRadius.only(topLeft: Radius.circular(12), topRight: Radius.circular(12)),
-      ),
+    if (isEnlarged) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: statusColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Text(mealType.emoji, style: const TextStyle(fontSize: 28)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    mealType.label,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: theme.textTheme.titleMedium?.color,
+                    ),
+                  ),
+                  Text(
+                    '${(mealType.dmCaloriePercentage * 100).toStringAsFixed(0)}% dari kebutuhan harian',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: theme.hintColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.all(12),
       child: Row(
         children: [
-          Text(mealType.emoji, style: TextStyle(fontSize: isEnlarged ? 28 : 20)),
+          Text(mealType.emoji, style: const TextStyle(fontSize: 20)),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -3157,26 +3248,20 @@ class _MealTableSection extends StatelessWidget {
                   mealType.label,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: isEnlarged ? 18 : 14,
+                    fontSize: 14,
                     color: theme.textTheme.titleMedium?.color,
                   ),
                 ),
                 Text(
                   '${(mealType.dmCaloriePercentage * 100).toStringAsFixed(0)}% dari kebutuhan harian',
                   style: TextStyle(
-                    fontSize: isEnlarged ? 14 : 12,
+                    fontSize: 12,
                     color: theme.hintColor,
                   ),
                 ),
               ],
             ),
           ),
-          if (!isEnlarged) ...[
-            IconButton(
-              icon: Icon(Icons.fullscreen, size: 24, color: actionIconColor),
-              onPressed: () => _showEnlargedMealTable(context),
-            ),
-          ],
         ],
       ),
     );
@@ -3192,6 +3277,7 @@ class _MealTableSection extends StatelessWidget {
       4: const FlexColumnWidth(1),
       5: const FlexColumnWidth(1),
       6: const FlexColumnWidth(1),
+      7: const FlexColumnWidth(0.9),
     };
 
     return Column(
@@ -3212,6 +3298,7 @@ class _MealTableSection extends StatelessWidget {
                 _tableHeaderCell(context, 'Karbo', isEnlarged: isEnlarged),
                 _tableHeaderCell(context, 'Serat', isEnlarged: isEnlarged),
                 _tableHeaderCell(context, 'Berat', isEnlarged: isEnlarged),
+                _tableHeaderCell(context, 'Aksi', isEnlarged: isEnlarged),
               ],
             ),
           ],
@@ -3235,6 +3322,7 @@ class _MealTableSection extends StatelessWidget {
                     _tableDataCell(context, entry.karbohidrat.toStringAsFixed(1), isEnlarged: isEnlarged),
                     _tableDataCell(context, entry.serat.toStringAsFixed(1), isEnlarged: isEnlarged),
                     _tableDataCell(context, entry.grams.toStringAsFixed(0), isEnlarged: isEnlarged),
+                    _tableActionCell(context, entry, isEnlarged: isEnlarged),
                   ],
                 ),
             ],
@@ -3348,31 +3436,138 @@ class _MealTableSection extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5), width: 1),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildMealHeader(context, totalFulfillmentRatio, statusColor),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-            child: _buildFoodTable(context),
+      child: Theme(
+        data: theme.copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: false,
+          tilePadding: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
-          Divider(height: 1, color: theme.dividerColor),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: _buildTotalsTable(
-              context,
-              actualEnergi, actualProtein, actualLemak, actualKarbo, actualSerat,
-              targetEnergi, targetProtein, targetLemak, targetKarbo, targetSerat,
-              percentage, statusColor,
-              fulfillmentRatio: totalFulfillmentRatio,
+          collapsedShape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          childrenPadding: EdgeInsets.zero,
+          collapsedBackgroundColor: statusColor.withValues(alpha: 0.1),
+          backgroundColor: statusColor.withValues(alpha: 0.1),
+          trailing: Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.14),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: statusColor.withValues(alpha: 0.30),
+                      width: 1,
+                    ),
+                  ),
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    splashRadius: 16,
+                    tooltip: 'Perbesar',
+                    icon: Icon(
+                      Icons.fullscreen,
+                      size: 16,
+                      color: statusColor,
+                    ),
+                    onPressed: () => _showEnlargedMealTable(context),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.18),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: statusColor.withValues(alpha: 0.35),
+                      width: 1,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 20,
+                    color: statusColor,
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+          title: _buildMealHeader(context, totalFulfillmentRatio, statusColor),
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+              child: _buildFoodTable(context),
+            ),
+            Divider(height: 1, color: theme.dividerColor),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: _buildTotalsTable(
+                context,
+                actualEnergi, actualProtein, actualLemak, actualKarbo, actualSerat,
+                targetEnergi, targetProtein, targetLemak, targetKarbo, targetSerat,
+                percentage, statusColor,
+                fulfillmentRatio: totalFulfillmentRatio,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _tableActionCell(
+    BuildContext context,
+    FoodLogEntry entry, {
+    bool isEnlarged = false,
+  }) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+      child: Center(
+        child: SizedBox(
+          width: isEnlarged ? 24 : 20,
+          height: isEnlarged ? 24 : 20,
+          child: PopupMenuButton<String>(
+          tooltip: 'Aksi',
+          icon: Icon(
+            Icons.more_vert,
+            size: isEnlarged ? 16 : 14,
+            color: theme.hintColor,
+          ),
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 140),
+          onSelected: (value) {
+            if (value == 'edit') onEditEntry(entry);
+            if (value == 'delete') onDeleteEntry(entry);
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem<String>(
+              value: 'edit',
+              child: Text('Edit'),
+            ),
+            PopupMenuItem<String>(
+              value: 'delete',
+              child: Text(
+                'Hapus',
+                style: TextStyle(color: theme.colorScheme.error),
+              ),
+            ),
+          ],
+          ),
+        ),
       ),
     );
   }
