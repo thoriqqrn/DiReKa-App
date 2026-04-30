@@ -630,7 +630,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
         record = await _showHeartActivityDialog();
         break;
       case HeartInputType.beratBadan:
-        // Tidak dipakai lagi pada alur input baru.
+        // Input BB terpisah dimatikan. BB diambil dari form pemeriksaan.
         return;
     }
 
@@ -3380,11 +3380,18 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
 
   List<HeartHealthRecord> get _heartWeightRecords {
     final list = _heartRecords.where((e) {
-      if (e.type == HeartInputType.beratBadan) return true; // legacy
-      if (e.type != HeartInputType.gejala) return false;
-      final raw = e.payload['bb'];
-      if (raw is num) return raw.toDouble() > 0;
-      return double.tryParse((raw ?? '').toString()) != null;
+      if (e.type != HeartInputType.pemeriksaan) {
+        return false;
+      }
+      final examId = (e.payload['examId'] ?? '').toString().toLowerCase();
+      final examName = (e.payload['exam'] ?? '').toString().toLowerCase();
+      final isWeightExam = examId == 'bb' ||
+          examName == 'berat badan' ||
+          examName.contains('berat badan');
+      if (!isWeightExam) return false;
+      final result = (e.payload['result'] ?? '').toString().trim();
+      final normalized = result.replaceAll(',', '.');
+      return double.tryParse(normalized) != null;
     }).toList();
     list.sort((a, b) => a.date.compareTo(b.date));
     return list;
@@ -4499,14 +4506,15 @@ class _HeartTrendCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dateFmt = DateFormat('d/M');
+    final weeklyRecords = records.length > 7
+        ? records.sublist(records.length - 7)
+        : records;
     final spots = <FlSpot>[];
     final idealSpots = <FlSpot>[];
-    for (var i = 0; i < records.length; i++) {
-      final p = records[i].payload;
-      final dynamic rawBb = p['bb'];
-      final double bb = (rawBb is num ? rawBb.toDouble() : null) ??
-          (double.tryParse((p['bb'] ?? '').toString()) ??
-              records[i].weight);
+    for (var i = 0; i < weeklyRecords.length; i++) {
+      final p = weeklyRecords[i].payload;
+      final result = (p['result'] ?? '').toString().trim().replaceAll(',', '.');
+      final double bb = double.tryParse(result) ?? 0;
       spots.add(FlSpot(i.toDouble(), bb));
       idealSpots.add(FlSpot(i.toDouble(), idealWeight));
     }
@@ -4525,7 +4533,7 @@ class _HeartTrendCard extends StatelessWidget {
       title: 'Trend BB Mingguan',
       child: SizedBox(
         height: 240,
-        child: records.isEmpty
+        child: weeklyRecords.isEmpty
             ? Center(
                 child: Text(
                   'Belum ada data berat badan.',
@@ -4557,10 +4565,10 @@ class _HeartTrendCard extends StatelessWidget {
                           showTitles: true,
                           getTitlesWidget: (value, meta) {
                             final i = value.toInt();
-                            if (i < 0 || i >= records.length) return SizedBox();
-                            if (records.length > 6 && i.isOdd) return SizedBox();
+                            if (i < 0 || i >= weeklyRecords.length) return SizedBox();
+                            if (weeklyRecords.length > 6 && i.isOdd) return SizedBox();
                             return Text(
-                              dateFmt.format(records[i].date),
+                              dateFmt.format(weeklyRecords[i].date),
                               style: TextStyle(fontSize: 9),
                             );
                           },
