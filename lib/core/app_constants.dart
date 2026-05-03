@@ -3,6 +3,8 @@ class AppConstants {
   static const String routeSplash = '/';
   static const String routeDiseaseSelection = '/disease-selection';
   static const String routeLogin = '/login';
+  static const String routeForgotPassword = '/forgot-password';
+  static const String routePasswordResetAction = '/password-reset-action';
   static const String routeRegister = '/register';
   static const String routeMain = '/main';
   static const String routeNotifications = '/notifications';
@@ -15,6 +17,11 @@ class AppConstants {
 
   // Firestore collection
   static const String colUsers = 'users';
+
+  // Password reset / email action handler
+  static const String passwordResetHandlerUrl = 'https://direka-app.web.app';
+  static const String passwordResetContinueUrl =
+      'https://direka-app.web.app/login';
 
   // SharedPrefs keys
   static const String prefDiseaseType = 'disease_type';

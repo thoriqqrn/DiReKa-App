@@ -42,6 +42,36 @@ class UserService {
     await _users.doc(user.uid).update(data);
   }
 
+  Future<UserModel?> getUserByEmail(String email) async {
+    final trimmed = email.trim();
+    if (trimmed.isEmpty) return null;
+
+    final direct = await _users
+        .where('email', isEqualTo: trimmed)
+        .limit(1)
+        .get(const GetOptions(source: Source.serverAndCache));
+    if (direct.docs.isNotEmpty) {
+      return UserModel.fromMap(
+        direct.docs.first.data() as Map<String, dynamic>,
+      );
+    }
+
+    final lowered = trimmed.toLowerCase();
+    if (lowered != trimmed) {
+      final fallback = await _users
+          .where('email', isEqualTo: lowered)
+          .limit(1)
+          .get(const GetOptions(source: Source.serverAndCache));
+      if (fallback.docs.isNotEmpty) {
+        return UserModel.fromMap(
+          fallback.docs.first.data() as Map<String, dynamic>,
+        );
+      }
+    }
+
+    return null;
+  }
+
   Stream<UserModel?> userStream(String uid) {
     return _users.doc(uid).snapshots().map((doc) {
       if (!doc.exists) return null;

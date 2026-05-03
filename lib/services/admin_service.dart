@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
 
 import '../core/app_constants.dart';
@@ -90,6 +91,8 @@ class EducationPost {
 class AdminService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFunctions _functions =
+      FirebaseFunctions.instanceFor(region: 'asia-southeast2');
 
   CollectionReference<Map<String, dynamic>> get _users =>
       _db.collection(AppConstants.colUsers);
@@ -303,6 +306,21 @@ class AdminService {
   /// Hapus akun user dari database
   Future<void> deleteUserAccount(String uid) async {
     await _users.doc(uid).delete();
+  }
+
+  /// Reset password user via Cloud Function (hanya untuk admin).
+  /// Cloud Function juga membuat audit log reset password.
+  Future<void> resetUserPassword({
+    required String targetUid,
+    required String newPassword,
+    String? reason,
+  }) async {
+    final callable = _functions.httpsCallable('adminResetUserPassword');
+    await callable.call({
+      'targetUid': targetUid,
+      'newPassword': newPassword,
+      'reason': (reason ?? 'Reset manual dari Admin App').trim(),
+    });
   }
 
   /// Stream realtime jumlah user

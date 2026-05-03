@@ -150,6 +150,61 @@ class AuthService {
     await _auth.sendPasswordResetEmail(email: email.trim());
   }
 
+  Future<void> sendPasswordResetEmailWithTemplate(String email) async {
+    await _auth.setLanguageCode('id');
+    await _auth.sendPasswordResetEmail(
+      email: email.trim(),
+      actionCodeSettings: ActionCodeSettings(
+        url: AppConstants.passwordResetContinueUrl,
+        handleCodeInApp: false,
+        androidPackageName: 'direka.app',
+        androidInstallApp: true,
+      ),
+    );
+  }
+
+  Future<String> verifyPasswordResetCode(String code) async {
+    return _auth.verifyPasswordResetCode(code);
+  }
+
+  Future<void> confirmPasswordReset({
+    required String code,
+    required String newPassword,
+  }) async {
+    await _auth.confirmPasswordReset(
+      code: code,
+      newPassword: newPassword,
+    );
+  }
+
+
+  Future<void> changeCurrentUserPassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw FirebaseAuthException(
+        code: 'user-not-found',
+        message: 'Pengguna tidak ditemukan.',
+      );
+    }
+    final email = user.email;
+    if (email == null || email.trim().isEmpty) {
+      throw FirebaseAuthException(
+        code: 'operation-not-allowed',
+        message: 'Akun ini tidak menggunakan login email/password.',
+      );
+    }
+
+    final credential = EmailAuthProvider.credential(
+      email: email.trim(),
+      password: currentPassword,
+    );
+    await user.reauthenticateWithCredential(credential);
+    await user.updatePassword(newPassword);
+  }
+
   Future<void> createFamilyLinkedAccount({
     required UserModel primaryUser,
     required String familyName,

@@ -305,19 +305,8 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _onLupaPassword() {
-    final email = _emailCtrl.text.trim();
-    if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Masukkan email terlebih dahulu')),
-      );
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Link reset kata sandi telah dikirim ke email Anda'),
-      ),
-    );
+  Future<void> _onLupaPassword() async {
+    await Navigator.pushNamed(context, AppConstants.routeForgotPassword);
   }
 }
 

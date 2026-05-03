@@ -6,6 +6,7 @@ import '../../models/disease_type.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/disease_provider.dart';
 import '../../services/app_notification_service.dart';
+import '../../widgets/custom_text_field.dart';
 import '../notifications/notification_info_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -206,6 +207,13 @@ class SettingsScreen extends StatelessWidget {
                         context,
                         AppConstants.routeEditProfile,
                       ),
+                    ),
+                    const Divider(height: 1),
+                    _SettingsTile(
+                      icon: Icons.password_outlined,
+                      label: 'Ubah Kata Sandi',
+                      subtitle: 'Perbarui kata sandi akun Anda',
+                      onTap: () => _showChangePasswordDialog(context),
                     ),
                     const Divider(height: 1),
                     _SettingsTile(
@@ -486,6 +494,111 @@ class SettingsScreen extends StatelessWidget {
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             child: const Text('Keluar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showChangePasswordDialog(BuildContext context) {
+    final currentController = TextEditingController();
+    final newController = TextEditingController();
+    final confirmController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Ubah Kata Sandi'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CustomTextField(
+                label: 'Kata sandi saat ini',
+                controller: currentController,
+                obscureText: true,
+                prefixIcon: const Icon(Icons.lock_outline),
+              ),
+              const SizedBox(height: 10),
+              CustomTextField(
+                label: 'Kata sandi baru',
+                controller: newController,
+                obscureText: true,
+                prefixIcon: const Icon(Icons.lock_reset_outlined),
+              ),
+              const SizedBox(height: 10),
+              CustomTextField(
+                label: 'Konfirmasi kata sandi baru',
+                controller: confirmController,
+                obscureText: true,
+                prefixIcon: const Icon(Icons.verified_user_outlined),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final currentPassword = currentController.text.trim();
+              final newPassword = newController.text.trim();
+              final confirmPassword = confirmController.text.trim();
+
+              if (currentPassword.isEmpty ||
+                  newPassword.isEmpty ||
+                  confirmPassword.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Semua kolom kata sandi wajib diisi.'),
+                  ),
+                );
+                return;
+              }
+              if (newPassword.length < 6) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Kata sandi baru minimal 6 karakter.'),
+                  ),
+                );
+                return;
+              }
+              if (newPassword != confirmPassword) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Konfirmasi kata sandi baru tidak cocok.'),
+                  ),
+                );
+                return;
+              }
+
+              final auth = context.read<AuthProvider>();
+              final success = await auth.changePassword(
+                currentPassword: currentPassword,
+                newPassword: newPassword,
+              );
+              if (!context.mounted) return;
+
+              if (success) {
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Kata sandi berhasil diperbarui.'),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      auth.errorMessage ?? 'Gagal mengubah kata sandi.',
+                    ),
+                  ),
+                );
+              }
+            },
+            child: const Text('Simpan'),
           ),
         ],
       ),

@@ -432,6 +432,90 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    _setLoading(true);
+    _clearError();
+    try {
+      await _authService.changeCurrentUserPassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
+      _setLoading(false);
+      return true;
+    } on FirebaseAuthException catch (e) {
+      _setError(_mapPasswordChangeError(e.code));
+      _setLoading(false);
+      return false;
+    } catch (_) {
+      _setError('Gagal mengubah kata sandi. Coba lagi.');
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  Future<bool> requestPasswordReset(String email) async {
+    _setLoading(true);
+    _clearError();
+    try {
+      await _authService.sendPasswordResetEmailWithTemplate(email.trim());
+      _setLoading(false);
+      return true;
+    } on FirebaseAuthException catch (e) {
+      _setError(_mapPasswordResetRequestError(e.code));
+      _setLoading(false);
+      return false;
+    } catch (_) {
+      _setError('Gagal mengirim link reset password. Coba lagi.');
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  Future<String?> verifyResetPasswordCode(String code) async {
+    _setLoading(true);
+    _clearError();
+    try {
+      final email = await _authService.verifyPasswordResetCode(code);
+      _setLoading(false);
+      return email;
+    } on FirebaseAuthException catch (e) {
+      _setError(_mapPasswordResetActionError(e.code));
+      _setLoading(false);
+      return null;
+    } catch (_) {
+      _setError('Link reset password tidak valid atau sudah kedaluwarsa.');
+      _setLoading(false);
+      return null;
+    }
+  }
+
+  Future<bool> confirmResetPassword({
+    required String code,
+    required String newPassword,
+  }) async {
+    _setLoading(true);
+    _clearError();
+    try {
+      await _authService.confirmPasswordReset(
+        code: code,
+        newPassword: newPassword,
+      );
+      _setLoading(false);
+      return true;
+    } on FirebaseAuthException catch (e) {
+      _setError(_mapPasswordResetActionError(e.code));
+      _setLoading(false);
+      return false;
+    } catch (_) {
+      _setError('Gagal menyimpan password baru. Coba lagi.');
+      _setLoading(false);
+      return false;
+    }
+  }
+
   @override
   void dispose() {
     _userModelSubscription?.cancel();
@@ -507,5 +591,55 @@ class AuthProvider extends ChangeNotifier {
     }
 
     return 'Login dengan Google gagal: $raw';
+  }
+
+  String _mapPasswordChangeError(String code) {
+    switch (code) {
+      case 'wrong-password':
+      case 'invalid-credential':
+        return 'Kata sandi saat ini tidak sesuai.';
+      case 'weak-password':
+        return 'Kata sandi baru terlalu lemah (minimal 6 karakter).';
+      case 'requires-recent-login':
+        return 'Sesi login sudah lama. Silakan login ulang lalu coba lagi.';
+      case 'operation-not-allowed':
+        return 'Akun ini tidak mendukung ubah password email/password.';
+      case 'user-not-found':
+        return 'Akun tidak ditemukan. Silakan login ulang.';
+      default:
+        return 'Gagal mengubah kata sandi. Coba lagi.';
+    }
+  }
+
+  String _mapPasswordResetRequestError(String code) {
+    switch (code) {
+      case 'invalid-email':
+        return 'Format email tidak valid.';
+      case 'too-many-requests':
+        return 'Terlalu banyak permintaan. Coba lagi beberapa saat lagi.';
+      case 'network-request-failed':
+        return 'Tidak ada koneksi internet.';
+      case 'user-not-found':
+        return 'Email tidak terdaftar.';
+      default:
+        return 'Gagal mengirim link reset password. Coba lagi.';
+    }
+  }
+
+  String _mapPasswordResetActionError(String code) {
+    switch (code) {
+      case 'expired-action-code':
+        return 'Link reset password sudah kedaluwarsa.';
+      case 'invalid-action-code':
+        return 'Link reset password tidak valid.';
+      case 'weak-password':
+        return 'Password baru terlalu lemah. Gunakan minimal 6 karakter.';
+      case 'user-disabled':
+        return 'Akun ini dinonaktifkan.';
+      case 'user-not-found':
+        return 'Email tidak terdaftar.';
+      default:
+        return 'Proses reset password gagal. Coba lagi.';
+    }
   }
 }

@@ -1,0 +1,123 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn() && (
+        request.auth.token.admin == true ||
+        request.auth.token.role == 'admin' ||
+        request.auth.token.email == 'admin@direka.app'
+      );
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function isPrimaryOfFamily(uid) {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/users/$(uid)) &&
+        get(/databases/$(database)/documents/users/$(uid)).data.linkedPrimaryUid == request.auth.uid;
+    }
+
+    function isFoodLogOwner(uid) {
+      return signedIn() && uid == request.auth.uid;
+    }
+
+    function isFoodLogFamilyOwner(uid) {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/users/$(uid)) &&
+        get(/databases/$(database)/documents/users/$(uid)).data.linkedPrimaryUid == request.auth.uid;
+    }
+
+    match /users/{uid} {
+      allow create: if isSelf(uid) || (
+        signedIn() &&
+        request.resource.data.linkedPrimaryUid == request.auth.uid &&
+        request.resource.data.isFamilyAccount == true
+      );
+
+      allow read: if isSelf(uid) || isPrimaryOfFamily(uid) || isAdmin();
+
+      allow update, delete: if isSelf(uid) || isPrimaryOfFamily(uid) || isAdmin();
+
+      match /family_accounts/{docId} {
+        allow read, write: if isSelf(uid) || isAdmin();
+      }
+
+      match /notifications/{docId} {
+        allow read, write: if isSelf(uid) || isPrimaryOfFamily(uid) || isAdmin();
+      }
+
+      match /kidney_health_records/{docId} {
+        allow read, write: if isSelf(uid) || isPrimaryOfFamily(uid) || isAdmin();
+      }
+
+      match /heart_health_records/{docId} {
+        allow read, write: if isSelf(uid) || isPrimaryOfFamily(uid) || isAdmin();
+      }
+
+      match /diabetes_health_records/{docId} {
+        allow read, write: if isSelf(uid) || isPrimaryOfFamily(uid) || isAdmin();
+      }
+
+      match /{subcollection}/{docId} {
+        allow read, write: if isSelf(uid) || isPrimaryOfFamily(uid) || isAdmin();
+      }
+    }
+
+    match /food_logs/{docId} {
+      allow read: if isAdmin() || (
+        signedIn() &&
+        (
+          resource == null ||
+          resource.data.uid == request.auth.uid ||
+          isFoodLogFamilyOwner(resource.data.uid)
+        )
+      );
+
+      allow create, update: if isAdmin() || (
+        signedIn() &&
+        request.resource.data.uid is string &&
+        (
+          isFoodLogOwner(request.resource.data.uid) ||
+          isFoodLogFamilyOwner(request.resource.data.uid)
+        )
+      );
+
+      allow delete: if isAdmin() || (
+        signedIn() &&
+        (
+          resource.data.uid == request.auth.uid ||
+          isFoodLogFamilyOwner(resource.data.uid)
+        )
+      );
+    }
+
+    match /food_catalog/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /education_posts/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /admin_broadcasts/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /admin_password_reset_audit/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

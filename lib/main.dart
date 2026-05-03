@@ -13,6 +13,8 @@ import 'screens/admin/admin_screen.dart';
 import 'screens/admin/admin_settings_screen.dart';
 import 'screens/admin/admin_food_catalog_screen.dart';
 import 'screens/auth/disease_selection_screen.dart';
+import 'screens/auth/forgot_password_screen.dart';
+import 'screens/auth/password_reset_action_screen.dart';
 import 'screens/notifications/notifications_screen.dart';
 import 'screens/profile/edit_profile_screen.dart';
 import 'screens/auth/google_complete_profile_screen.dart';
@@ -39,6 +41,14 @@ void main() async {
 class DiRekaApp extends StatelessWidget {
   const DiRekaApp({super.key});
 
+  String _resolveInitialRoute() {
+    final params = Uri.base.queryParameters;
+    if (params['mode'] == 'resetPassword' && (params['oobCode'] ?? '').isNotEmpty) {
+      return AppConstants.routePasswordResetAction;
+    }
+    return AppConstants.routeSplash;
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -63,12 +73,16 @@ class DiRekaApp extends StatelessWidget {
           ],
           supportedLocales: const [Locale('id', 'ID'), Locale('en', 'US')],
           locale: const Locale('id', 'ID'),
-          initialRoute: AppConstants.routeSplash,
+          initialRoute: _resolveInitialRoute(),
           routes: {
             AppConstants.routeSplash: (_) => const SplashScreen(),
             AppConstants.routeDiseaseSelection: (_) =>
                 const DiseaseSelectionScreen(),
             AppConstants.routeLogin: (_) => const LoginScreen(),
+            AppConstants.routeForgotPassword: (_) =>
+                const ForgotPasswordScreen(),
+            AppConstants.routePasswordResetAction: (_) =>
+                const PasswordResetActionScreen(),
             AppConstants.routeRegister: (_) => const RegisterScreen(),
             AppConstants.routeMain: (_) => const MainScreen(),
             AppConstants.routeNotifications: (_) =>
