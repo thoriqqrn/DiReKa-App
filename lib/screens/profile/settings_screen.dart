@@ -5,6 +5,7 @@ import '../../core/app_constants.dart';
 import '../../models/disease_type.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/disease_provider.dart';
+import '../../providers/font_size_provider.dart';
 import '../../services/app_notification_service.dart';
 import '../../widgets/custom_text_field.dart';
 import '../notifications/notification_info_screen.dart';
@@ -149,6 +150,15 @@ class SettingsScreen extends StatelessWidget {
                       label: 'Jenis Penyakit',
                       subtitle: disease?.label ?? '-',
                     ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Ukuran Font
+              _SectionCard(
+                title: 'Aksesibilitas',
+                children: [
+                  const _FontSizeTile(),
                 ],
               ),
               const SizedBox(height: 20),
@@ -910,6 +920,172 @@ class _SettingsTile extends StatelessWidget {
         size: 20,
       ),
       onTap: onTap,
+    );
+  }
+}
+class _FontSizeTile extends StatefulWidget {
+  const _FontSizeTile();
+
+  @override
+  State<_FontSizeTile> createState() => _FontSizeTileState();
+}
+
+class _FontSizeTileState extends State<_FontSizeTile> {
+  // Local slider value for smooth real-time preview before provider rebuilds.
+  double _sliderValue = FontSizeLevel.normal.index.toDouble();
+  bool _initialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _sliderValue =
+          context.read<FontSizeProvider>().sliderValue;
+      _initialized = true;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final ext = theme.extension<AppThemeExtension>();
+    final fontProvider = context.watch<FontSizeProvider>();
+    final currentLevel = FontSizeLevel.values[_sliderValue.round()];
+
+    // Icon + accent color
+    final accentColor = theme.brightness == Brightness.dark
+        ? theme.colorScheme.secondary
+        : theme.primaryColor;
+
+    // Label positions for 4 steps
+    const labels = ['Kecil', 'Normal', 'Besar', 'Sangat\nBesar'];
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header row
+          Row(
+            children: [
+              Icon(Icons.text_fields_rounded, size: 22, color: accentColor),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Ukuran Font',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: theme.textTheme.bodyLarge?.color,
+                    ),
+                  ),
+                  Text(
+                    'Aktif: ${fontProvider.level.label}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.hintColor,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Live preview box
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: accentColor.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: accentColor.withValues(alpha: 0.25),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Contoh ukuran teks',
+                  style: TextStyle(
+                    fontSize: 15 * currentLevel.scale,
+                    fontWeight: FontWeight.w600,
+                    color: theme.textTheme.bodyLarge?.color,
+                  ),
+                  textScaler: TextScaler.noScaling,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Informasi nutrisi harian Anda akan tampil seperti ini.',
+                  style: TextStyle(
+                    fontSize: 12 * currentLevel.scale,
+                    color: theme.hintColor,
+                    height: 1.4,
+                  ),
+                  textScaler: TextScaler.noScaling,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Slider
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: accentColor,
+              inactiveTrackColor:
+                  ext?.border ?? theme.dividerColor,
+              thumbColor: accentColor,
+              overlayColor: accentColor.withValues(alpha: 0.15),
+              trackHeight: 4,
+              thumbShape:
+                  const RoundSliderThumbShape(enabledThumbRadius: 10),
+            ),
+            child: Slider(
+              min: 0,
+              max: 3,
+              divisions: 3,
+              value: _sliderValue,
+              onChanged: (v) {
+                setState(() => _sliderValue = v);
+              },
+              onChangeEnd: (v) {
+                context.read<FontSizeProvider>().setFromSlider(v);
+              },
+            ),
+          ),
+
+          // Step labels row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: List.generate(labels.length, (i) {
+              final isActive = _sliderValue.round() == i;
+              return SizedBox(
+                width: 56,
+                child: Text(
+                  labels[i],
+                  textAlign: i == 0
+                      ? TextAlign.left
+                      : i == labels.length - 1
+                          ? TextAlign.right
+                          : TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight:
+                        isActive ? FontWeight.w700 : FontWeight.w400,
+                    color: isActive ? accentColor : theme.hintColor,
+                  ),
+                  textScaler: TextScaler.noScaling,
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
     );
   }
 }

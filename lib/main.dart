@@ -8,6 +8,7 @@ import 'core/app_constants.dart';
 import 'core/app_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/disease_provider.dart';
+import 'providers/font_size_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screens/admin/admin_screen.dart';
 import 'screens/admin/admin_settings_screen.dart';
@@ -56,47 +57,61 @@ class DiRekaApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => DiseaseProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => FontSizeProvider()),
       ],
       child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, child) => MaterialApp(
-          title: 'Direka',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
-          themeMode: themeProvider.themeMode,
-          // Lokalisasi Bahasa Indonesia
-          localizationsDelegates: const [
-            quill.FlutterQuillLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: const [Locale('id', 'ID'), Locale('en', 'US')],
-          locale: const Locale('id', 'ID'),
-          initialRoute: _resolveInitialRoute(),
-          routes: {
-            AppConstants.routeSplash: (_) => const SplashScreen(),
-            AppConstants.routeDiseaseSelection: (_) =>
-                const DiseaseSelectionScreen(),
-            AppConstants.routeLogin: (_) => const LoginScreen(),
-            AppConstants.routeForgotPassword: (_) =>
-                const ForgotPasswordScreen(),
-            AppConstants.routePasswordResetAction: (_) =>
-                const PasswordResetActionScreen(),
-            AppConstants.routeRegister: (_) => const RegisterScreen(),
-            AppConstants.routeMain: (_) => const MainScreen(),
-            AppConstants.routeNotifications: (_) =>
-                const NotificationsScreen(),
-            AppConstants.routeSettings: (_) => const SettingsScreen(),
-            AppConstants.routeEditProfile: (_) => const EditProfileScreen(),
-            AppConstants.routeGoogleCompleteProfile: (_) =>
-                const GoogleCompleteProfileScreen(),
-            AppConstants.routeAdmin: (_) => const AdminScreen(),
-            AppConstants.routeAdminSettings: (_) => const AdminSettingsScreen(),
-            AppConstants.routeAdminFoodCatalog: (_) =>
-                const AdminFoodCatalogScreen(),
-          },
-        ),
+        builder: (context, themeProvider, child) {
+          return Consumer<FontSizeProvider>(
+            builder: (context, fontSizeProvider, _) {
+              return MediaQuery(
+                data: MediaQuery.of(context).copyWith(
+                  textScaler: TextScaler.linear(fontSizeProvider.scale),
+                ),
+                child: MaterialApp(
+                  title: 'Direka',
+                  debugShowCheckedModeBanner: false,
+                  theme: AppTheme.lightTheme,
+                  darkTheme: AppTheme.darkTheme,
+                  themeMode: themeProvider.themeMode,
+                  // Lokalisasi Bahasa Indonesia
+                  localizationsDelegates: const [
+                    quill.FlutterQuillLocalizations.delegate,
+                    GlobalMaterialLocalizations.delegate,
+                    GlobalWidgetsLocalizations.delegate,
+                    GlobalCupertinoLocalizations.delegate,
+                  ],
+                  supportedLocales: const [Locale('id', 'ID'), Locale('en', 'US')],
+                  locale: const Locale('id', 'ID'),
+                  initialRoute: _resolveInitialRoute(),
+                  routes: {
+                    AppConstants.routeSplash: (_) => const SplashScreen(),
+                    AppConstants.routeDiseaseSelection: (_) =>
+                        const DiseaseSelectionScreen(),
+                    AppConstants.routeLogin: (_) => const LoginScreen(),
+                    AppConstants.routeForgotPassword: (_) =>
+                        const ForgotPasswordScreen(),
+                    AppConstants.routePasswordResetAction: (_) =>
+                        const PasswordResetActionScreen(),
+                    AppConstants.routeRegister: (_) => const RegisterScreen(),
+                    AppConstants.routeMain: (_) => const MainScreen(),
+                    AppConstants.routeNotifications: (_) =>
+                        const NotificationsScreen(),
+                    AppConstants.routeSettings: (_) => const SettingsScreen(),
+                    AppConstants.routeEditProfile: (_) =>
+                        const EditProfileScreen(),
+                    AppConstants.routeGoogleCompleteProfile: (_) =>
+                        const GoogleCompleteProfileScreen(),
+                    AppConstants.routeAdmin: (_) => const AdminScreen(),
+                    AppConstants.routeAdminSettings: (_) =>
+                        const AdminSettingsScreen(),
+                    AppConstants.routeAdminFoodCatalog: (_) =>
+                        const AdminFoodCatalogScreen(),
+                  },
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }
