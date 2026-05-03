@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/app_colors.dart';
 import '../../core/app_constants.dart';
 import '../../models/disease_type.dart';
+import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/disease_provider.dart';
 import '../../providers/font_size_provider.dart';
@@ -46,89 +47,15 @@ class SettingsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
 
-                // Info kesehatan
-                _SectionCard(
-                  title: 'Informasi Kesehatan',
-                  children: [
-                    _InfoRow(
-                      label: 'Usia',
-                      value: user.ageString,
-                      icon: Icons.calendar_today_outlined,
-                    ),
-                    const Divider(height: 1),
-                    _InfoRow(
-                      label: 'Berat Badan',
-                      value: '${user.weight} kg',
-                      icon: Icons.monitor_weight_outlined,
-                    ),
-                    const Divider(height: 1),
-                    _InfoRow(
-                      label: 'Tinggi Badan',
-                      value: '${user.height} cm',
-                      icon: Icons.height,
-                    ),
-                    const Divider(height: 1),
-                    _InfoRow(
-                      label: 'IMT',
-                      value:
-                          '${user.bmi.toStringAsFixed(1)} (${user.bmiCategory})',
-                      icon: Icons.calculate_outlined,
-                    ),
-                    const Divider(height: 1),
-                    _InfoRow(
-                      label: 'Alamat',
-                      value:
-                          '${user.addressVillage}, ${user.addressDistrict}, ${user.addressCity}, ${user.addressProvince}',
-                      icon: Icons.location_on_outlined,
-                    ),
-                    const Divider(height: 1),
-                    _InfoRow(
-                      label: 'Pendidikan',
-                      value: user.education.isEmpty ? '-' : user.education,
-                      icon: Icons.school_outlined,
-                    ),
-                    const Divider(height: 1),
-                    _InfoRow(
-                      label: 'Pekerjaan',
-                      value: user.occupation.isEmpty ? '-' : user.occupation,
-                      icon: Icons.work_outline,
-                    ),
-                    if (user.diseaseType == DiseaseType.type2DiabetesMellitus ||
-                        user.diseaseType == DiseaseType.heartFailure) ...[
-                      const Divider(height: 1),
-                      _InfoRow(
-                        label: user.diseaseType == DiseaseType.type2DiabetesMellitus
-                            ? 'Lama DM'
-                            : 'Lama Jantung Koroner',
-                        value: user.diseaseType == DiseaseType.type2DiabetesMellitus
-                            ? '${user.diabetesDurationYears.toStringAsFixed(1)} tahun'
-                            : '${user.heartDiseaseDurationYears.toStringAsFixed(1)} tahun',
-                        icon: Icons.timelapse_outlined,
-                      ),
-                      if (user.diseaseType == DiseaseType.type2DiabetesMellitus) ...[
-                        const Divider(height: 1),
-                        _InfoRow(
-                          label: 'Terapi insulin',
-                          value: user.usesInsulinTherapy ? 'Ya' : 'Tidak',
-                          icon: Icons.medication_outlined,
-                        ),
-                        if (user.usesInsulinTherapy) ...[
-                          const Divider(height: 1),
-                          _InfoRow(
-                            label: 'Lama Insulin',
-                            value: '${user.insulinDurationYears.toStringAsFixed(1)} tahun',
-                            icon: Icons.history_edu_outlined,
-                          ),
-                        ],
-                      ],
-                    ],
-                  ],
-                ),
+                // Info kesehatan (collapsed — tap buka modal)
+                _HealthInfoTile(user: user, disease: disease),
                 const SizedBox(height: 20),
               ] else ...[
+
                 _GuestCard(),
                 const SizedBox(height: 20),
               ],
+
 
               // Preferensi
               _SectionCard(
@@ -780,59 +707,7 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
 
-  const _InfoRow({
-    required this.label,
-    required this.value,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final iconColor = theme.brightness == Brightness.dark
-        ? theme.colorScheme.secondary
-        : theme.primaryColor;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 20, color: iconColor),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: theme.hintColor,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: theme.textTheme.bodyLarge?.color,
-                    height: 1.35,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _InfoTile extends StatelessWidget {
   final IconData icon;
@@ -923,6 +798,343 @@ class _SettingsTile extends StatelessWidget {
     );
   }
 }
+// ──────────────────────────────────────────────────────────────────────────────
+// Collapsed health info tile
+// ──────────────────────────────────────────────────────────────────────────────
+class _HealthInfoTile extends StatelessWidget {
+  final UserModel user;
+  final DiseaseType? disease;
+
+  const _HealthInfoTile({required this.user, required this.disease});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final ext = theme.extension<AppThemeExtension>();
+    final accentColor = theme.brightness == Brightness.dark
+        ? theme.colorScheme.secondary
+        : theme.primaryColor;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Informasi Kesehatan',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: theme.hintColor,
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: () => _openHealthSheet(context),
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            decoration: BoxDecoration(
+              color: theme.cardTheme.color,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: ext?.border ?? theme.dividerColor),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: accentColor.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.favorite_border_rounded,
+                    size: 22,
+                    color: accentColor,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Lihat Data Kesehatan',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: theme.textTheme.bodyLarge?.color,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        'IMT ${user.bmi.toStringAsFixed(1)} · ${disease?.label ?? '-'} · ${user.ageString}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.hintColor,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.expand_circle_down_outlined,
+                  color: accentColor,
+                  size: 22,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _openHealthSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _HealthInfoBottomSheet(user: user, disease: disease),
+    );
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Bottom sheet — detail lengkap informasi kesehatan
+// ──────────────────────────────────────────────────────────────────────────────
+class _HealthInfoBottomSheet extends StatelessWidget {
+  final UserModel user;
+  final DiseaseType? disease;
+
+  const _HealthInfoBottomSheet({required this.user, required this.disease});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final ext = theme.extension<AppThemeExtension>();
+    final accentColor = theme.brightness == Brightness.dark
+        ? theme.colorScheme.secondary
+        : theme.primaryColor;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.65,
+      minChildSize: 0.4,
+      maxChildSize: 0.92,
+      snap: true,
+      snapSizes: const [0.65, 0.92],
+      builder: (context, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: theme.scaffoldBackgroundColor,
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 20,
+                offset: const Offset(0, -4),
+              )
+            ],
+          ),
+          child: Column(
+            children: [
+              // Drag handle
+              Padding(
+                padding: const EdgeInsets.only(top: 12, bottom: 4),
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.dividerColor,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              // Header
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 10, 16, 12),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.favorite_border_rounded,
+                      color: accentColor,
+                      size: 22,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Informasi Kesehatan',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: theme.textTheme.bodyLarge?.color,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: Icon(
+                        Icons.close_rounded,
+                        color: theme.hintColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Divider(height: 1, color: ext?.border ?? theme.dividerColor),
+              // Content
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                  children: [
+                    _sheetRow(
+                      context,
+                      icon: Icons.calendar_today_outlined,
+                      label: 'Usia',
+                      value: user.ageString,
+                    ),
+                    _sheetRow(
+                      context,
+                      icon: Icons.monitor_weight_outlined,
+                      label: 'Berat Badan',
+                      value: '${user.weight} kg',
+                    ),
+                    _sheetRow(
+                      context,
+                      icon: Icons.height,
+                      label: 'Tinggi Badan',
+                      value: '${user.height} cm',
+                    ),
+                    _sheetRow(
+                      context,
+                      icon: Icons.calculate_outlined,
+                      label: 'IMT',
+                      value:
+                          '${user.bmi.toStringAsFixed(1)} (${user.bmiCategory})',
+                    ),
+                    _sheetRow(
+                      context,
+                      icon: Icons.location_on_outlined,
+                      label: 'Alamat',
+                      value:
+                          '${user.addressVillage}, ${user.addressDistrict}, ${user.addressCity}, ${user.addressProvince}',
+                    ),
+                    _sheetRow(
+                      context,
+                      icon: Icons.school_outlined,
+                      label: 'Pendidikan',
+                      value:
+                          user.education.isEmpty ? '-' : user.education,
+                    ),
+                    _sheetRow(
+                      context,
+                      icon: Icons.work_outline,
+                      label: 'Pekerjaan',
+                      value:
+                          user.occupation.isEmpty ? '-' : user.occupation,
+                    ),
+                    if (user.diseaseType ==
+                            DiseaseType.type2DiabetesMellitus ||
+                        user.diseaseType == DiseaseType.heartFailure) ...[
+                      _sheetRow(
+                        context,
+                        icon: Icons.timelapse_outlined,
+                        label:
+                            user.diseaseType ==
+                                    DiseaseType.type2DiabetesMellitus
+                                ? 'Lama DM'
+                                : 'Lama Jantung Koroner',
+                        value: user.diseaseType ==
+                                DiseaseType.type2DiabetesMellitus
+                            ? '${user.diabetesDurationYears.toStringAsFixed(1)} tahun'
+                            : '${user.heartDiseaseDurationYears.toStringAsFixed(1)} tahun',
+                      ),
+                      if (user.diseaseType ==
+                          DiseaseType.type2DiabetesMellitus) ...[
+                        _sheetRow(
+                          context,
+                          icon: Icons.medication_outlined,
+                          label: 'Terapi Insulin',
+                          value: user.usesInsulinTherapy ? 'Ya' : 'Tidak',
+                        ),
+                        if (user.usesInsulinTherapy)
+                          _sheetRow(
+                            context,
+                            icon: Icons.history_edu_outlined,
+                            label: 'Lama Insulin',
+                            value:
+                                '${user.insulinDurationYears.toStringAsFixed(1)} tahun',
+                          ),
+                      ],
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _sheetRow(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    final theme = Theme.of(context);
+    final iconColor = theme.brightness == Brightness.dark
+        ? theme.colorScheme.secondary
+        : theme.primaryColor;
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, size: 20, color: iconColor),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.hintColor,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      value,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: theme.textTheme.bodyLarge?.color,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        Divider(
+          height: 1,
+          color: theme.dividerColor.withValues(alpha: 0.5),
+        ),
+      ],
+    );
+  }
+}
+
 class _FontSizeTile extends StatefulWidget {
   const _FontSizeTile();
 
