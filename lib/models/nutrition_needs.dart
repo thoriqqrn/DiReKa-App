@@ -29,9 +29,9 @@ class NutritionNeeds {
   /// Protein      = 1.2 × BBI         (g/hari)
   /// Lemak        = 0.99 × BBI        (g/hari)
   /// Karbohidrat  = 4.82 × BBI        (g/hari)
-  /// Natrium      = 6.000             (mg/hari — tetap)
-  /// Kalium       = 13 × BBI          (mg/hari)
-  /// Fosfor       = 600               (mg/hari — tetap)
+  /// Natrium      = 2.000             (mg/hari — tetap, sesuai rekomendasi CKD)
+  /// Kalium       = 40 × BBI          (mg/hari)
+  /// Fosfor       = 16.5 × BBI        (mg/hari)
   /// Cairan       = 500 + urinOutput  (ml/hari)
   factory NutritionNeeds.kidneyDisease({
     required double bbi,
@@ -42,9 +42,9 @@ class NutritionNeeds {
       protein: 1.2 * bbi,
       lemak: 0.99 * bbi,
       karbohidrat: 4.82 * bbi,
-      natrium: 6000,
-      kalium: 13 * bbi,
-      fosfor: 600,
+      natrium: 2000,           // statis 2 g/hari
+      kalium: 40 * bbi,        // 40 mg × BBI
+      fosfor: 16.5 * bbi,      // 16,5 mg × BBI
       cairan: 500 + urinOutput,
       serat: 0, // tidak dipantau untuk ginjal
     );
