@@ -1280,6 +1280,7 @@ class _NavButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return GestureDetector(
       onTap: enabled ? onTap : null,
       child: Container(
@@ -1287,19 +1288,22 @@ class _NavButton extends StatelessWidget {
         height: 28,
         decoration: BoxDecoration(
           color: enabled
-              ? theme.primaryColor.withValues(alpha: 0.12)
-              : theme.dividerColor.withValues(alpha: 0.08),
+              ? theme.primaryColor.withValues(alpha: isDark ? 0.28 : 0.12)
+              : theme.dividerColor.withValues(alpha: isDark ? 0.16 : 0.08),
           shape: BoxShape.circle,
           border: Border.all(
             color: enabled
-                ? theme.primaryColor.withValues(alpha: 0.4)
-                : theme.dividerColor.withValues(alpha: 0.2),
+                ? theme.primaryColor.withValues(alpha: isDark ? 0.7 : 0.4)
+                : theme.dividerColor.withValues(alpha: isDark ? 0.35 : 0.2),
           ),
         ),
         child: Icon(
           icon,
           size: 18,
-          color: enabled ? theme.primaryColor : theme.hintColor,
+          // Dark mode: putih agar kontras, light mode: ikut primaryColor/hintColor
+          color: enabled
+              ? (isDark ? Colors.white : theme.primaryColor)
+              : theme.hintColor.withValues(alpha: isDark ? 0.5 : 0.4),
         ),
       ),
     );
