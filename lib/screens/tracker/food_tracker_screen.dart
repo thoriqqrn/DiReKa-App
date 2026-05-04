@@ -2296,12 +2296,16 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
-                            color: theme.primaryColor
-                                .withValues(alpha: 0.15),
+                            // Dark mode: fill lebih solid agar badge terlihat
+                            color: theme.brightness == Brightness.dark
+                                ? theme.primaryColor.withValues(alpha: 0.28)
+                                : theme.primaryColor.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                                color: theme.primaryColor
-                                    .withValues(alpha: 0.4)),
+                              color: theme.brightness == Brightness.dark
+                                  ? theme.primaryColor.withValues(alpha: 0.7)
+                                  : theme.primaryColor.withValues(alpha: 0.4),
+                            ),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -2311,7 +2315,10 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                                     ? Icons.shopping_cart
                                     : Icons.shopping_cart_outlined,
                                 size: 16,
-                                color: theme.primaryColor,
+                                // Dark mode: putih agar kontras di atas fill gelap
+                                color: theme.brightness == Brightness.dark
+                                    ? Colors.white
+                                    : theme.primaryColor,
                               ),
                               const SizedBox(width: 4),
                               Text(
@@ -2319,7 +2326,9 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700,
-                                  color: theme.primaryColor,
+                                  color: theme.brightness == Brightness.dark
+                                      ? Colors.white
+                                      : theme.primaryColor,
                                 ),
                               ),
                             ],
