@@ -1939,14 +1939,38 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
 
   void _addToCart(FoodItem food, double grams) {
     setState(() => _cart.add(_CartItem(food: food, grams: grams)));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${food.nama} ditambahkan ke keranjang'),
-        duration: const Duration(seconds: 1),
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 80),
+    _showCartSuccessOverlay(food.nama, food.emoji);
+  }
+
+  /// Tampilkan overlay animasi "Berhasil ditambahkan ke keranjang"
+  /// menggunakan OverlayEntry + AnimationController agar modal muncul
+  /// tepat di atas konten sheet dan auto-dismiss tanpa interaksi user.
+  void _showCartSuccessOverlay(String foodName, String emoji) {
+    final overlay = Overlay.of(context);
+    late OverlayEntry entry;
+    late AnimationController ctrl;
+
+    ctrl = AnimationController(
+      vsync: Navigator.of(context),
+      duration: const Duration(milliseconds: 280),
+    );
+
+    entry = OverlayEntry(
+      builder: (_) => _CartSuccessOverlay(
+        foodName: foodName,
+        emoji: emoji,
+        controller: ctrl,
       ),
     );
+
+    overlay.insert(entry);
+    ctrl.forward();
+
+    Future.delayed(const Duration(milliseconds: 1400), () async {
+      await ctrl.reverse();
+      entry.remove();
+      ctrl.dispose();
+    });
   }
 
   void _removeFromCart(int index) {
@@ -2613,6 +2637,135 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
           ),
         );
       },
+    );
+  }
+}
+
+// ─── Cart Success Overlay ─────────────────────────────────────────────────────
+
+/// Overlay animasi yang muncul saat item berhasil ditambahkan ke keranjang.
+/// Menggunakan scale + fade agar terasa ringan dan tidak mengganggu alur input.
+class _CartSuccessOverlay extends AnimatedWidget {
+  final String foodName;
+  final String emoji;
+
+  const _CartSuccessOverlay({
+    required this.foodName,
+    required this.emoji,
+    required AnimationController controller,
+  }) : super(listenable: controller);
+
+  AnimationController get _ctrl => listenable as AnimationController;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scaleAnim = CurvedAnimation(
+      parent: _ctrl,
+      curve: Curves.elasticOut,
+      reverseCurve: Curves.easeIn,
+    );
+    final fadeAnim = CurvedAnimation(
+      parent: _ctrl,
+      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+      reverseCurve: Curves.easeIn,
+    );
+
+    return IgnorePointer(
+      child: Material(
+        color: Colors.transparent,
+        child: Align(
+          alignment: const Alignment(0, 0.1),
+          child: FadeTransition(
+            opacity: fadeAnim,
+            child: ScaleTransition(
+              scale: scaleAnim,
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 300),
+                margin: const EdgeInsets.symmetric(horizontal: 32),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
+                decoration: BoxDecoration(
+                  color: theme.brightness == Brightness.dark
+                      ? const Color(0xFF1E2A2A)
+                      : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: theme.primaryColor.withValues(alpha: 0.3),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.18),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Ikon centang animasi
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: theme.primaryColor.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Text(emoji, style: const TextStyle(fontSize: 22)),
+                          Positioned(
+                            right: 2,
+                            bottom: 2,
+                            child: Container(
+                              width: 18,
+                              height: 18,
+                              decoration: BoxDecoration(
+                                color: theme.primaryColor,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.check,
+                                color: Colors.white,
+                                size: 11,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Ditambahkan ke keranjang!',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: theme.primaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      foodName,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.textTheme.bodyMedium?.color,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
