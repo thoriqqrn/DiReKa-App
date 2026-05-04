@@ -33,7 +33,6 @@ class DayStreakCard extends StatelessWidget {
     // Generate semua hari dalam bulan ini
     final daysInMonth = _getDaysInMonth(currentYear, currentMonth);
     final firstDayOfWeek = DateTime(currentYear, currentMonth, 1).weekday;
-    final hasStreak = user.currentStreak > 0;
     final hasInputToday = thisMonthLogins.any((d) => d.day == now.day);
 
     return Container(
@@ -97,11 +96,19 @@ class DayStreakCard extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text(
-                      hasStreak ? '🔥' : '⚪',
-                      style: TextStyle(
-                        fontSize: 24,
-                        color: hasStreak ? null : Colors.grey.shade500,
+                    ColorFiltered(
+                      colorFilter: hasInputToday
+                          ? const ColorFilter.mode(
+                              Colors.transparent, BlendMode.dst)
+                          : const ColorFilter.matrix(<double>[
+                              0.2126, 0.7152, 0.0722, 0, 0,
+                              0.2126, 0.7152, 0.0722, 0, 0,
+                              0.2126, 0.7152, 0.0722, 0, 0,
+                              0,      0,      0,      1, 0,
+                            ]),
+                      child: const Text(
+                        '🔥',
+                        style: TextStyle(fontSize: 24),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -120,7 +127,7 @@ class DayStreakCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: hasStreak
+                            color: hasInputToday
                                 ? Colors.redAccent
                                 : Colors.grey.shade500,
                           ),
@@ -209,7 +216,7 @@ class DayStreakCard extends StatelessWidget {
                     width: 12,
                     height: 12,
                     decoration: BoxDecoration(
-                      color: hasStreak
+                      color: hasInputToday
                           ? Colors.red.withValues(alpha: 0.5)
                           : Colors.grey.withValues(alpha: 0.55),
                       borderRadius: BorderRadius.circular(3),
