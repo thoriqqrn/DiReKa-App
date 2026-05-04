@@ -395,13 +395,17 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
       builder: (ctx) => _AddFoodSheet(
         mealType: _selectedMealType!,
         isGuest: isGuest,
-        onAdd: (food, grams) async {
-          final entry = FoodLogEntry.create(
-            food: food,
-            grams: grams,
-            mealType: _selectedMealType!,
-          );
-          await FoodLogService.addEntry(uid, _selectedDate, entry);
+        onAddAll: (cartItems) async {
+          if (cartItems.isEmpty) return;
+          final mealType = _selectedMealType!;
+          final entries = cartItems
+              .map((item) => FoodLogEntry.create(
+                    food: item.food,
+                    grams: item.grams,
+                    mealType: mealType,
+                  ))
+              .toList();
+          await FoodLogService.addEntries(uid, _selectedDate, entries);
           if (mounted) {
             final auth = context.read<AuthProvider>();
             auth.updateActivityStreak();
@@ -1896,13 +1900,20 @@ class _FoodEntryCard extends StatelessWidget {
 // ADD FOOD BOTTOM SHEET
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// A single item sitting in the temporary cart before batch-submit.
+class _CartItem {
+  final FoodItem food;
+  final double grams;
+  _CartItem({required this.food, required this.grams});
+}
+
 class _AddFoodSheet extends StatefulWidget {
   final MealType mealType;
   final bool isGuest;
-  final Future<void> Function(FoodItem food, double grams) onAdd;
+  final Future<void> Function(List<_CartItem> cartItems) onAddAll;
   const _AddFoodSheet({
     required this.mealType,
-    required this.onAdd,
+    required this.onAddAll,
     this.isGuest = false,
   });
 
@@ -1917,6 +1928,26 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
   String _selectedCategory = 'Semua';
   bool _isSearching = false;
   Timer? _debounce;
+
+  // ── Cart state ──────────────────────────────────────────────────────────────
+  final List<_CartItem> _cart = [];
+
+  void _addToCart(FoodItem food, double grams) {
+    setState(() => _cart.add(_CartItem(food: food, grams: grams)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${food.nama} ditambahkan ke keranjang'),
+        duration: const Duration(seconds: 1),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 80),
+      ),
+    );
+  }
+
+  void _removeFromCart(int index) {
+    setState(() => _cart.removeAt(index));
+  }
+  // ────────────────────────────────────────────────────────────────────────────
 
   @override
   void initState() {
@@ -2013,13 +2044,12 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
         child: _TakaranSajiContent(
           food: food,
           onSave: (grams) async {
-            Navigator.pop(ctx);
+            Navigator.pop(ctx); // tutup dialog takaran saja
             if (widget.isGuest) {
               _showGuestLoginDialog();
               return;
             }
-            Navigator.pop(context);
-            await widget.onAdd(food, grams);
+            _addToCart(food, grams); // masuk ke keranjang, sheet tetap terbuka
           },
           onCancel: () => Navigator.pop(ctx),
         ),
@@ -2122,17 +2152,16 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
               ),
               FilledButton(
                 onPressed: grams > 0
-                    ? () async {
-                        Navigator.pop(ctx); // tutup dialog gram
+                    ? () {
+                        Navigator.pop(ctx); // tutup dialog gram saja
                         if (widget.isGuest) {
                           _showGuestLoginDialog();
                           return;
                         }
-                        Navigator.pop(context); // tutup sheet
-                        await widget.onAdd(food, grams);
+                        _addToCart(food, grams); // masuk ke keranjang
                       }
                     : null,
-                child: const Text('Simpan'),
+                child: const Text('Tambah ke Keranjang'),
               ),
             ],
           );
@@ -2173,9 +2202,18 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
     );
   }
 
+  bool _isCartExpanded = false;
+  bool _isSubmitting = false;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cartCount = _cart.length;
+    final cartTotalKkal = _cart.fold(
+      0.0,
+      (sum, item) => sum + item.food.calcFor(item.grams)['energi']!,
+    );
+
     return DraggableScrollableSheet(
       initialChildSize: 0.85,
       minChildSize: 0.5,
@@ -2189,7 +2227,7 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
           ),
           child: Column(
             children: [
-              // Handle
+              // ── Handle ──
               const SizedBox(height: 12),
               Container(
                 width: 40,
@@ -2200,16 +2238,162 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                 ),
               ),
               const SizedBox(height: 14),
-              Text(
-                'Tambah Makanan',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: theme.textTheme.titleMedium?.color,
+              // ── Title row with meal label ──
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    Text(
+                      widget.mealType.emoji,
+                      style: const TextStyle(fontSize: 20),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Tambah • ${widget.mealType.label}',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: theme.textTheme.titleMedium?.color,
+                        ),
+                      ),
+                    ),
+                    if (cartCount > 0)
+                      GestureDetector(
+                        onTap: () =>
+                            setState(() => _isCartExpanded = !_isCartExpanded),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: theme.primaryColor
+                                .withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                                color: theme.primaryColor
+                                    .withValues(alpha: 0.4)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _isCartExpanded
+                                    ? Icons.shopping_cart
+                                    : Icons.shopping_cart_outlined,
+                                size: 16,
+                                color: theme.primaryColor,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '$cartCount item',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: theme.primaryColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
               const SizedBox(height: 12),
-              // Search field
+
+              // ── Keranjang expandable panel ──
+              if (_isCartExpanded && cartCount > 0) ...[
+                Container(
+                  constraints: const BoxConstraints(maxHeight: 200),
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: theme.primaryColor.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: theme.primaryColor.withValues(alpha: 0.2)),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        child: Row(
+                          children: [
+                            Icon(Icons.shopping_cart,
+                                size: 14, color: theme.primaryColor),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Keranjang ($cartCount item)',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: theme.primaryColor,
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              '${cartTotalKkal.toStringAsFixed(0)} kkal',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: theme.hintColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Divider(
+                          height: 1,
+                          color: theme.primaryColor.withValues(alpha: 0.15)),
+                      Flexible(
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          itemCount: _cart.length,
+                          separatorBuilder: (_, __) =>
+                              Divider(height: 1, color: theme.dividerColor),
+                          itemBuilder: (_, i) {
+                            final item = _cart[i];
+                            final kkal = item.food
+                                .calcFor(item.grams)['energi']!
+                                .toStringAsFixed(0);
+                            return ListTile(
+                              dense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 0),
+                              title: Text(
+                                item.food.nama,
+                                style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              subtitle: Text(
+                                '${item.grams.toInt()} g  ·  $kkal kkal',
+                                style: TextStyle(
+                                    fontSize: 11, color: theme.hintColor),
+                              ),
+                              trailing: IconButton(
+                                icon: Icon(Icons.close,
+                                    size: 16,
+                                    color: theme.colorScheme.error),
+                                onPressed: () => _removeFromCart(i),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+
+              // ── Search field ──
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: TextField(
@@ -2229,141 +2413,197 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                   onChanged: _onSearchChanged,
                 ),
               ),
-              // Category chips
-              if (_categories.isNotEmpty) ...
-                [
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 36,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: _categories.length,
-                      separatorBuilder: (_, __) =>
-                          const SizedBox(width: 8),
-                      itemBuilder: (_, i) {
-                        final cat = _categories[i];
-                        final selected = cat == _selectedCategory;
-                        final isDark = theme.brightness == Brightness.dark;
-                        return GestureDetector(
-                          onTap: () =>
-                              setState(() => _selectedCategory = cat),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
+
+              // ── Category chips ──
+              if (_categories.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 36,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: _categories.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (_, i) {
+                      final cat = _categories[i];
+                      final selected = cat == _selectedCategory;
+                      final isDark = theme.brightness == Brightness.dark;
+                      return GestureDetector(
+                        onTap: () =>
+                            setState(() => _selectedCategory = cat),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: selected
+                                ? theme.primaryColor.withValues(
+                                    alpha: isDark ? 0.9 : 1)
+                                : theme.dividerColor.withValues(
+                                    alpha: isDark ? 0.16 : 0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
                               color: selected
-                                  ? theme.primaryColor.withValues(
-                                      alpha: isDark ? 0.9 : 1,
-                                    )
+                                  ? theme.primaryColor
                                   : theme.dividerColor.withValues(
-                                      alpha: isDark ? 0.16 : 0.1,
-                                    ),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: selected
-                                    ? theme.primaryColor
-                                    : theme.dividerColor.withValues(
-                                        alpha: isDark ? 0.35 : 0.2,
-                                      ),
-                              ),
-                              boxShadow: selected
-                                  ? [
-                                      BoxShadow(
-                                        color: theme.primaryColor.withValues(
-                                          alpha: isDark ? 0.28 : 0.12,
-                                        ),
-                                        blurRadius: 12,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ]
-                                  : null,
+                                      alpha: isDark ? 0.35 : 0.2),
                             ),
-                            child: Text(
-                              cat,
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: selected
-                                    ? FontWeight.w600
-                                    : FontWeight.w400,
-                                color: selected
-                                    ? Colors.white
-                                    : theme.hintColor,
-                              ),
+                            boxShadow: selected
+                                ? [
+                                    BoxShadow(
+                                      color: theme.primaryColor.withValues(
+                                          alpha: isDark ? 0.28 : 0.12),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Text(
+                            cat,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: selected
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                              color: selected ? Colors.white : theme.hintColor,
                             ),
                           ),
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    },
                   ),
-                ],
+                ),
+              ],
               const SizedBox(height: 8),
-              // Results
+
+              // ── Results list ──
               Expanded(
                 child: _isSearching
-                    ? Center(child: CircularProgressIndicator(color: theme.primaryColor))
+                    ? Center(
+                        child: CircularProgressIndicator(
+                            color: theme.primaryColor))
                     : _results.isEmpty
-                    ? Center(
-                        child: Text(
-                          'Tidak ditemukan',
-                          style: TextStyle(color: theme.hintColor),
-                        ),
-                      )
-                    : _filteredResults.isEmpty
-                    ? Center(
-                        child: Text(
-                          _selectedCategory == 'Semua'
-                              ? 'Tidak ditemukan'
-                              : 'Tidak ada makanan di kategori "$_selectedCategory"',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: theme.hintColor,
-                            fontSize: 13,
-                          ),
-                        ),
-                      )
-                    : ListView.separated(
-                        controller: scrollCtrl,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 4,
-                        ),
-                        itemCount: _filteredResults.length,
-                        separatorBuilder: (_, __) => Divider(height: 1, color: theme.dividerColor),
-                        itemBuilder: (_, i) {
-                          final food = _filteredResults[i];
-                          return ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 4,
-                            ),
-                            title: Text(
-                              food.nama,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: theme.textTheme.bodyLarge?.color,
+                        ? Center(
+                            child: Text('Tidak ditemukan',
+                                style: TextStyle(color: theme.hintColor)))
+                        : _filteredResults.isEmpty
+                            ? Center(
+                                child: Text(
+                                  _selectedCategory == 'Semua'
+                                      ? 'Tidak ditemukan'
+                                      : 'Tidak ada makanan di kategori "$_selectedCategory"',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                      color: theme.hintColor, fontSize: 13),
+                                ),
+                              )
+                            : ListView.separated(
+                                controller: scrollCtrl,
+                                padding: EdgeInsets.fromLTRB(
+                                    16, 4, 16, cartCount > 0 ? 16 : 4),
+                                itemCount: _filteredResults.length,
+                                separatorBuilder: (_, __) => Divider(
+                                    height: 1, color: theme.dividerColor),
+                                itemBuilder: (_, i) {
+                                  final food = _filteredResults[i];
+                                  return ListTile(
+                                    contentPadding:
+                                        const EdgeInsets.symmetric(
+                                            vertical: 4),
+                                    title: Text(
+                                      food.nama,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color:
+                                            theme.textTheme.bodyLarge?.color,
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      '${food.energi.toInt()} kkal  ·  P: ${food.protein}g  ·  Na: ${food.natrium.toInt()}mg',
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color: theme.hintColor),
+                                    ),
+                                    trailing: Icon(Icons.add_circle_outline,
+                                        color: theme.primaryColor),
+                                    onTap: () => _selectFood(food),
+                                  );
+                                },
                               ),
-                            ),
-                            subtitle: Text(
-                              '${food.energi.toInt()} kkal  ·  P: ${food.protein}g  ·  Na: ${food.natrium.toInt()}mg',
+              ),
+
+              // ── Cart submit bar (fixed bottom) ──
+              if (cartCount > 0)
+                Container(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                  decoration: BoxDecoration(
+                    color: theme.cardTheme.color,
+                    border: Border(
+                        top: BorderSide(
+                            color: theme.dividerColor.withValues(alpha: 0.4))),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.06),
+                        blurRadius: 8,
+                        offset: const Offset(0, -2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '$cartCount makanan dipilih',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: theme.hintColor,
                               ),
                             ),
-                            trailing: Icon(
-                              Icons.add_circle_outline,
-                              color: theme.primaryColor,
+                            Text(
+                              '${cartTotalKkal.toStringAsFixed(0)} kkal total',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: theme.textTheme.bodyLarge?.color,
+                              ),
                             ),
-                            onTap: () => _selectFood(food),
-                          );
-                        },
+                          ],
+                        ),
                       ),
-              ),
-              const SizedBox(height: 16),
+                      const SizedBox(width: 12),
+                      FilledButton.icon(
+                        onPressed: _isSubmitting
+                            ? null
+                            : () async {
+                                setState(() => _isSubmitting = true);
+                                Navigator.pop(context);
+                                await widget.onAddAll(List.from(_cart));
+                              },
+                        icon: _isSubmitting
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white),
+                              )
+                            : const Icon(Icons.save_alt_rounded, size: 18),
+                        label: const Text('Simpan Semua'),
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 14),
+                          textStyle: const TextStyle(
+                              fontWeight: FontWeight.w700, fontSize: 14),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
         );
@@ -2948,7 +3188,7 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
                             color: Colors.white,
                           ),
                         )
-                      : const Text('Simpan'),
+                      : const Text('Tambah ke Keranjang'),
                 ),
               ),
             ],

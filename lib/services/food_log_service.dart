@@ -100,6 +100,32 @@ class FoodLogService {
     await _mirrorFoodLogToLinkedGroup(uid, date);
   }
 
+  /// Tambah banyak entri makanan sekaligus ke log hari [date] dalam satu transaksi.
+  /// Digunakan oleh sistem keranjang (cart) untuk batch-submit.
+  static Future<void> addEntries(
+      String uid, DateTime date, List<FoodLogEntry> newEntries) async {
+    if (newEntries.isEmpty) return;
+    final docRef = _db.collection('food_logs').doc(_docId(uid, date));
+    await _db.runTransaction((tx) async {
+      final snap = await tx.get(docRef);
+      if (!snap.exists) {
+        tx.set(docRef, {
+          'uid': uid,
+          'date': _docId(uid, date).split('_').last,
+          'entries': newEntries.map((e) => e.toMap()).toList(),
+        });
+      } else {
+        final entries =
+            List<dynamic>.from(snap.data()!['entries'] as List? ?? []);
+        for (final entry in newEntries) {
+          entries.add(entry.toMap());
+        }
+        tx.update(docRef, {'entries': entries});
+      }
+    });
+    await _mirrorFoodLogToLinkedGroup(uid, date);
+  }
+
   /// Update entri yang sudah ada (cari berdasarkan id, replace datanya).
   static Future<void> updateEntry(
       String uid, DateTime date, FoodLogEntry updated) async {
