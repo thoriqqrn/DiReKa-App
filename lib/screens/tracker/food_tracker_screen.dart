@@ -543,12 +543,11 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
                           else if (needs != null) ...[
                             // 1. Weekly fluid chart for kidney patients
                             if (auth.currentUser?.diseaseType ==
-                                    DiseaseType.chronicKidneyDisease &&
-                                _weeklyData != null &&
-                                _weeklyData!.isNotEmpty) ...[
+                                    DiseaseType.chronicKidneyDisease) ...[ 
                               _WeeklyFluidChart(
                                 target: needs.cairan,
-                                weeklyData: _weeklyData!,
+                                uid: _uid,
+                                needs: needs,
                               ),
                               const SizedBox(height: 16),
                               // 2. Daily circular gauge for kidney patients
@@ -988,157 +987,350 @@ class _NutritionSummaryCard extends StatelessWidget {
 // WEEKLY FLUID CHART (Bar diagram for past 7 days)
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _WeeklyFluidChart extends StatelessWidget {
+class _WeeklyFluidChart extends StatefulWidget {
   final double target;
-  final List<DailyNutrition> weeklyData;
+  final String uid;
+  final NutritionNeeds needs;
 
-  const _WeeklyFluidChart({required this.target, required this.weeklyData});
+  const _WeeklyFluidChart({
+    required this.target,
+    required this.uid,
+    required this.needs,
+  });
+
+  @override
+  State<_WeeklyFluidChart> createState() => _WeeklyFluidChartState();
+}
+
+class _WeeklyFluidChartState extends State<_WeeklyFluidChart> {
+  // 0 = minggu ini, -1 = minggu lalu, dst.
+  int _weekOffset = 0;
+  List<DailyNutrition>? _data;
+  bool _loading = false;
+
+  // ── Tanggal akhir dari minggu yang sedang ditampilkan ──
+  DateTime get _endDate {
+    final today = DateTime.now();
+    return DateTime(today.year, today.month, today.day)
+        .add(Duration(days: _weekOffset * 7));
+  }
+
+  DateTime get _startDate => _endDate.subtract(const Duration(days: 6));
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+  }
+
+  Future<void> _fetchData() async {
+    if (!mounted) return;
+    setState(() => _loading = true);
+    try {
+      final data = await NutritionHistoryService.getWeeklyNutrition(
+        uid: widget.uid,
+        endDate: _endDate,
+        targets: widget.needs,
+      );
+      if (mounted) setState(() => _data = data);
+    } catch (_) {
+      if (mounted) setState(() => _data = []);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _navigate(int delta) {
+    // Tidak boleh ke depan melebihi minggu ini
+    if (_weekOffset + delta > 0) return;
+    setState(() {
+      _weekOffset += delta;
+      _data = null;
+    });
+    _fetchData();
+  }
+
+  String _formatDate(DateTime d) {
+    const bulan = [
+      '', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
+    ];
+    return '${d.day} ${bulan[d.month]} ${d.year}';
+  }
+
+  String get _periodLabel {
+    final start = _formatDate(_startDate);
+    final end = _formatDate(_endDate);
+    if (_weekOffset == 0) return 'Minggu ini  ·  $start – $end';
+    if (_weekOffset == -1) return 'Minggu lalu  ·  $start – $end';
+    return 'Periode  $start – $end';
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final maxValue =
-        (weeklyData.map((d) => d.cairan).reduce((a, b) => a > b ? a : b) * 1.1)
-            .clamp(target, double.infinity);
+    final weeklyData = _data;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Cairan Mingguan',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: theme.hintColor,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: weeklyData.map((day) {
-            final ratio = day.cairan / maxValue;
-            final isToday =
-                day.date.year == DateTime.now().year &&
-                day.date.month == DateTime.now().month &&
-                day.date.day == DateTime.now().day;
-            final targetRatio = day.cairan / (target > 0 ? target : 1.0);
-            final color = targetRatio >= 1.1
-                ? AppColors.error // Merah >= 110%
-                : targetRatio >= 0.9
-                ? AppColors.success // Hijau 90% - 110%
-                : AppColors.warning; // Kuning < 90%
-            
-            final dayOfWeek = [
-              'Min',
-              'Sen',
-              'Sel',
-              'Rab',
-              'Kam',
-              'Jum',
-              'Sab',
-            ][day.date.weekday % 7];
-
-            return Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 2),
-                child: Column(
-                  children: [
-                    // Bar with rounded top
-                    Container(
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: theme.dividerColor.withValues(alpha: 0.1),
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(6),
-                        ),
-                      ),
-                      alignment: Alignment.bottomCenter,
-                      child: Container(
-                        height: (ratio * 80).clamp(0, 80),
-                        decoration: BoxDecoration(
-                          color: color,
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(6),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '${day.cairan.toInt()} ml',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: isToday
-                            ? theme.primaryColor
-                            : theme.textTheme.bodyMedium?.color,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      dayOfWeek,
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: isToday ? theme.primaryColor : theme.hintColor,
-                        fontWeight: isToday
-                            ? FontWeight.w600
-                            : FontWeight.normal,
-                      ),
-                    ),
-                    if (isToday)
-                      Container(
-                        margin: const EdgeInsets.only(top: 2),
-                        width: 4,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: theme.primaryColor,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-        const SizedBox(height: 8),
-        // Legend
+        // ── Header: judul + navigasi ──
         Row(
           children: [
-            Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(
-                color: theme.primaryColor,
-                borderRadius: BorderRadius.circular(2),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Cairan Mingguan',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: theme.hintColor,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _periodLabel,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: theme.hintColor.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(width: 4),
-            Text(
-              'Target',
-              style: TextStyle(fontSize: 10, color: theme.hintColor),
+            // Tombol navigasi ←  →
+            Row(
+              children: [
+                _NavButton(
+                  icon: Icons.chevron_left_rounded,
+                  onTap: () => _navigate(-1),
+                  enabled: true,
+                ),
+                const SizedBox(width: 4),
+                _NavButton(
+                  icon: Icons.chevron_right_rounded,
+                  onTap: () => _navigate(1),
+                  enabled: _weekOffset < 0,
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(
-                color: AppColors.warning,
-                borderRadius: BorderRadius.circular(2),
-              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // ── Grafik / Loading ──
+        if (_loading || weeklyData == null)
+          SizedBox(
+            height: 130,
+            child: Center(
+              child: CircularProgressIndicator(
+                  strokeWidth: 2, color: theme.primaryColor),
             ),
-            const SizedBox(width: 4),
-            Text(
-              'Berlebih',
-              style: TextStyle(fontSize: 10, color: theme.hintColor),
+          )
+        else if (weeklyData.isEmpty)
+          SizedBox(
+            height: 100,
+            child: Center(
+              child: Text('Tidak ada data',
+                  style: TextStyle(color: theme.hintColor, fontSize: 12)),
             ),
+          )
+        else
+          _buildBars(context, weeklyData),
+
+        const SizedBox(height: 8),
+        // ── Legend ──
+        Row(
+          children: [
+            _LegendDot(color: AppColors.success, label: 'Normal (90–110%)'),
+            const SizedBox(width: 10),
+            _LegendDot(color: AppColors.warning, label: 'Kurang'),
+            const SizedBox(width: 10),
+            _LegendDot(color: AppColors.error, label: 'Berlebih'),
           ],
         ),
       ],
     );
   }
+
+  Widget _buildBars(BuildContext context, List<DailyNutrition> data) {
+    final theme = Theme.of(context);
+    final target = widget.target;
+    final maxValue = data
+        .map((d) => d.cairan)
+        .fold(target, (prev, v) => v > prev ? v : prev) * 1.1;
+
+    const dayLabels = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+    const bulan = [
+      '', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
+    ];
+    final today = DateTime.now();
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: data.map((day) {
+        final ratio = maxValue > 0 ? day.cairan / maxValue : 0.0;
+        final isToday = day.date.year == today.year &&
+            day.date.month == today.month &&
+            day.date.day == today.day;
+        final targetRatio = target > 0 ? day.cairan / target : 0.0;
+        final color = targetRatio >= 1.1
+            ? AppColors.error
+            : targetRatio >= 0.9
+                ? AppColors.success
+                : AppColors.warning;
+
+        final dayLabel = dayLabels[day.date.weekday % 7];
+        final dateLabel = '${day.date.day} ${bulan[day.date.month]}';
+
+        return Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            child: Column(
+              children: [
+                // Bar
+                Container(
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: theme.dividerColor.withValues(alpha: 0.1),
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(6)),
+                  ),
+                  alignment: Alignment.bottomCenter,
+                  child: Container(
+                    height: ((ratio * 80).clamp(0, 80)).toDouble(),
+                    decoration: BoxDecoration(
+                      color: day.cairan == 0
+                          ? theme.dividerColor.withValues(alpha: 0.2)
+                          : color,
+                      borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(6)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                // ml label
+                Text(
+                  day.cairan == 0
+                      ? '–'
+                      : '${day.cairan.toInt()}',
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w600,
+                    color: isToday
+                        ? theme.primaryColor
+                        : theme.textTheme.bodyMedium?.color,
+                  ),
+                ),
+                const SizedBox(height: 1),
+                // Nama hari
+                Text(
+                  dayLabel,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: isToday ? FontWeight.w700 : FontWeight.normal,
+                    color: isToday ? theme.primaryColor : theme.hintColor,
+                  ),
+                ),
+                // Tanggal
+                Text(
+                  dateLabel,
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: isToday
+                        ? theme.primaryColor.withValues(alpha: 0.85)
+                        : theme.hintColor.withValues(alpha: 0.65),
+                  ),
+                ),
+                if (isToday)
+                  Container(
+                    margin: const EdgeInsets.only(top: 2),
+                    width: 4,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: theme.primaryColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
 }
+
+/// Tombol navigasi panah (dipakai di header chart)
+class _NavButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool enabled;
+
+  const _NavButton({
+    required this.icon,
+    required this.onTap,
+    required this.enabled,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTap: enabled ? onTap : null,
+      child: Container(
+        width: 28,
+        height: 28,
+        decoration: BoxDecoration(
+          color: enabled
+              ? theme.primaryColor.withValues(alpha: 0.12)
+              : theme.dividerColor.withValues(alpha: 0.08),
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: enabled
+                ? theme.primaryColor.withValues(alpha: 0.4)
+                : theme.dividerColor.withValues(alpha: 0.2),
+          ),
+        ),
+        child: Icon(
+          icon,
+          size: 18,
+          color: enabled ? theme.primaryColor : theme.hintColor,
+        ),
+      ),
+    );
+  }
+}
+
+class _LegendDot extends StatelessWidget {
+  final Color color;
+  final String label;
+  const _LegendDot({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 3),
+        Text(label,
+            style: TextStyle(
+                fontSize: 9,
+                color: Theme.of(context).hintColor)),
+      ],
+    );
+  }
+}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DAY FLUID DATA MODEL
