@@ -1601,7 +1601,6 @@ class _FoodListSection extends StatelessWidget {
         else
           ...MealType.values.map((meal) {
             final mealEntries = grouped[meal]!;
-            if (mealEntries.isEmpty) return const SizedBox.shrink();
             return _MealSection(
               mealType: meal,
               entries: mealEntries,
@@ -1654,7 +1653,7 @@ class _EmptyFoodState extends StatelessWidget {
   }
 }
 
-// New widget: Section for each meal type with all entries and subtotals
+// Section for each meal type — accordion (collapsed by default), matching DM style
 class _MealSection extends StatelessWidget {
   final MealType mealType;
   final List<FoodLogEntry> entries;
@@ -1668,7 +1667,6 @@ class _MealSection extends StatelessWidget {
     required this.onEdit,
   });
 
-  // Calculate subtotals for this meal
   Map<String, double> _calculateSubtotals() {
     return {
       'energi': entries.fold(0.0, (sum, e) => sum + e.energi),
@@ -1684,92 +1682,199 @@ class _MealSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final subtotals = _calculateSubtotals();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Meal header with emoji and time range
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            children: [
-              Text(mealType.emoji, style: const TextStyle(fontSize: 24)),
-              const SizedBox(width: 10),
-              Expanded(
+    final kkal = subtotals['energi']!;
+
+    // Status color: merah jika tidak ada makanan, hijau jika ada
+    // (konsisten dgn DM — karena non-DM tidak punya target per-meal)
+    final Color statusColor = entries.isEmpty
+        ? theme.hintColor.withValues(alpha: 0.5)
+        : AppColors.success;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color,
+        border: Border.all(
+          color: theme.dividerColor.withValues(alpha: 0.5),
+          width: 1,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(
+                alpha: theme.brightness == Brightness.dark ? 0.15 : 0.04),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Theme(
+        // Hilangkan garis divider bawaan ExpansionTile
+        data: theme.copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: false,
+          tilePadding: EdgeInsets.zero,
+          childrenPadding: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12)),
+          collapsedShape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12)),
+          // Background header sesuai status (mirip DM)
+          collapsedBackgroundColor: entries.isEmpty
+              ? Colors.transparent
+              : statusColor.withValues(alpha: 0.07),
+          backgroundColor: entries.isEmpty
+              ? Colors.transparent
+              : statusColor.withValues(alpha: 0.07),
+          // ── Custom trailing: badge jumlah + ikon expand ──
+          trailing: Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Badge jumlah item
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                        color: statusColor.withValues(alpha: 0.35)),
+                  ),
+                  child: Text(
+                    '${entries.length}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: entries.isEmpty
+                          ? theme.hintColor
+                          : statusColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                // Ikon dropdown
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.18),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                        color: statusColor.withValues(alpha: 0.35)),
+                  ),
+                  child: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 18,
+                    color: entries.isEmpty
+                        ? theme.hintColor
+                        : statusColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // ── Header (title) ──
+          title: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 0, 10),
+            child: Row(
+              children: [
+                Text(mealType.emoji,
+                    style: const TextStyle(fontSize: 22)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        mealType.label,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: theme.textTheme.bodyLarge?.color,
+                        ),
+                      ),
+                      Text(
+                        entries.isEmpty
+                            ? mealType.timeRange
+                            : '${mealType.timeRange}  ·  ${kkal.toStringAsFixed(0)} kkal',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: theme.hintColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // ── Expanded content ──
+          children: [
+            Divider(height: 1, color: theme.dividerColor),
+            if (entries.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                    vertical: 16, horizontal: 16),
+                child: Text(
+                  'Belum ada makanan untuk ${mealType.label}',
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: theme.hintColor,
+                      fontStyle: FontStyle.italic),
+                ),
+              )
+            else ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: entries
+                      .map((e) => _FoodEntryCard(
+                            entry: e,
+                            onDelete: () => onDelete(e),
+                            onEdit: () => onEdit(e),
+                          ))
+                      .toList(),
+                ),
+              ),
+              // Subtotal row
+              Container(
+                margin: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: theme.dividerColor.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                      color: theme.dividerColor.withValues(alpha: 0.2)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      mealType.label,
+                      'Subtotal: ${kkal.toStringAsFixed(0)} kkal',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: theme.textTheme.bodyLarge?.color,
+                        color: theme.hintColor,
                       ),
                     ),
                     Text(
-                      mealType.timeRange,
+                      'Na: ${subtotals['natrium']!.toStringAsFixed(0)} mg  ·  P: ${subtotals['protein']!.toStringAsFixed(1)} g',
                       style: TextStyle(
-                        fontSize: 11,
-                        color: theme.hintColor,
-                      ),
+                          fontSize: 11,
+                          color:
+                              theme.hintColor.withValues(alpha: 0.8)),
                     ),
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: theme.primaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  '${entries.length}',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: theme.primaryColor,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
             ],
-          ),
+          ],
         ),
-        // Food entries
-        ...entries.map(
-          (e) => _FoodEntryCard(
-            entry: e,
-            onDelete: () => onDelete(e),
-            onEdit: () => onEdit(e),
-          ),
-        ),
-        // Meal subtotals
-        Container(
-          margin: const EdgeInsets.fromLTRB(0, 4, 0, 12),
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: theme.dividerColor.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Subtotal Kalori: ${subtotals['energi']!.toStringAsFixed(0)} kkal',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: theme.hintColor,
-                ),
-              ),
-              Text(
-                'Na: ${subtotals['natrium']!.toStringAsFixed(0)} mg  ·  P: ${subtotals['protein']!.toStringAsFixed(1)} g',
-                style: TextStyle(fontSize: 11, color: theme.hintColor.withValues(alpha: 0.8)),
-              ),
-            ],
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
