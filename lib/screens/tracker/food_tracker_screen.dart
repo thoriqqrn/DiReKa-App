@@ -797,6 +797,7 @@ class _NutritionSummaryCard extends StatelessWidget {
   });
 
   bool get _isDM => diseaseType == DiseaseType.type2DiabetesMellitus;
+  bool get _isHF => diseaseType == DiseaseType.heartFailure;
 
   @override
   Widget build(BuildContext context) {
@@ -852,20 +853,24 @@ class _NutritionSummaryCard extends StatelessWidget {
           'mg',
           Icons.science_outlined,
         ),
-        _NutrientData(
-          'Kalium',
-          intake.kalium,
-          needs.kalium,
-          'mg',
-          Icons.bolt_outlined,
-        ),
-        _NutrientData(
-          'Fosfor',
-          intake.fosfor,
-          needs.fosfor,
-          'mg',
-          Icons.circle_outlined,
-        ),
+        // Kalium & Fosfor: tidak relevan untuk Jantung Koroner (HF),
+        // hanya ditampilkan untuk CKD dan penyakit lainnya.
+        if (!_isHF) ...[
+          _NutrientData(
+            'Kalium',
+            intake.kalium,
+            needs.kalium,
+            'mg',
+            Icons.bolt_outlined,
+          ),
+          _NutrientData(
+            'Fosfor',
+            intake.fosfor,
+            needs.fosfor,
+            'mg',
+            Icons.circle_outlined,
+          ),
+        ],
         _NutrientData(
           'Cairan',
           intake.cairan,
