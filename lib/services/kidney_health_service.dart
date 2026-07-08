@@ -19,8 +19,13 @@ class KidneyHealthService {
     );
   }
 
-  static Future<void> updateRecord(String uid, KidneyHealthRecord record) async {
-    await _recordsRef(uid).doc(record.id).set(record.toMap(), SetOptions(merge: true));
+  static Future<void> updateRecord(
+    String uid,
+    KidneyHealthRecord record,
+  ) async {
+    await _recordsRef(
+      uid,
+    ).doc(record.id).set(record.toMap(), SetOptions(merge: true));
     await FamilyLinkService.mirrorUserSubcollectionWrite(
       sourceUid: uid,
       subcollection: 'kidney_health_records',
@@ -41,19 +46,25 @@ class KidneyHealthService {
   static Future<List<KidneyHealthRecord>> getRecords(
     String uid, {
     DateTime? fromDate,
+    DateTime? toDate,
     int limit = 200,
   }) async {
-    Query<Map<String, dynamic>> query = _recordsRef(uid)
-        .orderBy('date', descending: true)
-        .limit(limit);
+    Query<Map<String, dynamic>> query = _recordsRef(
+      uid,
+    ).orderBy('date', descending: true).limit(limit);
 
     if (fromDate != null) {
-      query = query.where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(fromDate));
+      query = query.where(
+        'date',
+        isGreaterThanOrEqualTo: Timestamp.fromDate(fromDate),
+      );
+    }
+
+    if (toDate != null) {
+      query = query.where('date', isLessThan: Timestamp.fromDate(toDate));
     }
 
     final snap = await query.get();
-    return snap.docs
-        .map((d) => KidneyHealthRecord.fromMap(d.data()))
-        .toList();
+    return snap.docs.map((d) => KidneyHealthRecord.fromMap(d.data())).toList();
   }
 }

@@ -60,8 +60,8 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
 
   Color get _inputButtonForeground =>
       Theme.of(context).brightness == Brightness.dark
-          ? Colors.white
-          : const Color(0xFF0F172A);
+      ? Colors.white
+      : const Color(0xFF0F172A);
 
   bool _canSubmitHealthInput() {
     if (_uid.isNotEmpty) return true;
@@ -523,21 +523,24 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
               SizedBox(height: 8),
               ...DiabetesInputType.values
                   .where(
-                    (t) =>
-                        usesInsulinTherapy ||
-                        t != DiabetesInputType.insulin,
+                    (t) => usesInsulinTherapy || t != DiabetesInputType.insulin,
                   )
                   .map(
-                (t) => ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: AppColors.diabetesColor.withValues(alpha: 0.12),
-                    child: Icon(_dmTypeIcon(t), color: AppColors.diabetesColor),
+                    (t) => ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: AppColors.diabetesColor.withValues(
+                          alpha: 0.12,
+                        ),
+                        child: Icon(
+                          _dmTypeIcon(t),
+                          color: AppColors.diabetesColor,
+                        ),
+                      ),
+                      title: Text(t.label),
+                      trailing: Icon(Icons.chevron_right),
+                      onTap: () => Navigator.pop(ctx, t),
+                    ),
                   ),
-                  title: Text(t.label),
-                  trailing: Icon(Icons.chevron_right),
-                  onTap: () => Navigator.pop(ctx, t),
-                ),
-              ),
             ],
           ),
         ),
@@ -597,16 +600,21 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
               ...HeartInputType.values
                   .where((t) => t != HeartInputType.beratBadan)
                   .map(
-                (t) => ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: AppColors.heartColor.withValues(alpha: 0.12),
-                    child: Icon(_heartTypeIcon(t), color: AppColors.heartColor),
+                    (t) => ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: AppColors.heartColor.withValues(
+                          alpha: 0.12,
+                        ),
+                        child: Icon(
+                          _heartTypeIcon(t),
+                          color: AppColors.heartColor,
+                        ),
+                      ),
+                      title: Text(t.label),
+                      trailing: Icon(Icons.chevron_right),
+                      onTap: () => Navigator.pop(ctx, t),
+                    ),
                   ),
-                  title: Text(t.label),
-                  trailing: Icon(Icons.chevron_right),
-                  onTap: () => Navigator.pop(ctx, t),
-                ),
-              ),
             ],
           ),
         ),
@@ -639,16 +647,19 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     }
   }
 
-  Future<HeartHealthRecord?> _showHeartWeightDialog({HeartHealthRecord? existing}) {
+  Future<HeartHealthRecord?> _showHeartWeightDialog({
+    HeartHealthRecord? existing,
+  }) {
     final payload = existing?.payload ?? {};
     final weightController = TextEditingController(
       text: (payload['weight'] ?? '').toString(),
     );
     final idealController = TextEditingController(
-      text: (payload['idealWeight'] ??
-              context.read<AuthProvider>().currentUser?.weight ??
-              '')
-          .toString(),
+      text:
+          (payload['idealWeight'] ??
+                  context.read<AuthProvider>().currentUser?.weight ??
+                  '')
+              .toString(),
     );
     DateTime date = existing?.date ?? DateTime.now();
 
@@ -656,7 +667,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocalState) => AlertDialog(
-          title: Text(existing == null ? 'Input Berat Badan' : 'Edit Berat Badan'),
+          title: Text(
+            existing == null ? 'Input Berat Badan' : 'Edit Berat Badan',
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -684,13 +697,18 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                 TextField(
                   controller: idealController,
                   keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(labelText: 'Berat badan ideal (kg)'),
+                  decoration: InputDecoration(
+                    labelText: 'Berat badan ideal (kg)',
+                  ),
                 ),
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Batal')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Batal'),
+            ),
             ElevatedButton(
               onPressed: () {
                 final w = double.tryParse(weightController.text.trim()) ?? -1;
@@ -699,7 +717,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                 Navigator.pop(
                   ctx,
                   HeartHealthRecord(
-                    id: existing?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
+                    id:
+                        existing?.id ??
+                        DateTime.now().microsecondsSinceEpoch.toString(),
                     type: HeartInputType.beratBadan,
                     date: DateTime(date.year, date.month, date.day),
                     payload: {'weight': w, 'idealWeight': iw},
@@ -715,20 +735,26 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     );
   }
 
-  Future<HeartHealthRecord?> _showHeartSymptomDialog({HeartHealthRecord? existing}) {
+  Future<HeartHealthRecord?> _showHeartSymptomDialog({
+    HeartHealthRecord? existing,
+  }) {
     final payload = existing?.payload ?? {};
     DateTime date = existing?.date ?? DateTime.now();
     String sesak = (payload['sesakNafas'] ?? 'Tidak').toString();
     String bengkak = (payload['bengkak'] ?? 'Tidak').toString();
     String cepatLelah = (payload['cepatLelah'] ?? 'Tidak').toString();
-    final bbController = TextEditingController(text: (payload['bb'] ?? '').toString());
+    final bbController = TextEditingController(
+      text: (payload['bb'] ?? '').toString(),
+    );
 
     return showDialog<HeartHealthRecord>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocalState) => AlertDialog(
           insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          title: Text(existing == null ? 'Input Gejala Jantung' : 'Edit Gejala Jantung'),
+          title: Text(
+            existing == null ? 'Input Gejala Jantung' : 'Edit Gejala Jantung',
+          ),
           content: SizedBox(
             width: 420,
             child: SingleChildScrollView(
@@ -736,52 +762,57 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                _DatePickerField(
-                  label: 'Tanggal',
-                  value: _dateFmt.format(date),
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: date,
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime.now().add(Duration(days: 1)),
-                    );
-                    if (picked != null) setLocalState(() => date = picked);
-                  },
-                ),
-                SizedBox(height: 10),
-                _HeartOptionField(
-                  label: 'Sesak napas',
-                  value: sesak,
-                  options: ['Tidak', 'Ringan', 'Berat'],
-                  onChanged: (v) => setLocalState(() => sesak = v),
-                ),
-                SizedBox(height: 8),
-                _HeartOptionField(
-                  label: 'Bagian tubuh bengkak',
-                  value: bengkak,
-                  options: ['Tidak', 'Ringan', 'Berat'],
-                  onChanged: (v) => setLocalState(() => bengkak = v),
-                ),
-                SizedBox(height: 8),
-                _HeartOptionField(
-                  label: 'Cepat lelah',
-                  value: cepatLelah,
-                  options: ['Ya', 'Tidak'],
-                  onChanged: (v) => setLocalState(() => cepatLelah = v),
-                ),
-                SizedBox(height: 8),
-                TextField(
-                  controller: bbController,
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(labelText: 'BB (kg)'),
-                ),
+                  _DatePickerField(
+                    label: 'Tanggal',
+                    value: _dateFmt.format(date),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: date,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now().add(Duration(days: 1)),
+                      );
+                      if (picked != null) setLocalState(() => date = picked);
+                    },
+                  ),
+                  SizedBox(height: 10),
+                  _HeartOptionField(
+                    label: 'Sesak napas',
+                    value: sesak,
+                    options: ['Tidak', 'Ringan', 'Berat'],
+                    onChanged: (v) => setLocalState(() => sesak = v),
+                  ),
+                  SizedBox(height: 8),
+                  _HeartOptionField(
+                    label: 'Bagian tubuh bengkak',
+                    value: bengkak,
+                    options: ['Tidak', 'Ringan', 'Berat'],
+                    onChanged: (v) => setLocalState(() => bengkak = v),
+                  ),
+                  SizedBox(height: 8),
+                  _HeartOptionField(
+                    label: 'Cepat lelah',
+                    value: cepatLelah,
+                    options: ['Ya', 'Tidak'],
+                    onChanged: (v) => setLocalState(() => cepatLelah = v),
+                  ),
+                  SizedBox(height: 8),
+                  TextField(
+                    controller: bbController,
+                    keyboardType: TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: InputDecoration(labelText: 'BB (kg)'),
+                  ),
                 ],
               ),
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Batal')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Batal'),
+            ),
             ElevatedButton(
               onPressed: () {
                 final category = _heartSymptomCategory(
@@ -792,7 +823,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                 Navigator.pop(
                   ctx,
                   HeartHealthRecord(
-                    id: existing?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
+                    id:
+                        existing?.id ??
+                        DateTime.now().microsecondsSinceEpoch.toString(),
                     type: HeartInputType.gejala,
                     date: DateTime(date.year, date.month, date.day),
                     payload: {
@@ -814,10 +847,14 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     );
   }
 
-  Future<HeartHealthRecord?> _showHeartMedicationDialog({HeartHealthRecord? existing}) {
+  Future<HeartHealthRecord?> _showHeartMedicationDialog({
+    HeartHealthRecord? existing,
+  }) {
     final payload = existing?.payload ?? {};
     DateTime date = existing?.date ?? DateTime.now();
-    final nameController = TextEditingController(text: (payload['name'] ?? '').toString());
+    final nameController = TextEditingController(
+      text: (payload['name'] ?? '').toString(),
+    );
     final doseFreqController = TextEditingController(
       text: (payload['doseFreq'] ?? '1').toString(),
     );
@@ -827,7 +864,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     final doseStrengthController = TextEditingController(
       text: (payload['doseStrength'] ?? '').toString(),
     );
-    final noteController = TextEditingController(text: (payload['note'] ?? '').toString());
+    final noteController = TextEditingController(
+      text: (payload['note'] ?? '').toString(),
+    );
     String formType = (payload['form'] ?? 'Tablet').toString();
     String doseUnit = (payload['doseUnit'] ?? 'mg').toString();
     String period = (payload['period'] ?? 'Pagi').toString();
@@ -845,7 +884,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocalState) => AlertDialog(
           insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          title: Text(existing == null ? 'Input Obat Jantung' : 'Edit Obat Jantung'),
+          title: Text(
+            existing == null ? 'Input Obat Jantung' : 'Edit Obat Jantung',
+          ),
           content: SizedBox(
             width: 420,
             child: SingleChildScrollView(
@@ -853,126 +894,135 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                _DatePickerField(
-                  label: 'Tanggal',
-                  value: _dateFmt.format(date),
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: date,
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime.now().add(Duration(days: 1)),
-                    );
-                    if (picked != null) setLocalState(() => date = picked);
-                  },
-                ),
-                SizedBox(height: 10),
-                TextField(
-                  controller: nameController,
-                  decoration: InputDecoration(labelText: 'Nama obat'),
-                ),
-                SizedBox(height: 10),
-                DropdownButtonFormField<String>(
-                  initialValue: formType,
-                  isExpanded: true,
-                  decoration: InputDecoration(labelText: 'Bentuk'),
-                  items: [
-                    DropdownMenuItem(value: 'Tablet', child: Text('Tablet')),
-                    DropdownMenuItem(value: 'Kapsul', child: Text('Kapsul')),
-                    DropdownMenuItem(value: 'Sirup', child: Text('Sirup')),
-                  ],
-                  onChanged: (v) {
-                    if (v != null) setLocalState(() => formType = v);
-                  },
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Format dosis: ... x ... (... mg/ml/g)',
-                  style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodyMedium?.color),
-                ),
-                SizedBox(height: 6),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: doseFreqController,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(labelText: 'Frekuensi'),
-                      ),
+                  _DatePickerField(
+                    label: 'Tanggal',
+                    value: _dateFmt.format(date),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: date,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now().add(Duration(days: 1)),
+                      );
+                      if (picked != null) setLocalState(() => date = picked);
+                    },
+                  ),
+                  SizedBox(height: 10),
+                  TextField(
+                    controller: nameController,
+                    decoration: InputDecoration(labelText: 'Nama obat'),
+                  ),
+                  SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    initialValue: formType,
+                    isExpanded: true,
+                    decoration: InputDecoration(labelText: 'Bentuk'),
+                    items: [
+                      DropdownMenuItem(value: 'Tablet', child: Text('Tablet')),
+                      DropdownMenuItem(value: 'Kapsul', child: Text('Kapsul')),
+                      DropdownMenuItem(value: 'Sirup', child: Text('Sirup')),
+                    ],
+                    onChanged: (v) {
+                      if (v != null) setLocalState(() => formType = v);
+                    },
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Format dosis: ... x ... (... mg/ml/g)',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
                     ),
-                    SizedBox(width: 8),
-                    Text('x'),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: TextField(
-                        controller: doseQtyController,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(labelText: 'Jumlah'),
+                  ),
+                  SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: doseFreqController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(labelText: 'Frekuensi'),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: doseStrengthController,
-                        keyboardType:
-                            TextInputType.numberWithOptions(decimal: true),
-                        decoration: InputDecoration(labelText: 'Kadar'),
+                      SizedBox(width: 8),
+                      Text('x'),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: doseQtyController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(labelText: 'Jumlah'),
+                        ),
                       ),
-                    ),
-                    SizedBox(width: 8),
-                    SizedBox(
-                      width: 110,
-                      child: DropdownButtonFormField<String>(
-                        initialValue: doseUnit,
-                        decoration: InputDecoration(labelText: 'Satuan'),
-                        items: [
-                          DropdownMenuItem(value: 'mg', child: Text('mg')),
-                          DropdownMenuItem(value: 'ml', child: Text('ml')),
-                          DropdownMenuItem(value: 'g', child: Text('g')),
-                        ],
-                        onChanged: (v) {
-                          if (v != null) setLocalState(() => doseUnit = v);
-                        },
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: doseStrengthController,
+                          keyboardType: TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          decoration: InputDecoration(labelText: 'Kadar'),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 8),
-                _HeartOptionField(
-                  label: 'Waktu minum',
-                  value: period,
-                  options: ['Pagi', 'Siang', 'Malam'],
-                  onChanged: (v) => setLocalState(() => period = v),
-                ),
-                SizedBox(height: 8),
-                _HeartOptionField(
-                  label: 'Sudah diminum',
-                  value: consumed,
-                  options: ['Ya', 'Tidak'],
-                  onChanged: (v) => setLocalState(() => consumed = v),
-                ),
-                SizedBox(height: 8),
-                TextField(
-                  controller: noteController,
-                  decoration: InputDecoration(labelText: 'Catatan'),
-                ),
+                      SizedBox(width: 8),
+                      SizedBox(
+                        width: 110,
+                        child: DropdownButtonFormField<String>(
+                          initialValue: doseUnit,
+                          decoration: InputDecoration(labelText: 'Satuan'),
+                          items: [
+                            DropdownMenuItem(value: 'mg', child: Text('mg')),
+                            DropdownMenuItem(value: 'ml', child: Text('ml')),
+                            DropdownMenuItem(value: 'g', child: Text('g')),
+                          ],
+                          onChanged: (v) {
+                            if (v != null) setLocalState(() => doseUnit = v);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  _HeartOptionField(
+                    label: 'Waktu minum',
+                    value: period,
+                    options: ['Pagi', 'Siang', 'Malam'],
+                    onChanged: (v) => setLocalState(() => period = v),
+                  ),
+                  SizedBox(height: 8),
+                  _HeartOptionField(
+                    label: 'Sudah diminum',
+                    value: consumed,
+                    options: ['Ya', 'Tidak'],
+                    onChanged: (v) => setLocalState(() => consumed = v),
+                  ),
+                  SizedBox(height: 8),
+                  TextField(
+                    controller: noteController,
+                    decoration: InputDecoration(labelText: 'Catatan'),
+                  ),
                 ],
               ),
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Batal')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Batal'),
+            ),
             ElevatedButton(
               onPressed: () {
                 if (nameController.text.trim().isEmpty) return;
                 Navigator.pop(
                   ctx,
                   HeartHealthRecord(
-                    id: existing?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
+                    id:
+                        existing?.id ??
+                        DateTime.now().microsecondsSinceEpoch.toString(),
                     type: HeartInputType.obat,
                     date: DateTime(date.year, date.month, date.day),
                     payload: {
@@ -1000,7 +1050,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     );
   }
 
-  Future<HeartHealthRecord?> _showHeartCheckupDialog({HeartHealthRecord? existing}) {
+  Future<HeartHealthRecord?> _showHeartCheckupDialog({
+    HeartHealthRecord? existing,
+  }) {
     final payload = existing?.payload ?? {};
     DateTime date = existing?.date ?? DateTime.now();
     final refs = _examReferencesForDiseaseType(DiseaseType.heartFailure);
@@ -1014,14 +1066,16 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     if (examId.isEmpty || !typeRefs.any((e) => e.id == examId)) {
       final examName = (payload['exam'] ?? '').toString();
       examId = typeRefs
-              .firstWhere(
-                (e) => e.name.toLowerCase() == examName.toLowerCase(),
-                orElse: () => typeRefs.first,
-              )
-              .id;
+          .firstWhere(
+            (e) => e.name.toLowerCase() == examName.toLowerCase(),
+            orElse: () => typeRefs.first,
+          )
+          .id;
     }
 
-    final resultController = TextEditingController(text: (payload['result'] ?? '').toString());
+    final resultController = TextEditingController(
+      text: (payload['result'] ?? '').toString(),
+    );
     String sampleTime = (payload['sampleTime'] ?? 'Pagi').toString();
     if (!['Pagi', 'Siang', 'Sore', 'Malam'].contains(sampleTime)) {
       sampleTime = 'Pagi';
@@ -1040,235 +1094,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocalState) => AlertDialog(
           insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          title: Text(existing == null ? 'Input Pemeriksaan' : 'Edit Pemeriksaan'),
-          content: SizedBox(
-            width: 430,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                _DatePickerField(
-                  label: 'Tanggal',
-                  value: _dateFmt.format(date),
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: date,
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime.now().add(Duration(days: 1)),
-                    );
-                    if (picked != null) setLocalState(() => date = picked);
-                  },
-                ),
-                SizedBox(height: 10),
-                Text(
-                  'Jenis pemeriksaan',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                SizedBox(height: 6),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: groups
-                      .map(
-                        (g) => ChoiceChip(
-                          selected: examType == g,
-                          label: Text(g),
-                          onSelected: (_) {
-                            setLocalState(() {
-                              examType = g;
-                              final nextRefs = refs.where((e) => e.group == examType).toList();
-                              examId = nextRefs.first.id;
-                            });
-                          },
-                        ),
-                      )
-                      .toList(),
-                ),
-                SizedBox(height: 10),
-                DropdownButtonFormField<String>(
-                  initialValue: examId,
-                  isExpanded: true,
-                  decoration: InputDecoration(labelText: 'Pemeriksaan'),
-                  items: refs
-                      .where((e) => e.group == examType)
-                      .map(
-                        (e) => DropdownMenuItem(
-                          value: e.id,
-                          child: Text(e.name),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    if (value == null) return;
-                    setLocalState(() => examId = value);
-                  },
-                ),
-                SizedBox(height: 10),
-                Builder(
-                  builder: (_) {
-                    final exam = selectedExam();
-                    return Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).scaffoldBackgroundColor,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Theme.of(context).dividerColor),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Satuan: ${exam.unit.isEmpty ? '-' : exam.unit}',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                          SizedBox(height: 2),
-                          Text(
-                            'Nilai normal: ${exam.normal}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Theme.of(context).textTheme.bodyMedium?.color,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-                if (examType == 'Urin') ...[
-                  SizedBox(height: 10),
-                  _HeartOptionField(
-                    label: 'Waktu pengambilan urin',
-                    value: sampleTime,
-                    options: ['Pagi', 'Siang', 'Sore', 'Malam'],
-                    onChanged: (v) => setLocalState(() => sampleTime = v),
-                  ),
-                ],
-                SizedBox(height: 10),
-                TextField(
-                  controller: resultController,
-                  onChanged: (_) => setLocalState(() {}),
-                  decoration: InputDecoration(
-                    labelText: 'Hasil',
-                    hintText: 'Contoh: 130/80, 5.2, Negatif',
-                  ),
-                ),
-                SizedBox(height: 10),
-                Builder(
-                  builder: (_) {
-                    final autoCategory = _autoExamCategory(
-                      selectedExam(),
-                      resultController.text.trim(),
-                    );
-                    return Row(
-                      children: [
-                        Text(
-                          'Kategori otomatis: ',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: Theme.of(context).hintColor,
-                          ),
-                        ),
-                        _StatusBadge(
-                          text: autoCategory,
-                          color: _checkupCategoryColor(context, autoCategory),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-                ],
-              ),
-            ),
+          title: Text(
+            existing == null ? 'Input Pemeriksaan' : 'Edit Pemeriksaan',
           ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Batal')),
-            ElevatedButton(
-              onPressed: () {
-                final exam = selectedExam();
-                if (resultController.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Hasil pemeriksaan wajib diisi.'),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                  return;
-                }
-                Navigator.pop(
-                  ctx,
-                  HeartHealthRecord(
-                    id: existing?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
-                    type: HeartInputType.pemeriksaan,
-                    date: DateTime(date.year, date.month, date.day),
-                    payload: {
-                      'examType': examType,
-                      'examId': exam.id,
-                      'exam': exam.name,
-                      'result': resultController.text.trim(),
-                      'unit': exam.unit,
-                      'normalRange': exam.normal,
-                      'category': _autoExamCategory(
-                        exam,
-                        resultController.text.trim(),
-                      ),
-                      if (examType == 'Urin') 'sampleTime': sampleTime,
-                    },
-                    createdAt: existing?.createdAt ?? DateTime.now(),
-                  ),
-                );
-              },
-              child: Text('Simpan'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<DiabetesHealthRecord?> _showDiabetesCheckupDialog({DiabetesHealthRecord? existing}) {
-    final payload = existing?.payload ?? {};
-    DateTime date = existing?.date ?? DateTime.now();
-    final refs = _examReferencesForDiseaseType(DiseaseType.type2DiabetesMellitus);
-    final groups = refs.map((e) => e.group).toSet().toList();
-
-    String examType = (payload['examType'] ?? 'Fisik').toString();
-    if (!groups.contains(examType)) examType = groups.first;
-
-    String examId = (payload['examId'] ?? '').toString();
-    final typeRefs = refs.where((e) => e.group == examType).toList();
-    if (examId.isEmpty || !typeRefs.any((e) => e.id == examId)) {
-      final examName = (payload['exam'] ?? '').toString();
-      examId = typeRefs
-              .firstWhere(
-                (e) => e.name.toLowerCase() == examName.toLowerCase(),
-                orElse: () => typeRefs.first,
-              )
-              .id;
-    }
-
-    final resultController = TextEditingController(text: (payload['result'] ?? '').toString());
-    String sampleTime = (payload['sampleTime'] ?? 'Pagi').toString();
-    if (!['Pagi', 'Siang', 'Sore', 'Malam'].contains(sampleTime)) {
-      sampleTime = 'Pagi';
-    }
-
-    _ExamReference selectedExam() {
-      final selectedRefs = refs.where((e) => e.group == examType).toList();
-      return selectedRefs.firstWhere(
-        (e) => e.id == examId,
-        orElse: () => selectedRefs.first,
-      );
-    }
-
-    return showDialog<DiabetesHealthRecord>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setLocalState) => AlertDialog(
-          insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          title: Text(existing == null ? 'Input Pemeriksaan' : 'Edit Pemeriksaan'),
           content: SizedBox(
             width: 430,
             child: SingleChildScrollView(
@@ -1306,7 +1134,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                             onSelected: (_) {
                               setLocalState(() {
                                 examType = g;
-                                final nextRefs = refs.where((e) => e.group == examType).toList();
+                                final nextRefs = refs
+                                    .where((e) => e.group == examType)
+                                    .toList();
                                 examId = nextRefs.first.id;
                               });
                             },
@@ -1343,7 +1173,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                         decoration: BoxDecoration(
                           color: Theme.of(context).scaffoldBackgroundColor,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Theme.of(context).dividerColor),
+                          border: Border.all(
+                            color: Theme.of(context).dividerColor,
+                          ),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1357,7 +1189,256 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                               'Nilai normal: ${exam.normal}',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Theme.of(context).textTheme.bodyMedium?.color,
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodyMedium?.color,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  if (examType == 'Urin') ...[
+                    SizedBox(height: 10),
+                    _HeartOptionField(
+                      label: 'Waktu pengambilan urin',
+                      value: sampleTime,
+                      options: ['Pagi', 'Siang', 'Sore', 'Malam'],
+                      onChanged: (v) => setLocalState(() => sampleTime = v),
+                    ),
+                  ],
+                  SizedBox(height: 10),
+                  TextField(
+                    controller: resultController,
+                    onChanged: (_) => setLocalState(() {}),
+                    decoration: InputDecoration(
+                      labelText: 'Hasil',
+                      hintText: 'Contoh: 130/80, 5.2, Negatif',
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Builder(
+                    builder: (_) {
+                      final autoCategory = _autoExamCategory(
+                        selectedExam(),
+                        resultController.text.trim(),
+                      );
+                      return Row(
+                        children: [
+                          Text(
+                            'Kategori otomatis: ',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).hintColor,
+                            ),
+                          ),
+                          _StatusBadge(
+                            text: autoCategory,
+                            color: _checkupCategoryColor(context, autoCategory),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final exam = selectedExam();
+                if (resultController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Hasil pemeriksaan wajib diisi.'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                  return;
+                }
+                Navigator.pop(
+                  ctx,
+                  HeartHealthRecord(
+                    id:
+                        existing?.id ??
+                        DateTime.now().microsecondsSinceEpoch.toString(),
+                    type: HeartInputType.pemeriksaan,
+                    date: DateTime(date.year, date.month, date.day),
+                    payload: {
+                      'examType': examType,
+                      'examId': exam.id,
+                      'exam': exam.name,
+                      'result': resultController.text.trim(),
+                      'unit': exam.unit,
+                      'normalRange': exam.normal,
+                      'category': _autoExamCategory(
+                        exam,
+                        resultController.text.trim(),
+                      ),
+                      if (examType == 'Urin') 'sampleTime': sampleTime,
+                    },
+                    createdAt: existing?.createdAt ?? DateTime.now(),
+                  ),
+                );
+              },
+              child: Text('Simpan'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<DiabetesHealthRecord?> _showDiabetesCheckupDialog({
+    DiabetesHealthRecord? existing,
+  }) {
+    final payload = existing?.payload ?? {};
+    DateTime date = existing?.date ?? DateTime.now();
+    final refs = _examReferencesForDiseaseType(
+      DiseaseType.type2DiabetesMellitus,
+    );
+    final groups = refs.map((e) => e.group).toSet().toList();
+
+    String examType = (payload['examType'] ?? 'Fisik').toString();
+    if (!groups.contains(examType)) examType = groups.first;
+
+    String examId = (payload['examId'] ?? '').toString();
+    final typeRefs = refs.where((e) => e.group == examType).toList();
+    if (examId.isEmpty || !typeRefs.any((e) => e.id == examId)) {
+      final examName = (payload['exam'] ?? '').toString();
+      examId = typeRefs
+          .firstWhere(
+            (e) => e.name.toLowerCase() == examName.toLowerCase(),
+            orElse: () => typeRefs.first,
+          )
+          .id;
+    }
+
+    final resultController = TextEditingController(
+      text: (payload['result'] ?? '').toString(),
+    );
+    String sampleTime = (payload['sampleTime'] ?? 'Pagi').toString();
+    if (!['Pagi', 'Siang', 'Sore', 'Malam'].contains(sampleTime)) {
+      sampleTime = 'Pagi';
+    }
+
+    _ExamReference selectedExam() {
+      final selectedRefs = refs.where((e) => e.group == examType).toList();
+      return selectedRefs.firstWhere(
+        (e) => e.id == examId,
+        orElse: () => selectedRefs.first,
+      );
+    }
+
+    return showDialog<DiabetesHealthRecord>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocalState) => AlertDialog(
+          insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          title: Text(
+            existing == null ? 'Input Pemeriksaan' : 'Edit Pemeriksaan',
+          ),
+          content: SizedBox(
+            width: 430,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _DatePickerField(
+                    label: 'Tanggal',
+                    value: _dateFmt.format(date),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: date,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now().add(Duration(days: 1)),
+                      );
+                      if (picked != null) setLocalState(() => date = picked);
+                    },
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'Jenis pemeriksaan',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: groups
+                        .map(
+                          (g) => ChoiceChip(
+                            selected: examType == g,
+                            label: Text(g),
+                            onSelected: (_) {
+                              setLocalState(() {
+                                examType = g;
+                                final nextRefs = refs
+                                    .where((e) => e.group == examType)
+                                    .toList();
+                                examId = nextRefs.first.id;
+                              });
+                            },
+                          ),
+                        )
+                        .toList(),
+                  ),
+                  SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    initialValue: examId,
+                    isExpanded: true,
+                    decoration: InputDecoration(labelText: 'Pemeriksaan'),
+                    items: refs
+                        .where((e) => e.group == examType)
+                        .map(
+                          (e) => DropdownMenuItem(
+                            value: e.id,
+                            child: Text(e.name),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setLocalState(() => examId = value);
+                    },
+                  ),
+                  SizedBox(height: 10),
+                  Builder(
+                    builder: (_) {
+                      final exam = selectedExam();
+                      return Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).scaffoldBackgroundColor,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: Theme.of(context).dividerColor,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Satuan: ${exam.unit.isEmpty ? '-' : exam.unit}',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Nilai normal: ${exam.normal}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodyMedium?.color,
                               ),
                             ),
                           ],
@@ -1412,7 +1493,10 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Batal')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Batal'),
+            ),
             ElevatedButton(
               onPressed: () {
                 final exam = selectedExam();
@@ -1428,7 +1512,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                 Navigator.pop(
                   ctx,
                   DiabetesHealthRecord(
-                    id: existing?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
+                    id:
+                        existing?.id ??
+                        DateTime.now().microsecondsSinceEpoch.toString(),
                     type: DiabetesInputType.pemeriksaan,
                     date: DateTime(date.year, date.month, date.day),
                     payload: {
@@ -1628,7 +1714,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                         color: AppColors.diabetesColor.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: AppColors.diabetesColor.withValues(alpha: 0.25),
+                          color: AppColors.diabetesColor.withValues(
+                            alpha: 0.25,
+                          ),
                         ),
                       ),
                       child: Text(
@@ -1646,7 +1734,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       decoration: BoxDecoration(
                         color: Theme.of(context).scaffoldBackgroundColor,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Theme.of(context).dividerColor),
+                        border: Border.all(
+                          color: Theme.of(context).dividerColor,
+                        ),
                       ),
                       child: Row(
                         children: [
@@ -1671,7 +1761,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                                   context: context,
                                   initialDate: date,
                                   firstDate: DateTime(2020),
-                                  lastDate: DateTime.now().add(Duration(days: 1)),
+                                  lastDate: DateTime.now().add(
+                                    Duration(days: 1),
+                                  ),
                                 );
                                 if (picked != null) {
                                   setLocalState(() => date = picked);
@@ -1691,7 +1783,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       fontWeight: FontWeight.w600,
-                                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                                      color: Theme.of(
+                                        context,
+                                      ).textTheme.bodyLarge?.color,
                                     ),
                                   ),
                                   SizedBox(height: 2),
@@ -1699,7 +1793,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                                     'Tap untuk pilih tanggal',
                                     style: TextStyle(
                                       fontSize: 11,
-                                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                                      color: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium?.color,
                                     ),
                                   ),
                                 ],
@@ -1732,12 +1828,30 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       initialValue: meal,
                       decoration: InputDecoration(labelText: 'Waktu makan'),
                       items: [
-                        DropdownMenuItem(value: 'Sarapan', child: Text('Sarapan')),
-                        DropdownMenuItem(value: 'Selingan Pagi', child: Text('Selingan Pagi')),
-                        DropdownMenuItem(value: 'Makan Siang', child: Text('Makan Siang')),
-                        DropdownMenuItem(value: 'Selingan Siang', child: Text('Selingan Siang')),
-                        DropdownMenuItem(value: 'Makan Malam', child: Text('Makan Malam')),
-                        DropdownMenuItem(value: 'Selingan Malam', child: Text('Selingan Malam')),
+                        DropdownMenuItem(
+                          value: 'Sarapan',
+                          child: Text('Sarapan'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Selingan Pagi',
+                          child: Text('Selingan Pagi'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Makan Siang',
+                          child: Text('Makan Siang'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Selingan Siang',
+                          child: Text('Selingan Siang'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Makan Malam',
+                          child: Text('Makan Malam'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Selingan Malam',
+                          child: Text('Selingan Malam'),
+                        ),
                       ],
                       onChanged: (value) {
                         if (value != null) {
@@ -1757,7 +1871,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       decoration: BoxDecoration(
                         color: Theme.of(context).scaffoldBackgroundColor,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Theme.of(context).dividerColor),
+                        border: Border.all(
+                          color: Theme.of(context).dividerColor,
+                        ),
                       ),
                       child: Row(
                         children: [
@@ -1768,7 +1884,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                                   : autoInfoText,
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Theme.of(context).textTheme.bodyMedium?.color,
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodyMedium?.color,
                               ),
                             ),
                           ),
@@ -1785,10 +1903,10 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                             onPressed: isAutoLoading
                                 ? null
                                 : () => syncMealFromFood(
-                                      setLocalState: setLocalState,
-                                      targetDate: date,
-                                      mealLabel: meal,
-                                    ),
+                                    setLocalState: setLocalState,
+                                    targetDate: date,
+                                    mealLabel: meal,
+                                  ),
                             child: Text('Sinkronkan'),
                           ),
                         ],
@@ -1798,31 +1916,47 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     TextField(
                       controller: basalController,
                       onChanged: (_) => setLocalState(() {}),
-                      keyboardType: TextInputType.numberWithOptions(decimal: true),
-                      decoration: InputDecoration(labelText: 'Insulin basal harian (A) unit'),
+                      keyboardType: TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Insulin basal harian (A) unit',
+                      ),
                     ),
                     SizedBox(height: 4),
                     Text(
                       'Contoh: total insulin kerja panjang dalam 1 hari. Isi angka saja (mis. 12).',
-                      style: TextStyle(fontSize: 11, color: Theme.of(context).textTheme.bodyMedium?.color),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
+                      ),
                     ),
                     SizedBox(height: 10),
                     TextField(
                       controller: prandialController,
                       onChanged: (_) => setLocalState(() {}),
-                      keyboardType: TextInputType.numberWithOptions(decimal: true),
-                      decoration: InputDecoration(labelText: 'Insulin prandial harian (B) unit'),
+                      keyboardType: TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Insulin prandial harian (B) unit',
+                      ),
                     ),
                     SizedBox(height: 4),
                     Text(
                       'Contoh: total insulin sebelum makan selama 1 hari. Isi angka saja (mis. 18).',
-                      style: TextStyle(fontSize: 11, color: Theme.of(context).textTheme.bodyMedium?.color),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
+                      ),
                     ),
                     SizedBox(height: 10),
                     TextField(
                       controller: carbsController,
                       readOnly: true,
-                      keyboardType: TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       decoration: InputDecoration(
                         labelText: 'Total karbohidrat makan (gram)',
                         helperText: 'Otomatis dari Food Tracker',
@@ -1831,13 +1965,18 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     SizedBox(height: 4),
                     Text(
                       'Nilai ini otomatis sesuai tanggal + waktu makan yang dipilih.',
-                      style: TextStyle(fontSize: 11, color: Theme.of(context).textTheme.bodyMedium?.color),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
+                      ),
                     ),
                     SizedBox(height: 10),
                     TextField(
                       controller: glController,
                       readOnly: true,
-                      keyboardType: TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       decoration: InputDecoration(
                         labelText: 'GL',
                         helperText: 'Otomatis dari Food Tracker',
@@ -1846,19 +1985,29 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     SizedBox(height: 4),
                     Text(
                       'Nilai GL dihitung otomatis dari log makanan pada waktu makan tersebut.',
-                      style: TextStyle(fontSize: 11, color: Theme.of(context).textTheme.bodyMedium?.color),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
+                      ),
                     ),
                     SizedBox(height: 10),
                     TextField(
                       controller: actualController,
                       onChanged: (_) => setLocalState(() {}),
-                      keyboardType: TextInputType.numberWithOptions(decimal: true),
-                      decoration: InputDecoration(labelText: 'Dosis insulin aktual (F) unit'),
+                      keyboardType: TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Dosis insulin aktual (F) unit',
+                      ),
                     ),
                     SizedBox(height: 4),
                     Text(
                       'Isi dosis insulin yang benar-benar diberikan sebelum makan.',
-                      style: TextStyle(fontSize: 11, color: Theme.of(context).textTheme.bodyMedium?.color),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
+                      ),
                     ),
                     SizedBox(height: 12),
                     Container(
@@ -1867,15 +2016,23 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       decoration: BoxDecoration(
                         color: Theme.of(context).scaffoldBackgroundColor,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Theme.of(context).dividerColor),
+                        border: Border.all(
+                          color: Theme.of(context).dividerColor,
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Total insulin harian (C = A+B): ${c.toStringAsFixed(2)} unit'),
+                          Text(
+                            'Total insulin harian (C = A+B): ${c.toStringAsFixed(2)} unit',
+                          ),
                           Text('ICR (D = 500/C): ${d.toStringAsFixed(2)}'),
-                          Text('Estimasi insulin makan (E = karbohidrat/D): ${e.toStringAsFixed(2)} unit'),
-                          Text('Selisih (F-E): ${diff.toStringAsFixed(2)} unit'),
+                          Text(
+                            'Estimasi insulin makan (E = karbohidrat/D): ${e.toStringAsFixed(2)} unit',
+                          ),
+                          Text(
+                            'Selisih (F-E): ${diff.toStringAsFixed(2)} unit',
+                          ),
                           SizedBox(height: 6),
                           Row(
                             children: [
@@ -1885,8 +2042,8 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                                 color: category == 'Balance'
                                     ? AppColors.success
                                     : category == 'Lebih'
-                                        ? AppColors.warning
-                                        : AppColors.error,
+                                    ? AppColors.warning
+                                    : AppColors.error,
                               ),
                             ],
                           ),
@@ -1898,13 +2055,19 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Batal')),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Batal'),
+              ),
               ElevatedButton(
                 onPressed: () {
-                  if (actualController.text.trim().isEmpty || carbsController.text.trim().isEmpty) {
+                  if (actualController.text.trim().isEmpty ||
+                      carbsController.text.trim().isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Isi karbohidrat dan dosis aktual terlebih dahulu.'),
+                        content: Text(
+                          'Isi karbohidrat dan dosis aktual terlebih dahulu.',
+                        ),
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
@@ -1914,7 +2077,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                   Navigator.pop(
                     ctx,
                     DiabetesHealthRecord(
-                      id: existing?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
+                      id:
+                          existing?.id ??
+                          DateTime.now().microsecondsSinceEpoch.toString(),
                       type: DiabetesInputType.insulin,
                       date: DateTime(date.year, date.month, date.day),
                       payload: {
@@ -1972,7 +2137,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
               ...KidneyInputType.values.map(
                 (t) => ListTile(
                   leading: CircleAvatar(
-                    backgroundColor: AppColors.kidneyColor.withValues(alpha: 0.12),
+                    backgroundColor: AppColors.kidneyColor.withValues(
+                      alpha: 0.12,
+                    ),
                     child: Icon(_typeIcon(t), color: AppColors.kidneyColor),
                   ),
                   title: Text(t.label),
@@ -2004,6 +2171,123 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     }
   }
 
+  Future<void> _showMonthlyKidneyTrendDialog() async {
+    if (_uid.isEmpty) {
+      _showLoginRequired();
+      return;
+    }
+
+    final now = DateTime.now();
+    DateTime selectedMonth = DateTime(now.year, now.month);
+    List<KidneyHealthRecord> records = [];
+    var isLoading = true;
+    var didRequestInitialLoad = false;
+    String? error;
+
+    Future<void> loadMonth(
+      BuildContext dialogContext,
+      StateSetter setLocalState,
+    ) async {
+      setLocalState(() {
+        isLoading = true;
+        error = null;
+      });
+      final monthStart = DateTime(selectedMonth.year, selectedMonth.month);
+      final nextMonth = DateTime(selectedMonth.year, selectedMonth.month + 1);
+      try {
+        final loaded = await KidneyHealthService.getRecords(
+          _uid,
+          fromDate: monthStart,
+          toDate: nextMonth,
+          limit: 400,
+        );
+        final filtered =
+            loaded
+                .where((record) => record.type == KidneyInputType.hemodialisa)
+                .toList()
+              ..sort((a, b) => a.date.compareTo(b.date));
+        if (!dialogContext.mounted) return;
+        setLocalState(() {
+          records = filtered;
+          isLoading = false;
+        });
+      } catch (_) {
+        if (!dialogContext.mounted) return;
+        setLocalState(() {
+          records = [];
+          isLoading = false;
+          error = 'History bulan ini belum bisa dimuat.';
+        });
+      }
+    }
+
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocalState) {
+          if (!didRequestInitialLoad) {
+            didRequestInitialLoad = true;
+            scheduleMicrotask(() => loadMonth(ctx, setLocalState));
+          }
+
+          return AlertDialog(
+            insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            title: Text('History Grafik % BB'),
+            content: SizedBox(
+              width: 520,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _MonthYearField(
+                      value: selectedMonth,
+                      firstDate: DateTime(now.year - 5),
+                      lastDate: DateTime(now.year, now.month),
+                      onChanged: (value) {
+                        if (value == null) return;
+                        selectedMonth = value;
+                        records = [];
+                        loadMonth(ctx, setLocalState);
+                      },
+                    ),
+                    SizedBox(height: 14),
+                    if (isLoading)
+                      SizedBox(
+                        height: 220,
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else if (error != null)
+                      Padding(
+                        padding: EdgeInsets.all(12),
+                        child: Text(
+                          error!,
+                          style: TextStyle(color: AppColors.error),
+                        ),
+                      )
+                    else
+                      _TrendCard(
+                        records: records,
+                        riskCategory: _riskCategory,
+                        riskColor: _riskColor,
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Tutup'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   Future<_ActivityInputResult?> _showActivityDialog({
     required String title,
     Map<String, dynamic>? existingPayload,
@@ -2011,18 +2295,20 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   }) {
     final payload = existingPayload ?? {};
     DateTime date = existingDate ?? DateTime.now();
-    
-    String activity = (payload['activityName'] ?? _activityOptions.first).toString();
+
+    String activity = (payload['activityName'] ?? _activityOptions.first)
+        .toString();
     // Ensure the initial value exists in options to prevent DropdownButton error
     if (!_activityOptions.contains(activity)) {
       activity = _activityOptions.first;
     }
 
-    String complaint = (payload['complaint'] ?? _activityComplaintOptions.first).toString();
+    String complaint = (payload['complaint'] ?? _activityComplaintOptions.first)
+        .toString();
     if (!_activityComplaintOptions.contains(complaint)) {
       complaint = _activityComplaintOptions.first;
     }
-    
+
     final durationCtrl = TextEditingController(
       text: (payload['duration'] ?? '').toString(),
     );
@@ -2056,7 +2342,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     ),
                     SizedBox(height: 10),
                     DropdownButtonFormField<String>(
-                      initialValue: _activityOptions.contains(activity) ? activity : _activityOptions.first,
+                      initialValue: _activityOptions.contains(activity)
+                          ? activity
+                          : _activityOptions.first,
                       decoration: InputDecoration(labelText: 'Jenis aktivitas'),
                       items: _activityOptions.toSet().map((v) {
                         return DropdownMenuItem(value: v, child: Text(v));
@@ -2069,7 +2357,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     SizedBox(height: 14),
                     TextField(
                       controller: durationCtrl,
-                      keyboardType: TextInputType.numberWithOptions(decimal: false),
+                      keyboardType: TextInputType.numberWithOptions(
+                        decimal: false,
+                      ),
                       decoration: InputDecoration(
                         labelText: 'Durasi (menit)',
                         hintText: 'contoh: 30',
@@ -2078,16 +2368,16 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     ),
                     SizedBox(height: 14),
                     DropdownButtonFormField<String>(
-                      initialValue: _activityComplaintOptions.contains(complaint) ? complaint : _activityComplaintOptions.first,
+                      initialValue:
+                          _activityComplaintOptions.contains(complaint)
+                          ? complaint
+                          : _activityComplaintOptions.first,
                       isExpanded: true,
                       decoration: InputDecoration(labelText: 'Status Keluhan'),
                       items: _activityComplaintOptions.toSet().map((v) {
                         return DropdownMenuItem(
                           value: v,
-                          child: Text(
-                            v,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                          child: Text(v, overflow: TextOverflow.ellipsis),
                         );
                       }).toList(),
                       selectedItemBuilder: (context) {
@@ -2112,7 +2402,10 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Batal')),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Batal'),
+              ),
               ElevatedButton(
                 onPressed: () {
                   final durationValue = durationCtrl.text.trim();
@@ -2122,7 +2415,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     'activityName': activity,
                     'duration': durationValue,
                     'complaint': complaint,
-                    'status': complaint == 'Normal' ? 'Normal / Aman' : 'Perlu Waspada',
+                    'status': complaint == 'Normal'
+                        ? 'Normal / Aman'
+                        : 'Perlu Waspada',
                   };
                   Navigator.pop(
                     ctx,
@@ -2141,9 +2436,13 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     );
   }
 
-  Future<HeartHealthRecord?> _showHeartActivityDialog({HeartHealthRecord? existing}) async {
+  Future<HeartHealthRecord?> _showHeartActivityDialog({
+    HeartHealthRecord? existing,
+  }) async {
     final result = await _showActivityDialog(
-      title: existing == null ? 'Input Aktivitas Jantung' : 'Edit Aktivitas Jantung',
+      title: existing == null
+          ? 'Input Aktivitas Jantung'
+          : 'Edit Aktivitas Jantung',
       existingPayload: existing?.payload,
       existingDate: existing?.date,
     );
@@ -2184,7 +2483,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   }) {
     final payload = existing?.payload ?? {};
     DateTime date = existing?.date ?? DateTime.now();
-    final nameController = TextEditingController(text: (payload['name'] ?? '').toString());
+    final nameController = TextEditingController(
+      text: (payload['name'] ?? '').toString(),
+    );
     final doseFreqController = TextEditingController(
       text: (payload['doseFreq'] ?? '1').toString(),
     );
@@ -2194,7 +2495,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     final doseStrengthController = TextEditingController(
       text: (payload['doseStrength'] ?? '').toString(),
     );
-    final noteController = TextEditingController(text: (payload['note'] ?? '').toString());
+    final noteController = TextEditingController(
+      text: (payload['note'] ?? '').toString(),
+    );
     String formType = (payload['form'] ?? 'Tablet').toString();
     String doseUnit = (payload['doseUnit'] ?? 'mg').toString();
     String period = (payload['period'] ?? 'Pagi').toString();
@@ -2212,7 +2515,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocalState) => AlertDialog(
           insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          title: Text(existing == null ? 'Input Obat Diabetes' : 'Edit Obat Diabetes'),
+          title: Text(
+            existing == null ? 'Input Obat Diabetes' : 'Edit Obat Diabetes',
+          ),
           content: SizedBox(
             width: 420,
             child: SingleChildScrollView(
@@ -2255,7 +2560,10 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                   SizedBox(height: 8),
                   Text(
                     'Format dosis: ... x ... (... mg/ml/g)',
-                    style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodyMedium?.color),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                    ),
                   ),
                   SizedBox(height: 6),
                   Row(
@@ -2285,7 +2593,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       Expanded(
                         child: TextField(
                           controller: doseStrengthController,
-                          keyboardType: TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                           decoration: InputDecoration(labelText: 'Kadar'),
                         ),
                       ),
@@ -2331,14 +2641,19 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Batal')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Batal'),
+            ),
             ElevatedButton(
               onPressed: () {
                 if (nameController.text.trim().isEmpty) return;
                 Navigator.pop(
                   ctx,
                   DiabetesHealthRecord(
-                    id: existing?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
+                    id:
+                        existing?.id ??
+                        DateTime.now().microsecondsSinceEpoch.toString(),
                     type: DiabetesInputType.obat,
                     date: DateTime(date.year, date.month, date.day),
                     payload: {
@@ -2365,6 +2680,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
       ),
     );
   }
+
   void _showNormalValuesDialog(DiseaseType diseaseType) {
     showDialog(
       context: context,
@@ -2375,12 +2691,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
           child: _NormalValuesTableContent(diseaseType: diseaseType),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text("Tutup"),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text("Tutup")),
         ],
-        ),
+      ),
     );
   }
 
@@ -2389,19 +2702,13 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text("Panduan Analisis Insulin"),
-        content: SingleChildScrollView(
-          child: _InsulinGuideContent(),
-        ),
+        content: SingleChildScrollView(child: _InsulinGuideContent()),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text("Tutup"),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text("Tutup")),
         ],
       ),
     );
   }
-
 
   void _showLoginRequired() {
     showModalBottomSheet(
@@ -2494,7 +2801,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocalState) => AlertDialog(
-          title: Text(existing == null ? 'Input Hemodialisa' : 'Edit Hemodialisa'),
+          title: Text(
+            existing == null ? 'Input Hemodialisa' : 'Edit Hemodialisa',
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -2517,9 +2826,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                 SizedBox(height: 10),
                 TextField(
                   controller: postController,
-                  keyboardType: TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
                     labelText: 'BB setelah hemodialisa I (kg)',
                   ),
@@ -2527,9 +2834,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                 SizedBox(height: 10),
                 TextField(
                   controller: preController,
-                  keyboardType: TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
                     labelText: 'BB sebelum hemodialisa II (kg)',
                   ),
@@ -2537,9 +2842,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                 SizedBox(height: 10),
                 TextField(
                   controller: noteController,
-                  decoration: InputDecoration(
-                    labelText: 'Catatan (opsional)',
-                  ),
+                  decoration: InputDecoration(labelText: 'Catatan (opsional)'),
                   maxLines: 2,
                 ),
               ],
@@ -2566,7 +2869,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                 Navigator.pop(
                   ctx,
                   KidneyHealthRecord(
-                    id: existing?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
+                    id:
+                        existing?.id ??
+                        DateTime.now().microsecondsSinceEpoch.toString(),
                     type: KidneyInputType.hemodialisa,
                     date: DateTime(date.year, date.month, date.day),
                     payload: {
@@ -2621,7 +2926,11 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     if (!['Pagi', 'Siang', 'Malam'].contains(period)) {
       period = 'Pagi';
     }
-    if (!['Sebelum makan', 'Saat makan', 'Setelah makan'].contains(mealTiming)) {
+    if (![
+      'Sebelum makan',
+      'Saat makan',
+      'Setelah makan',
+    ].contains(mealTiming)) {
       mealTiming = 'Sebelum makan';
     }
     if (!['Sebelum HD', 'Saat HD', 'Setelah HD'].contains(hdTiming)) {
@@ -2678,7 +2987,10 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                   SizedBox(height: 10),
                   Text(
                     'Format dosis: ... x ... (... mg/ml/g)',
-                    style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodyMedium?.color),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                    ),
                   ),
                   SizedBox(height: 6),
                   Row(
@@ -2714,7 +3026,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       Expanded(
                         child: TextField(
                           controller: doseStrengthController,
-                          keyboardType: TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                           decoration: InputDecoration(
                             labelText: 'Kadar',
                             hintText: '500',
@@ -2767,12 +3081,14 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     runSpacing: 8,
                     children: ['Sebelum makan', 'Saat makan', 'Setelah makan']
                         .map((item) {
-                      return ChoiceChip(
-                        selected: mealTiming == item,
-                        label: Text(item),
-                        onSelected: (_) => setLocalState(() => mealTiming = item),
-                      );
-                    }).toList(),
+                          return ChoiceChip(
+                            selected: mealTiming == item,
+                            label: Text(item),
+                            onSelected: (_) =>
+                                setLocalState(() => mealTiming = item),
+                          );
+                        })
+                        .toList(),
                   ),
                   SizedBox(height: 10),
                   Text(
@@ -2783,8 +3099,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: ['Sebelum HD', 'Saat HD', 'Setelah HD']
-                        .map((item) {
+                    children: ['Sebelum HD', 'Saat HD', 'Setelah HD'].map((
+                      item,
+                    ) {
                       return ChoiceChip(
                         selected: hdTiming == item,
                         label: Text(item),
@@ -2795,8 +3112,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                   SizedBox(height: 10),
                   TextField(
                     controller: noteController,
-                    decoration:
-                        InputDecoration(labelText: 'Catatan/efek keluh'),
+                    decoration: InputDecoration(
+                      labelText: 'Catatan/efek keluh',
+                    ),
                     maxLines: 2,
                   ),
                 ],
@@ -2822,7 +3140,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                 Navigator.pop(
                   ctx,
                   KidneyHealthRecord(
-                    id: existing?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
+                    id:
+                        existing?.id ??
+                        DateTime.now().microsecondsSinceEpoch.toString(),
                     type: KidneyInputType.obat,
                     date: DateTime(date.year, date.month, date.day),
                     payload: {
@@ -2899,8 +3219,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                 SizedBox(height: 10),
                 TextField(
                   controller: intensityController,
-                  decoration:
-                      InputDecoration(labelText: 'Intensitas (Ringan/Sedang/Berat)'),
+                  decoration: InputDecoration(
+                    labelText: 'Intensitas (Ringan/Sedang/Berat)',
+                  ),
                 ),
                 SizedBox(height: 10),
                 TextField(
@@ -2930,7 +3251,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                 Navigator.pop(
                   ctx,
                   KidneyHealthRecord(
-                    id: existing?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
+                    id:
+                        existing?.id ??
+                        DateTime.now().microsecondsSinceEpoch.toString(),
                     type: KidneyInputType.gejala,
                     date: DateTime(date.year, date.month, date.day),
                     payload: {
@@ -2954,7 +3277,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     KidneyHealthRecord? existing,
   }) {
     final payload = existing?.payload ?? {};
-    final refs = _examReferencesForDiseaseType(DiseaseType.chronicKidneyDisease);
+    final refs = _examReferencesForDiseaseType(
+      DiseaseType.chronicKidneyDisease,
+    );
     final groups = refs.map((e) => e.group).toSet().toList();
 
     String examType = (payload['examType'] ?? 'Fisik').toString();
@@ -2965,23 +3290,23 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     if (examId.isEmpty || !typeRefs.any((e) => e.id == examId)) {
       final examName = (payload['exam'] ?? '').toString();
       examId = typeRefs
-              .firstWhere(
-                (e) => e.name.toLowerCase() == examName.toLowerCase(),
-                orElse: () => typeRefs.first,
-              )
-              .id;
+          .firstWhere(
+            (e) => e.name.toLowerCase() == examName.toLowerCase(),
+            orElse: () => typeRefs.first,
+          )
+          .id;
     }
 
     final resultController = TextEditingController(
       text: (payload['result'] ?? '').toString().isNotEmpty
           ? (payload['result'] ?? '').toString()
           : (payload['bloodPressure'] ?? '').toString().isNotEmpty
-              ? (payload['bloodPressure'] ?? '').toString()
-              : (payload['hb'] ?? '').toString().isNotEmpty
-                  ? (payload['hb'] ?? '').toString()
-                  : (payload['ureum'] ?? '').toString().isNotEmpty
-                      ? (payload['ureum'] ?? '').toString()
-                      : (payload['kreatinin'] ?? '').toString(),
+          ? (payload['bloodPressure'] ?? '').toString()
+          : (payload['hb'] ?? '').toString().isNotEmpty
+          ? (payload['hb'] ?? '').toString()
+          : (payload['ureum'] ?? '').toString().isNotEmpty
+          ? (payload['ureum'] ?? '').toString()
+          : (payload['kreatinin'] ?? '').toString(),
     );
     String sampleTime = (payload['sampleTime'] ?? 'Pagi').toString();
     if (!['Pagi', 'Siang', 'Sore', 'Malam'].contains(sampleTime)) {
@@ -3002,7 +3327,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocalState) => AlertDialog(
           insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          title: Text(existing == null ? 'Input Pemeriksaan' : 'Edit Pemeriksaan'),
+          title: Text(
+            existing == null ? 'Input Pemeriksaan' : 'Edit Pemeriksaan',
+          ),
           content: SizedBox(
             width: 430,
             child: SingleChildScrollView(
@@ -3010,139 +3337,145 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                _DatePickerField(
-                  label: 'Tanggal',
-                  value: _dateFmt.format(date),
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: date,
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime.now().add(Duration(days: 1)),
-                    );
-                    if (picked != null) {
-                      setLocalState(() => date = picked);
-                    }
-                  },
-                ),
-                SizedBox(height: 10),
-                Text(
-                  'Jenis pemeriksaan',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                SizedBox(height: 6),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: groups
-                      .map(
-                        (g) => ChoiceChip(
-                          selected: examType == g,
-                          label: Text(g),
-                          onSelected: (_) {
-                            setLocalState(() {
-                              examType = g;
-                              final nextRefs = refs.where((e) => e.group == examType).toList();
-                              examId = nextRefs.first.id;
-                            });
-                          },
+                  _DatePickerField(
+                    label: 'Tanggal',
+                    value: _dateFmt.format(date),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: date,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now().add(Duration(days: 1)),
+                      );
+                      if (picked != null) {
+                        setLocalState(() => date = picked);
+                      }
+                    },
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'Jenis pemeriksaan',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: groups
+                        .map(
+                          (g) => ChoiceChip(
+                            selected: examType == g,
+                            label: Text(g),
+                            onSelected: (_) {
+                              setLocalState(() {
+                                examType = g;
+                                final nextRefs = refs
+                                    .where((e) => e.group == examType)
+                                    .toList();
+                                examId = nextRefs.first.id;
+                              });
+                            },
+                          ),
+                        )
+                        .toList(),
+                  ),
+                  SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    initialValue: examId,
+                    isExpanded: true,
+                    decoration: InputDecoration(labelText: 'Pemeriksaan'),
+                    items: refs
+                        .where((e) => e.group == examType)
+                        .map(
+                          (e) => DropdownMenuItem(
+                            value: e.id,
+                            child: Text(e.name),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setLocalState(() => examId = value);
+                    },
+                  ),
+                  SizedBox(height: 10),
+                  Builder(
+                    builder: (_) {
+                      final exam = selectedExam();
+                      return Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).scaffoldBackgroundColor,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: Theme.of(context).dividerColor,
+                          ),
                         ),
-                      )
-                      .toList(),
-                ),
-                SizedBox(height: 10),
-                DropdownButtonFormField<String>(
-                  initialValue: examId,
-                  isExpanded: true,
-                  decoration: InputDecoration(labelText: 'Pemeriksaan'),
-                  items: refs
-                      .where((e) => e.group == examType)
-                      .map(
-                        (e) => DropdownMenuItem(
-                          value: e.id,
-                          child: Text(e.name),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Satuan: ${exam.unit.isEmpty ? '-' : exam.unit}',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Nilai normal: ${exam.normal}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodyMedium?.color,
+                              ),
+                            ),
+                          ],
                         ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    if (value == null) return;
-                    setLocalState(() => examId = value);
-                  },
-                ),
-                SizedBox(height: 10),
-                Builder(
-                  builder: (_) {
-                    final exam = selectedExam();
-                    return Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).scaffoldBackgroundColor,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Theme.of(context).dividerColor),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      );
+                    },
+                  ),
+                  if (examType == 'Urin') ...[
+                    SizedBox(height: 10),
+                    _HeartOptionField(
+                      label: 'Waktu pengambilan urin',
+                      value: sampleTime,
+                      options: ['Pagi', 'Siang', 'Sore', 'Malam'],
+                      onChanged: (v) => setLocalState(() => sampleTime = v),
+                    ),
+                  ],
+                  SizedBox(height: 10),
+                  TextField(
+                    controller: resultController,
+                    onChanged: (_) => setLocalState(() {}),
+                    decoration: InputDecoration(
+                      labelText: 'Hasil',
+                      hintText: 'Contoh: 130/80, 13.2, Negatif',
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Builder(
+                    builder: (_) {
+                      final autoCategory = _autoExamCategory(
+                        selectedExam(),
+                        resultController.text.trim(),
+                      );
+                      return Row(
                         children: [
                           Text(
-                            'Satuan: ${exam.unit.isEmpty ? '-' : exam.unit}',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                          SizedBox(height: 2),
-                          Text(
-                            'Nilai normal: ${exam.normal}',
+                            'Kategori otomatis: ',
                             style: TextStyle(
-                              fontSize: 12,
-                              color: Theme.of(context).textTheme.bodyMedium?.color,
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).hintColor,
                             ),
                           ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-                if (examType == 'Urin') ...[
-                  SizedBox(height: 10),
-                  _HeartOptionField(
-                    label: 'Waktu pengambilan urin',
-                    value: sampleTime,
-                    options: ['Pagi', 'Siang', 'Sore', 'Malam'],
-                    onChanged: (v) => setLocalState(() => sampleTime = v),
-                  ),
-                ],
-                SizedBox(height: 10),
-                TextField(
-                  controller: resultController,
-                  onChanged: (_) => setLocalState(() {}),
-                  decoration: InputDecoration(
-                    labelText: 'Hasil',
-                    hintText: 'Contoh: 130/80, 13.2, Negatif',
-                  ),
-                ),
-                SizedBox(height: 10),
-                Builder(
-                  builder: (_) {
-                    final autoCategory = _autoExamCategory(
-                      selectedExam(),
-                      resultController.text.trim(),
-                    );
-                    return Row(
-                      children: [
-                        Text(
-                          'Kategori otomatis: ',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: Theme.of(context).hintColor,
+                          _StatusBadge(
+                            text: autoCategory,
+                            color: _checkupCategoryColor(context, autoCategory),
                           ),
-                        ),
-                        _StatusBadge(
-                          text: autoCategory,
-                          color: _checkupCategoryColor(context, autoCategory),
-                        ),
-                      ],
-                    );
-                  },
-                ),
+                        ],
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -3167,7 +3500,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                 Navigator.pop(
                   ctx,
                   KidneyHealthRecord(
-                    id: existing?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
+                    id:
+                        existing?.id ??
+                        DateTime.now().microsecondsSinceEpoch.toString(),
                     type: KidneyInputType.pemeriksaan,
                     date: DateTime(date.year, date.month, date.day),
                     payload: {
@@ -3210,7 +3545,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   }
 
   List<KidneyHealthRecord> get _symptomRecords {
-    final list = _records.where((e) => e.type == KidneyInputType.gejala).toList();
+    final list = _records
+        .where((e) => e.type == KidneyInputType.gejala)
+        .toList();
     list.sort((a, b) => b.date.compareTo(a.date));
     return list;
   }
@@ -3297,7 +3634,8 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
 
     String fromRange({double? min, double? max}) {
       if (numbers.isEmpty) {
-        if (lower.contains('negatif') || lower.contains('normal')) return 'Normal';
+        if (lower.contains('negatif') || lower.contains('normal'))
+          return 'Normal';
         return 'Tidak normal';
       }
       final value = numbers.first;
@@ -3385,7 +3723,8 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
       }
       final examId = (e.payload['examId'] ?? '').toString().toLowerCase();
       final examName = (e.payload['exam'] ?? '').toString().toLowerCase();
-      final isWeightExam = examId == 'bb' ||
+      final isWeightExam =
+          examId == 'bb' ||
           examName == 'berat badan' ||
           examName.contains('berat badan');
       if (!isWeightExam) return false;
@@ -3398,52 +3737,65 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   }
 
   List<HeartHealthRecord> get _heartSymptomRecords {
-    final list =
-        _heartRecords.where((e) => e.type == HeartInputType.gejala).toList();
+    final list = _heartRecords
+        .where((e) => e.type == HeartInputType.gejala)
+        .toList();
     list.sort((a, b) => b.date.compareTo(a.date));
     return list;
   }
 
   List<HeartHealthRecord> get _heartMedicationRecords {
-    final list = _heartRecords.where((e) => e.type == HeartInputType.obat).toList();
+    final list = _heartRecords
+        .where((e) => e.type == HeartInputType.obat)
+        .toList();
     list.sort((a, b) => b.date.compareTo(a.date));
     return list;
   }
 
   List<HeartHealthRecord> get _heartCheckupRecords {
-    final list =
-        _heartRecords.where((e) => e.type == HeartInputType.pemeriksaan).toList();
+    final list = _heartRecords
+        .where((e) => e.type == HeartInputType.pemeriksaan)
+        .toList();
     list.sort((a, b) => b.date.compareTo(a.date));
     return list;
   }
 
   List<HeartHealthRecord> get _heartActivityRecords {
-    final list = _heartRecords.where((e) => e.type == HeartInputType.aktivitas).toList();
+    final list = _heartRecords
+        .where((e) => e.type == HeartInputType.aktivitas)
+        .toList();
     list.sort((a, b) => b.date.compareTo(a.date));
     return list;
   }
 
   List<DiabetesHealthRecord> get _dmCheckupRecords {
-    final list =
-        _dmRecords.where((e) => e.type == DiabetesInputType.pemeriksaan).toList();
+    final list = _dmRecords
+        .where((e) => e.type == DiabetesInputType.pemeriksaan)
+        .toList();
     list.sort((a, b) => b.date.compareTo(a.date));
     return list;
   }
 
   List<DiabetesHealthRecord> get _dmInsulinRecords {
-    final list = _dmRecords.where((e) => e.type == DiabetesInputType.insulin).toList();
+    final list = _dmRecords
+        .where((e) => e.type == DiabetesInputType.insulin)
+        .toList();
     list.sort((a, b) => b.date.compareTo(a.date));
     return list;
   }
 
   List<DiabetesHealthRecord> get _dmActivityRecords {
-    final list = _dmRecords.where((e) => e.type == DiabetesInputType.aktivitas).toList();
+    final list = _dmRecords
+        .where((e) => e.type == DiabetesInputType.aktivitas)
+        .toList();
     list.sort((a, b) => b.date.compareTo(a.date));
     return list;
   }
 
   List<DiabetesHealthRecord> get _dmMedicationRecords {
-    final list = _dmRecords.where((e) => e.type == DiabetesInputType.obat).toList();
+    final list = _dmRecords
+        .where((e) => e.type == DiabetesInputType.obat)
+        .toList();
     list.sort((a, b) => b.date.compareTo(a.date));
     return list;
   }
@@ -3461,7 +3813,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
             return Center(
               child: Text(
                 'Pilih penyakit terlebih dulu untuk melihat tracker kesehatan.',
-                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
                 textAlign: TextAlign.center,
               ),
             );
@@ -3508,7 +3862,10 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     if (_heartError != null) SizedBox(height: 14),
                     _HeartTrendCard(
                       records: _heartWeightRecords,
-                      idealWeight: auth.currentUser?.bbi ?? auth.currentUser?.weight ?? 0,
+                      idealWeight:
+                          auth.currentUser?.bbi ??
+                          auth.currentUser?.weight ??
+                          0,
                     ),
                     SizedBox(height: 16),
                     // Activity Gauge for Heart
@@ -3516,17 +3873,24 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       final now = DateTime.now();
                       final today = DateTime(now.year, now.month, now.day);
                       final sevenDaysAgo = today.subtract(Duration(days: 6));
-                      
-                      final weeklyRecords = _heartActivityRecords.where((r) =>
-                          r.date.isAfter(sevenDaysAgo.subtract(Duration(seconds: 1))) &&
-                          r.date.isBefore(today.add(Duration(days: 1))));
+
+                      final weeklyRecords = _heartActivityRecords.where(
+                        (r) =>
+                            r.date.isAfter(
+                              sevenDaysAgo.subtract(Duration(seconds: 1)),
+                            ) &&
+                            r.date.isBefore(today.add(Duration(days: 1))),
+                      );
 
                       final totalDuration = weeklyRecords.fold<double>(
-                          0,
-                          (sum, r) =>
-                              sum +
-                              (double.tryParse(r.payload['duration']?.toString() ?? '0') ??
-                                  0));
+                        0,
+                        (sum, r) =>
+                            sum +
+                            (double.tryParse(
+                                  r.payload['duration']?.toString() ?? '0',
+                                ) ??
+                                0),
+                      );
                       return _ActivityGauge(
                         totalDuration: totalDuration,
                         target: 150.0,
@@ -3579,7 +3943,10 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                             onDelete: _deleteHeartRecord,
                           ),
                     SizedBox(height: 16),
-                      _NormalValuesButtonCard(onTap: () => _showNormalValuesDialog(DiseaseType.heartFailure)),
+                    _NormalValuesButtonCard(
+                      onTap: () =>
+                          _showNormalValuesDialog(DiseaseType.heartFailure),
+                    ),
                   ],
                 ),
               ),
@@ -3590,7 +3957,8 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
             if (_isDmLoading) {
               return Center(child: CircularProgressIndicator());
             }
-            final usesInsulinTherapy = auth.currentUser?.usesInsulinTherapy ?? false;
+            final usesInsulinTherapy =
+                auth.currentUser?.usesInsulinTherapy ?? false;
 
             return RefreshIndicator(
               onRefresh: _loadDmRecords,
@@ -3645,16 +4013,23 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       final today = DateTime(now.year, now.month, now.day);
                       final sevenDaysAgo = today.subtract(Duration(days: 6));
 
-                      final weeklyRecords = _dmActivityRecords.where((r) =>
-                          r.date.isAfter(sevenDaysAgo.subtract(Duration(seconds: 1))) &&
-                          r.date.isBefore(today.add(Duration(days: 1))));
-                      
+                      final weeklyRecords = _dmActivityRecords.where(
+                        (r) =>
+                            r.date.isAfter(
+                              sevenDaysAgo.subtract(Duration(seconds: 1)),
+                            ) &&
+                            r.date.isBefore(today.add(Duration(days: 1))),
+                      );
+
                       final totalDuration = weeklyRecords.fold<double>(
-                          0,
-                          (sum, r) =>
-                              sum +
-                              (double.tryParse(r.payload['duration']?.toString() ?? '0') ??
-                                  0));
+                        0,
+                        (sum, r) =>
+                            sum +
+                            (double.tryParse(
+                                  r.payload['duration']?.toString() ?? '0',
+                                ) ??
+                                0),
+                      );
                       return _ActivityGauge(
                         totalDuration: totalDuration,
                         target: 150.0,
@@ -3695,16 +4070,20 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                             onEdit: _editDmRecord,
                             onDelete: _deleteDmRecord,
                           ),
+                    SizedBox(height: 16),
+                    _NormalValuesButtonCard(
+                      onTap: () => _showNormalValuesDialog(
+                        DiseaseType.type2DiabetesMellitus,
+                      ),
+                    ),
+                    if (usesInsulinTherapy) ...[
                       SizedBox(height: 16),
-                      _NormalValuesButtonCard(onTap: () => _showNormalValuesDialog(DiseaseType.type2DiabetesMellitus)),
-                      if (usesInsulinTherapy) ...[
-                        SizedBox(height: 16),
-                        _InsulinGuideButtonCard(onTap: _showInsulinGuideDialog),
-                      ],
+                      _InsulinGuideButtonCard(onTap: _showInsulinGuideDialog),
                     ],
-                  ),
+                  ],
                 ),
-              );
+              ),
+            );
           }
 
           if (diseaseType != DiseaseType.chronicKidneyDisease) {
@@ -3743,7 +4122,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                         Container(
                           padding: EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).cardTheme.color ?? Theme.of(context).cardColor,
+                            color:
+                                Theme.of(context).cardTheme.color ??
+                                Theme.of(context).cardColor,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
@@ -3761,7 +4142,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                                  color: Theme.of(
+                                    context,
+                                  ).textTheme.bodyLarge?.color,
                                 ),
                               ),
                               SizedBox(height: 2),
@@ -3769,7 +4152,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                                 'Pantau hemodialisa, gejala, dan obat',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                                  color: Theme.of(
+                                    context,
+                                  ).textTheme.bodyMedium?.color,
                                 ),
                               ),
                             ],
@@ -3788,7 +4173,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                               borderRadius: BorderRadius.circular(10),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.success.withValues(alpha: 0.35),
+                                  color: AppColors.success.withValues(
+                                    alpha: 0.35,
+                                  ),
                                   blurRadius: 10,
                                   offset: Offset(0, 3),
                                 ),
@@ -3797,7 +4184,11 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.add, size: 16, color: _inputButtonForeground),
+                                Icon(
+                                  Icons.add,
+                                  size: 16,
+                                  color: _inputButtonForeground,
+                                ),
                                 SizedBox(width: 4),
                                 Text(
                                   'Input',
@@ -3842,6 +4233,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     records: _hemodialysisRecords,
                     riskCategory: _riskCategory,
                     riskColor: _riskColor,
+                    onViewHistory: _showMonthlyKidneyTrendDialog,
                   ),
                   SizedBox(height: 16),
                   _HemodialysisTable(
@@ -3878,16 +4270,21 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     onDelete: _deleteRecord,
                   ),
                   SizedBox(height: 16),
-                    _NormalValuesButtonCard(onTap: () => _showNormalValuesDialog(DiseaseType.chronicKidneyDisease)),
-                  ],
-                ),
+                  _NormalValuesButtonCard(
+                    onTap: () => _showNormalValuesDialog(
+                      DiseaseType.chronicKidneyDisease,
+                    ),
+                  ),
+                ],
               ),
-            );
-          },
-        ),
-      );
-    }
+            ),
+          );
+        },
+      ),
+    );
   }
+}
+
 class _DatePickerField extends StatelessWidget {
   final String label;
   final String value;
@@ -3908,8 +4305,47 @@ class _DatePickerField extends StatelessWidget {
         decoration: InputDecoration(labelText: label),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [Text(value), Icon(Icons.calendar_month, size: 18)],
+        ),
+      ),
+    );
+  }
+}
+
+class _MonthYearField extends StatelessWidget {
+  final DateTime value;
+  final DateTime firstDate;
+  final DateTime lastDate;
+  final ValueChanged<DateTime?> onChanged;
+
+  const _MonthYearField({
+    required this.value,
+    required this.firstDate,
+    required this.lastDate,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () async {
+        final picked = await showDialog<DateTime>(
+          context: context,
+          builder: (ctx) => _MonthYearPickerDialog(
+            initialValue: value,
+            firstDate: firstDate,
+            lastDate: lastDate,
+          ),
+        );
+        onChanged(picked);
+      },
+      borderRadius: BorderRadius.circular(10),
+      child: InputDecorator(
+        decoration: InputDecoration(labelText: 'Bulan dan tahun'),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(value),
+            Text(DateFormat('MMMM yyyy', 'id_ID').format(value)),
             Icon(Icons.calendar_month, size: 18),
           ],
         ),
@@ -3918,15 +4354,149 @@ class _DatePickerField extends StatelessWidget {
   }
 }
 
+class _MonthYearPickerDialog extends StatefulWidget {
+  final DateTime initialValue;
+  final DateTime firstDate;
+  final DateTime lastDate;
+
+  const _MonthYearPickerDialog({
+    required this.initialValue,
+    required this.firstDate,
+    required this.lastDate,
+  });
+
+  @override
+  State<_MonthYearPickerDialog> createState() => _MonthYearPickerDialogState();
+}
+
+class _MonthYearPickerDialogState extends State<_MonthYearPickerDialog> {
+  late int _year;
+
+  @override
+  void initState() {
+    super.initState();
+    _year = widget.initialValue.year;
+  }
+
+  bool _isEnabled(int month) {
+    final candidate = DateTime(_year, month);
+    final min = DateTime(widget.firstDate.year, widget.firstDate.month);
+    final max = DateTime(widget.lastDate.year, widget.lastDate.month);
+    return !candidate.isBefore(min) && !candidate.isAfter(max);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final monthFmt = DateFormat('MMM', 'id_ID');
+    final canPrev = _year > widget.firstDate.year;
+    final canNext = _year < widget.lastDate.year;
+
+    return AlertDialog(
+      title: Text('Pilih bulan dan tahun'),
+      content: SizedBox(
+        width: 360,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  onPressed: canPrev ? () => setState(() => _year--) : null,
+                  icon: Icon(Icons.chevron_left),
+                ),
+                SizedBox(
+                  width: 92,
+                  child: Center(
+                    child: Text(
+                      '$_year',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: canNext ? () => setState(() => _year++) : null,
+                  icon: Icon(Icons.chevron_right),
+                ),
+              ],
+            ),
+            SizedBox(height: 12),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final columns = constraints.maxWidth < 300 ? 3 : 4;
+                return GridView.builder(
+                  shrinkWrap: true,
+                  itemCount: 12,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: columns,
+                    childAspectRatio: 2.25,
+                    crossAxisSpacing: 6,
+                    mainAxisSpacing: 6,
+                  ),
+                  itemBuilder: (ctx, index) {
+                    final month = index + 1;
+                    final enabled = _isEnabled(month);
+                    final selected =
+                        widget.initialValue.year == _year &&
+                        widget.initialValue.month == month;
+                    return OutlinedButton(
+                      onPressed: enabled
+                          ? () => Navigator.pop(ctx, DateTime(_year, month))
+                          : null,
+                      style: OutlinedButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.symmetric(horizontal: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        backgroundColor: selected
+                            ? AppColors.kidneyColor.withValues(alpha: 0.12)
+                            : null,
+                        side: BorderSide(
+                          color: selected
+                              ? AppColors.kidneyColor
+                              : Theme.of(context).dividerColor,
+                        ),
+                      ),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          monthFmt.format(DateTime(_year, month)),
+                          maxLines: 1,
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('Batal'),
+        ),
+      ],
+    );
+  }
+}
+
 class _TrendCard extends StatelessWidget {
   final List<KidneyHealthRecord> records;
   final String Function(double) riskCategory;
   final Color Function(double) riskColor;
+  final VoidCallback? onViewHistory;
 
   const _TrendCard({
     required this.records,
     required this.riskCategory,
     required this.riskColor,
+    this.onViewHistory,
   });
 
   @override
@@ -3943,21 +4513,24 @@ class _TrendCard extends StatelessWidget {
     }
 
     final (minY, maxY, interval) = spots.isEmpty
-      ? ( -5.0, 5.0, 2.0 )
-      : () {
-        final minValue = spots
-          .map((e) => e.y)
-          .reduce((a, b) => a < b ? a : b);
-        final maxValue = spots
-          .map((e) => e.y)
-          .reduce((a, b) => a > b ? a : b);
+        ? (-5.0, 5.0, 2.0)
+        : () {
+            final minValue = spots
+                .map((e) => e.y)
+                .reduce((a, b) => a < b ? a : b);
+            final maxValue = spots
+                .map((e) => e.y)
+                .reduce((a, b) => a > b ? a : b);
 
-        final absBound = [minValue.abs(), maxValue.abs(), 2.0]
-          .reduce((a, b) => a > b ? a : b);
-        final padded = (absBound * 1.2).clamp(2.0, 30.0).toDouble();
-        final step = padded <= 8 ? 2.0 : 5.0;
-        return (-padded, padded, step);
-        }();
+            final absBound = [
+              minValue.abs(),
+              maxValue.abs(),
+              2.0,
+            ].reduce((a, b) => a > b ? a : b);
+            final padded = (absBound * 1.2).clamp(2.0, 30.0).toDouble();
+            final step = padded <= 8 ? 2.0 : 5.0;
+            return (-padded, padded, step);
+          }();
 
     return Container(
       decoration: BoxDecoration(
@@ -3979,6 +4552,26 @@ class _TrendCard extends StatelessWidget {
             'Trend % kenaikan BB antar dialisis (1 bulan)',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
           ),
+          if (onViewHistory != null) ...[
+            SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(
+                onPressed: onViewHistory,
+                style: OutlinedButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  minimumSize: Size(0, 34),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                icon: Icon(Icons.show_chart, size: 16),
+                label: Text(
+                  'Lihat grafik per bulan',
+                  style: TextStyle(fontSize: 12),
+                ),
+              ),
+            ),
+          ],
           SizedBox(height: 6),
           Wrap(
             spacing: 8,
@@ -3999,7 +4592,10 @@ class _TrendCard extends StatelessWidget {
                   SizedBox(width: 6),
                   Text(
                     'BB kurva',
-                    style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodyMedium?.color),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                    ),
                   ),
                 ],
               ),
@@ -4027,7 +4623,9 @@ class _TrendCard extends StatelessWidget {
                 ? Center(
                     child: Text(
                       'Belum ada data hemodialisa.',
-                      style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
+                      style: TextStyle(
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
+                      ),
                     ),
                   )
                 : LineChart(
@@ -4069,7 +4667,9 @@ class _TrendCard extends StatelessWidget {
                                 xLabelFmt.format(trendData[idx].date),
                                 style: TextStyle(
                                   fontSize: 9,
-                                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                                  color: Theme.of(
+                                    context,
+                                  ).textTheme.bodyMedium?.color,
                                 ),
                               );
                             },
@@ -4095,7 +4695,9 @@ class _TrendCard extends StatelessWidget {
                           barWidth: 2.2,
                           belowBarData: BarAreaData(
                             show: true,
-                            color: AppColors.kidneyColor.withValues(alpha: 0.08),
+                            color: AppColors.kidneyColor.withValues(
+                              alpha: 0.08,
+                            ),
                           ),
                           dotData: FlDotData(
                             show: true,
@@ -4146,14 +4748,18 @@ class _HemodialysisTable extends StatelessWidget {
               padding: EdgeInsets.all(16),
               child: Text(
                 'Belum ada input hemodialisa.',
-                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
               ),
             )
           : SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
-                headingTextStyle:
-                    TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                headingTextStyle: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
                 dataTextStyle: TextStyle(fontSize: 12),
                 columnSpacing: 18,
                 columns: [
@@ -4172,16 +4778,22 @@ class _HemodialysisTable extends StatelessWidget {
                           triggerMode: TooltipTriggerMode.tap,
                           showDuration: Duration(seconds: 4),
                           padding: EdgeInsets.all(10),
-                          textStyle: TextStyle(color: Colors.white, fontSize: 12),
+                          textStyle: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.black87,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          message: 'Kategori % IDWG:\nRingan: < 2%\nSedang: 2% - 4%\nBerat: > 4%',
+                          message:
+                              'Kategori % IDWG:\nRingan: < 2%\nSedang: 2% - 4%\nBerat: > 4%',
                           child: Icon(
                             Icons.info_outline,
                             size: 15,
-                            color: Theme.of(context).textTheme.bodyMedium?.color,
+                            color: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.color,
                           ),
                         ),
                       ],
@@ -4255,14 +4867,18 @@ class _MedicationTable extends StatelessWidget {
               padding: EdgeInsets.all(16),
               child: Text(
                 'Belum ada input obat.',
-                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
               ),
             )
           : SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
-                headingTextStyle:
-                    TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                headingTextStyle: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
                 dataTextStyle: TextStyle(fontSize: 12),
                 columnSpacing: 18,
                 columns: [
@@ -4349,14 +4965,20 @@ class _SimpleListCard extends StatelessWidget {
               padding: EdgeInsets.all(16),
               child: Text(
                 emptyText,
-                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
               ),
             )
           : Column(
               children: records.take(5).map((r) {
                 return ListTile(
                   dense: true,
-                  leading: Icon(icon, size: 18, color: Theme.of(context).textTheme.bodyMedium?.color),
+                  leading: Icon(
+                    icon,
+                    size: 18,
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                  ),
                   title: Text(buildLine(r), style: TextStyle(fontSize: 12.5)),
                   trailing: PopupMenuButton<String>(
                     onSelected: (value) {
@@ -4446,7 +5068,9 @@ class _HeartHeader extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Theme.of(context).cardTheme.color ?? Theme.of(context).cardColor,
+              color:
+                  Theme.of(context).cardTheme.color ??
+                  Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(Icons.health_and_safety, color: AppColors.heartColor),
@@ -4467,7 +5091,10 @@ class _HeartHeader extends StatelessWidget {
                 SizedBox(height: 2),
                 Text(
                   'Pantau gejala, aktivitas, obat, pemeriksaan, dan BB',
-                  style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodyMedium?.color),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                  ),
                 ),
               ],
             ),
@@ -4486,7 +5113,13 @@ class _HeartHeader extends StatelessWidget {
                 children: [
                   Icon(Icons.add, size: 16, color: inputForeground),
                   SizedBox(width: 4),
-                  Text('Input', style: TextStyle(fontWeight: FontWeight.w700, color: inputForeground)),
+                  Text(
+                    'Input',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: inputForeground,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -4537,7 +5170,9 @@ class _HeartTrendCard extends StatelessWidget {
             ? Center(
                 child: Text(
                   'Belum ada data berat badan.',
-                  style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                  ),
                 ),
               )
             : Padding(
@@ -4558,15 +5193,21 @@ class _HeartTrendCard extends StatelessWidget {
                       ),
                     ),
                     titlesData: FlTitlesData(
-                      topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      topTitles: AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      rightTitles: AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
                           getTitlesWidget: (value, meta) {
                             final i = value.toInt();
-                            if (i < 0 || i >= weeklyRecords.length) return SizedBox();
-                            if (weeklyRecords.length > 6 && i.isOdd) return SizedBox();
+                            if (i < 0 || i >= weeklyRecords.length)
+                              return SizedBox();
+                            if (weeklyRecords.length > 6 && i.isOdd)
+                              return SizedBox();
                             return Text(
                               dateFmt.format(weeklyRecords[i].date),
                               style: TextStyle(fontSize: 9),
@@ -4641,7 +5282,12 @@ class _HeartSymptomTable extends StatelessWidget {
       child: records.isEmpty
           ? Padding(
               padding: EdgeInsets.all(16),
-              child: Text('Belum ada input gejala.', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color)),
+              child: Text(
+                'Belum ada input gejala.',
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
+              ),
             )
           : SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -4664,40 +5310,50 @@ class _HeartSymptomTable extends StatelessWidget {
                   final category = (p['category'] ?? '').toString().isNotEmpty
                       ? (p['category'] ?? '').toString()
                       : (sesak == 'Berat' || bengkak == 'Berat')
-                          ? 'Berat'
-                          : (sesak == 'Ringan' ||
-                                  bengkak == 'Ringan' ||
-                                  cepatLelah == 'Ya')
-                              ? 'Sedang'
-                              : 'Ringan';
+                      ? 'Berat'
+                      : (sesak == 'Ringan' ||
+                            bengkak == 'Ringan' ||
+                            cepatLelah == 'Ya')
+                      ? 'Sedang'
+                      : 'Ringan';
                   final categoryColor = category == 'Berat'
                       ? AppColors.error
                       : category == 'Sedang'
-                          ? AppColors.warning
-                          : AppColors.success;
-                  return DataRow(cells: [
-                    DataCell(Text(dateFmt.format(r.date))),
-                    DataCell(Text(sesak)),
-                    DataCell(Text(bengkak)),
-                    DataCell(Text(cepatLelah)),
-                    DataCell(Text((p['bb'] ?? '-').toString())),
-                    DataCell(_StatusBadge(text: category, color: categoryColor)),
-                    DataCell(Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          visualDensity: VisualDensity.compact,
-                          icon: Icon(Icons.edit_outlined, size: 18),
-                          onPressed: () => onEdit(r),
+                      ? AppColors.warning
+                      : AppColors.success;
+                  return DataRow(
+                    cells: [
+                      DataCell(Text(dateFmt.format(r.date))),
+                      DataCell(Text(sesak)),
+                      DataCell(Text(bengkak)),
+                      DataCell(Text(cepatLelah)),
+                      DataCell(Text((p['bb'] ?? '-').toString())),
+                      DataCell(
+                        _StatusBadge(text: category, color: categoryColor),
+                      ),
+                      DataCell(
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              visualDensity: VisualDensity.compact,
+                              icon: Icon(Icons.edit_outlined, size: 18),
+                              onPressed: () => onEdit(r),
+                            ),
+                            IconButton(
+                              visualDensity: VisualDensity.compact,
+                              icon: Icon(
+                                Icons.delete_outline,
+                                size: 18,
+                                color: AppColors.error,
+                              ),
+                              onPressed: () => onDelete(r),
+                            ),
+                          ],
                         ),
-                        IconButton(
-                          visualDensity: VisualDensity.compact,
-                          icon: Icon(Icons.delete_outline, size: 18, color: AppColors.error),
-                          onPressed: () => onDelete(r),
-                        ),
-                      ],
-                    )),
-                  ]);
+                      ),
+                    ],
+                  );
                 }).toList(),
               ),
             ),
@@ -4725,7 +5381,12 @@ class _HeartMedicationTable extends StatelessWidget {
       child: records.isEmpty
           ? Padding(
               padding: EdgeInsets.all(16),
-              child: Text('Belum ada input obat.', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color)),
+              child: Text(
+                'Belum ada input obat.',
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
+              ),
             )
           : SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -4742,29 +5403,37 @@ class _HeartMedicationTable extends StatelessWidget {
                 ],
                 rows: records.map((r) {
                   final p = r.payload;
-                  return DataRow(cells: [
-                    DataCell(Text(dateFmt.format(r.date))),
-                    DataCell(Text((p['name'] ?? '-').toString())),
-                    DataCell(Text((p['dose'] ?? '-').toString())),
-                    DataCell(Text((p['period'] ?? '-').toString())),
-                    DataCell(Text((p['consumed'] ?? '-').toString())),
-                    DataCell(Text((p['note'] ?? '-').toString())),
-                    DataCell(Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          visualDensity: VisualDensity.compact,
-                          icon: Icon(Icons.edit_outlined, size: 18),
-                          onPressed: () => onEdit(r),
+                  return DataRow(
+                    cells: [
+                      DataCell(Text(dateFmt.format(r.date))),
+                      DataCell(Text((p['name'] ?? '-').toString())),
+                      DataCell(Text((p['dose'] ?? '-').toString())),
+                      DataCell(Text((p['period'] ?? '-').toString())),
+                      DataCell(Text((p['consumed'] ?? '-').toString())),
+                      DataCell(Text((p['note'] ?? '-').toString())),
+                      DataCell(
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              visualDensity: VisualDensity.compact,
+                              icon: Icon(Icons.edit_outlined, size: 18),
+                              onPressed: () => onEdit(r),
+                            ),
+                            IconButton(
+                              visualDensity: VisualDensity.compact,
+                              icon: Icon(
+                                Icons.delete_outline,
+                                size: 18,
+                                color: AppColors.error,
+                              ),
+                              onPressed: () => onDelete(r),
+                            ),
+                          ],
                         ),
-                        IconButton(
-                          visualDensity: VisualDensity.compact,
-                          icon: Icon(Icons.delete_outline, size: 18, color: AppColors.error),
-                          onPressed: () => onDelete(r),
-                        ),
-                      ],
-                    )),
-                  ]);
+                      ),
+                    ],
+                  );
                 }).toList(),
               ),
             ),
@@ -4803,36 +5472,39 @@ class _HeartActivityTable extends StatelessWidget {
           rows: records.map((r) {
             final p = r.payload;
             final complaint = (p['complaint'] ?? 'Normal').toString();
-            final complaintColor =
-                complaint == 'Normal' ? AppColors.success : AppColors.error;
+            final complaintColor = complaint == 'Normal'
+                ? AppColors.success
+                : AppColors.error;
 
-            return DataRow(cells: [
-              DataCell(Text(dateFmt.format(r.date))),
-              DataCell(Text((p['activityName'] ?? '-').toString())),
-              DataCell(Text('${p['duration'] ?? '-'} mnt')),
-              DataCell(_StatusBadge(text: complaint, color: complaintColor)),
-              DataCell(
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      icon: Icon(Icons.edit_outlined, size: 18),
-                      onPressed: () => onEdit(r),
-                    ),
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      icon: Icon(
-                        Icons.delete_outline,
-                        size: 18,
-                        color: AppColors.error,
+            return DataRow(
+              cells: [
+                DataCell(Text(dateFmt.format(r.date))),
+                DataCell(Text((p['activityName'] ?? '-').toString())),
+                DataCell(Text('${p['duration'] ?? '-'} mnt')),
+                DataCell(_StatusBadge(text: complaint, color: complaintColor)),
+                DataCell(
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        icon: Icon(Icons.edit_outlined, size: 18),
+                        onPressed: () => onEdit(r),
                       ),
-                      onPressed: () => onDelete(r),
-                    ),
-                  ],
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        icon: Icon(
+                          Icons.delete_outline,
+                          size: 18,
+                          color: AppColors.error,
+                        ),
+                        onPressed: () => onDelete(r),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ]);
+              ],
+            );
           }).toList(),
         ),
       ),
@@ -4860,7 +5532,12 @@ class _HeartCheckupTable extends StatelessWidget {
       child: records.isEmpty
           ? Padding(
               padding: EdgeInsets.all(16),
-              child: Text('Belum ada input pemeriksaan.', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color)),
+              child: Text(
+                'Belum ada input pemeriksaan.',
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
+              ),
             )
           : SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -4882,36 +5559,46 @@ class _HeartCheckupTable extends StatelessWidget {
                   }
                   final result = (p['result'] ?? '-').toString();
                   final unit = (p['unit'] ?? '').toString();
-                  return DataRow(cells: [
-                    DataCell(Text(dateFmt.format(r.date))),
-                    DataCell(Text(examType)),
-                    DataCell(Text((p['exam'] ?? '-').toString())),
-                    DataCell(Text(unit.isNotEmpty ? '$result $unit' : result)),
-                    DataCell(
-                      _StatusBadge(
-                        text: (p['category'] ?? '-').toString(),
-                        color: _checkupCategoryColor(
-                          context,
-                          (p['category'] ?? '').toString(),
+                  return DataRow(
+                    cells: [
+                      DataCell(Text(dateFmt.format(r.date))),
+                      DataCell(Text(examType)),
+                      DataCell(Text((p['exam'] ?? '-').toString())),
+                      DataCell(
+                        Text(unit.isNotEmpty ? '$result $unit' : result),
+                      ),
+                      DataCell(
+                        _StatusBadge(
+                          text: (p['category'] ?? '-').toString(),
+                          color: _checkupCategoryColor(
+                            context,
+                            (p['category'] ?? '').toString(),
+                          ),
                         ),
                       ),
-                    ),
-                    DataCell(Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          visualDensity: VisualDensity.compact,
-                          icon: Icon(Icons.edit_outlined, size: 18),
-                          onPressed: () => onEdit(r),
+                      DataCell(
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              visualDensity: VisualDensity.compact,
+                              icon: Icon(Icons.edit_outlined, size: 18),
+                              onPressed: () => onEdit(r),
+                            ),
+                            IconButton(
+                              visualDensity: VisualDensity.compact,
+                              icon: Icon(
+                                Icons.delete_outline,
+                                size: 18,
+                                color: AppColors.error,
+                              ),
+                              onPressed: () => onDelete(r),
+                            ),
+                          ],
                         ),
-                        IconButton(
-                          visualDensity: VisualDensity.compact,
-                          icon: Icon(Icons.delete_outline, size: 18, color: AppColors.error),
-                          onPressed: () => onDelete(r),
-                        ),
-                      ],
-                    )),
-                  ]);
+                      ),
+                    ],
+                  );
                 }).toList(),
               ),
             ),
@@ -4941,7 +5628,9 @@ class _KidneyCheckupTable extends StatelessWidget {
               padding: EdgeInsets.all(16),
               child: Text(
                 'Belum ada input pemeriksaan.',
-                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
               ),
             )
           : SingleChildScrollView(
@@ -4959,11 +5648,14 @@ class _KidneyCheckupTable extends StatelessWidget {
                 rows: records.map((r) {
                   final p = r.payload;
 
-                  final isLegacy = !(p.containsKey('exam') || p.containsKey('examType'));
+                  final isLegacy =
+                      !(p.containsKey('exam') || p.containsKey('examType'));
                   final examType = isLegacy
                       ? 'Fisik'
                       : (p['examType'] ?? '-').toString();
-                  final exam = isLegacy ? 'Paket CKD' : (p['exam'] ?? '-').toString();
+                  final exam = isLegacy
+                      ? 'Paket CKD'
+                      : (p['exam'] ?? '-').toString();
                   final legacy = <String>[];
                   if ((p['bloodPressure'] ?? '').toString().isNotEmpty) {
                     legacy.add('TD ${(p['bloodPressure'] ?? '-')}');
@@ -4984,39 +5676,43 @@ class _KidneyCheckupTable extends StatelessWidget {
                   final unit = isLegacy ? '' : (p['unit'] ?? '').toString();
                   final category = (p['category'] ?? '-').toString();
 
-                  return DataRow(cells: [
-                    DataCell(Text(dateFmt.format(r.date))),
-                    DataCell(Text(examType)),
-                    DataCell(Text(exam)),
-                    DataCell(Text(unit.isNotEmpty ? '$result $unit' : result)),
-                    DataCell(
-                      _StatusBadge(
-                        text: category,
-                        color: _checkupCategoryColor(context, category),
+                  return DataRow(
+                    cells: [
+                      DataCell(Text(dateFmt.format(r.date))),
+                      DataCell(Text(examType)),
+                      DataCell(Text(exam)),
+                      DataCell(
+                        Text(unit.isNotEmpty ? '$result $unit' : result),
                       ),
-                    ),
-                    DataCell(
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            visualDensity: VisualDensity.compact,
-                            icon: Icon(Icons.edit_outlined, size: 18),
-                            onPressed: () => onEdit(r),
-                          ),
-                          IconButton(
-                            visualDensity: VisualDensity.compact,
-                            icon: Icon(
-                              Icons.delete_outline,
-                              size: 18,
-                              color: AppColors.error,
+                      DataCell(
+                        _StatusBadge(
+                          text: category,
+                          color: _checkupCategoryColor(context, category),
+                        ),
+                      ),
+                      DataCell(
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              visualDensity: VisualDensity.compact,
+                              icon: Icon(Icons.edit_outlined, size: 18),
+                              onPressed: () => onEdit(r),
                             ),
-                            onPressed: () => onDelete(r),
-                          ),
-                        ],
+                            IconButton(
+                              visualDensity: VisualDensity.compact,
+                              icon: Icon(
+                                Icons.delete_outline,
+                                size: 18,
+                                color: AppColors.error,
+                              ),
+                              onPressed: () => onDelete(r),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ]);
+                    ],
+                  );
                 }).toList(),
               ),
             ),
@@ -5054,10 +5750,15 @@ class _DiabetesHeader extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Theme.of(context).cardTheme.color ?? Theme.of(context).cardColor,
+              color:
+                  Theme.of(context).cardTheme.color ??
+                  Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(Icons.health_and_safety, color: AppColors.diabetesColor),
+            child: Icon(
+              Icons.health_and_safety,
+              color: AppColors.diabetesColor,
+            ),
           ),
           SizedBox(width: 10),
           Expanded(
@@ -5075,7 +5776,10 @@ class _DiabetesHeader extends StatelessWidget {
                 SizedBox(height: 2),
                 Text(
                   'Pantau aktivitas, pemeriksaan, dan analisis insulin',
-                  style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodyMedium?.color),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                  ),
                 ),
               ],
             ),
@@ -5094,7 +5798,13 @@ class _DiabetesHeader extends StatelessWidget {
                 children: [
                   Icon(Icons.add, size: 16, color: inputForeground),
                   SizedBox(width: 4),
-                  Text('Input', style: TextStyle(fontWeight: FontWeight.w700, color: inputForeground)),
+                  Text(
+                    'Input',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: inputForeground,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -5103,8 +5813,7 @@ class _DiabetesHeader extends StatelessWidget {
       ),
     );
   }
-  }
-
+}
 
 class _ExamReference {
   final String id;
@@ -5128,33 +5837,258 @@ class _ExamReference {
 }
 
 List<_ExamReference> _examReferenceCatalog = [
-  _ExamReference(id: "bb", group: "Fisik", name: "Berat Badan", unit: "kg", normal: "-", forKidney: true, forHeart: true, forDiabetes: true),
-  _ExamReference(id: "tb", group: "Fisik", name: "Tinggi Badan", unit: "cm", normal: "-", forKidney: true, forHeart: true, forDiabetes: true),
-  _ExamReference(id: "suhu", group: "Fisik", name: "Suhu", unit: "°C", normal: "36,5 - 37,5", forKidney: true, forHeart: true, forDiabetes: true),
-  _ExamReference(id: "td", group: "Fisik", name: "Tekanan Darah", unit: "mmHg", normal: "< 120/80", forKidney: true, forHeart: true, forDiabetes: true),
-  _ExamReference(id: "spo2", group: "Fisik", name: "Saturasi Oksigen", unit: "%", normal: "95 - 100", forKidney: true, forHeart: true, forDiabetes: true),
-  _ExamReference(id: "nadi", group: "Fisik", name: "Denyut Nadi", unit: "x/mnt", normal: "60 - 100", forKidney: true, forHeart: true, forDiabetes: true),
+  _ExamReference(
+    id: "bb",
+    group: "Fisik",
+    name: "Berat Badan",
+    unit: "kg",
+    normal: "-",
+    forKidney: true,
+    forHeart: true,
+    forDiabetes: true,
+  ),
+  _ExamReference(
+    id: "tb",
+    group: "Fisik",
+    name: "Tinggi Badan",
+    unit: "cm",
+    normal: "-",
+    forKidney: true,
+    forHeart: true,
+    forDiabetes: true,
+  ),
+  _ExamReference(
+    id: "suhu",
+    group: "Fisik",
+    name: "Suhu",
+    unit: "°C",
+    normal: "36,5 - 37,5",
+    forKidney: true,
+    forHeart: true,
+    forDiabetes: true,
+  ),
+  _ExamReference(
+    id: "td",
+    group: "Fisik",
+    name: "Tekanan Darah",
+    unit: "mmHg",
+    normal: "< 120/80",
+    forKidney: true,
+    forHeart: true,
+    forDiabetes: true,
+  ),
+  _ExamReference(
+    id: "spo2",
+    group: "Fisik",
+    name: "Saturasi Oksigen",
+    unit: "%",
+    normal: "95 - 100",
+    forKidney: true,
+    forHeart: true,
+    forDiabetes: true,
+  ),
+  _ExamReference(
+    id: "nadi",
+    group: "Fisik",
+    name: "Denyut Nadi",
+    unit: "x/mnt",
+    normal: "60 - 100",
+    forKidney: true,
+    forHeart: true,
+    forDiabetes: true,
+  ),
 
-  _ExamReference(id: "urin_protein", group: "Urin", name: "Protein", unit: "", normal: "Negatif", forKidney: true, forHeart: false, forDiabetes: false),
-  _ExamReference(id: "urin_ph", group: "Urin", name: "pH", unit: "", normal: "4,5 - 8,0", forKidney: true, forHeart: false, forDiabetes: false),
-  _ExamReference(id: "urin_hb", group: "Urin", name: "Hb", unit: "", normal: "Negatif", forKidney: true, forHeart: false, forDiabetes: false),
+  _ExamReference(
+    id: "urin_protein",
+    group: "Urin",
+    name: "Protein",
+    unit: "",
+    normal: "Negatif",
+    forKidney: true,
+    forHeart: false,
+    forDiabetes: false,
+  ),
+  _ExamReference(
+    id: "urin_ph",
+    group: "Urin",
+    name: "pH",
+    unit: "",
+    normal: "4,5 - 8,0",
+    forKidney: true,
+    forHeart: false,
+    forDiabetes: false,
+  ),
+  _ExamReference(
+    id: "urin_hb",
+    group: "Urin",
+    name: "Hb",
+    unit: "",
+    normal: "Negatif",
+    forKidney: true,
+    forHeart: false,
+    forDiabetes: false,
+  ),
 
-  _ExamReference(id: "chol_total", group: "Darah", name: "Kolesterol Total", unit: "mg/dL", normal: "< 200", forKidney: true, forHeart: true, forDiabetes: true),
-  _ExamReference(id: "hdl", group: "Darah", name: "HDL", unit: "mg/dL", normal: "< 4,5", forKidney: true, forHeart: true, forDiabetes: true),
-  _ExamReference(id: "ldl", group: "Darah", name: "LDL", unit: "mg/dL", normal: "< 100", forKidney: true, forHeart: true, forDiabetes: true),
-  _ExamReference(id: "trigliserida", group: "Darah", name: "Trigliserida", unit: "mg/dL", normal: "< 150", forKidney: true, forHeart: true, forDiabetes: true),
-  _ExamReference(id: "bun", group: "Darah", name: "BUN", unit: "mg/dL", normal: "-", forKidney: true, forHeart: true, forDiabetes: true),
-  _ExamReference(id: "natrium", group: "Darah", name: "Natrium", unit: "mmol/L", normal: "135 - 145", forKidney: true, forHeart: true, forDiabetes: true),
-  _ExamReference(id: "gdp", group: "Darah", name: "Gula darah puasa", unit: "mg/dL", normal: "70 - 110", forKidney: true, forHeart: true, forDiabetes: true),
-  _ExamReference(id: "gds", group: "Darah", name: "Gula darah sewaktu", unit: "mg/dL", normal: "< 200", forKidney: true, forHeart: true, forDiabetes: true),
-  _ExamReference(id: "hba1c", group: "Darah", name: "HbA1c", unit: "%", normal: "< 5,7%", forKidney: true, forHeart: true, forDiabetes: true),
-  _ExamReference(id: "ureum", group: "Darah", name: "Ureum", unit: "mg/dL", normal: "10 - 50", forKidney: true, forHeart: true, forDiabetes: true),
-  _ExamReference(id: "kreatinin", group: "Darah", name: "Kreatinin", unit: "mg/dL", normal: "L: 0,7 - 1,3 | P: 0,6 - 1,1", forKidney: true, forHeart: true, forDiabetes: true),
-  _ExamReference(id: "kalium", group: "Darah", name: "Kalium", unit: "mmol/L", normal: "3,5 - 5,1", forKidney: true, forHeart: true, forDiabetes: true),
-  _ExamReference(id: "fosfat", group: "Darah", name: "Fosfat", unit: "mg/dL", normal: "2,5 - 4,5", forKidney: true, forHeart: true, forDiabetes: true),
-  _ExamReference(id: "albumin", group: "Darah", name: "Albumin", unit: "g/dL", normal: "3,5 - 5,0", forKidney: true, forHeart: true, forDiabetes: true),
-  _ExamReference(id: "hb_darah", group: "Darah", name: "Hemoglobin (Hb)", unit: "g/dL", normal: "L: 13,0 - 16,0 | P: 12,0 - 14,0", forKidney: true, forHeart: true, forDiabetes: true),
-  _ExamReference(id: "ht", group: "Darah", name: "Hematokrit (Ht)", unit: "%", normal: "L: 40 - 50 | P: 36 - 44", forKidney: true, forHeart: true, forDiabetes: true),
+  _ExamReference(
+    id: "chol_total",
+    group: "Darah",
+    name: "Kolesterol Total",
+    unit: "mg/dL",
+    normal: "< 200",
+    forKidney: true,
+    forHeart: true,
+    forDiabetes: true,
+  ),
+  _ExamReference(
+    id: "hdl",
+    group: "Darah",
+    name: "HDL",
+    unit: "mg/dL",
+    normal: "< 4,5",
+    forKidney: true,
+    forHeart: true,
+    forDiabetes: true,
+  ),
+  _ExamReference(
+    id: "ldl",
+    group: "Darah",
+    name: "LDL",
+    unit: "mg/dL",
+    normal: "< 100",
+    forKidney: true,
+    forHeart: true,
+    forDiabetes: true,
+  ),
+  _ExamReference(
+    id: "trigliserida",
+    group: "Darah",
+    name: "Trigliserida",
+    unit: "mg/dL",
+    normal: "< 150",
+    forKidney: true,
+    forHeart: true,
+    forDiabetes: true,
+  ),
+  _ExamReference(
+    id: "bun",
+    group: "Darah",
+    name: "BUN",
+    unit: "mg/dL",
+    normal: "-",
+    forKidney: true,
+    forHeart: true,
+    forDiabetes: true,
+  ),
+  _ExamReference(
+    id: "natrium",
+    group: "Darah",
+    name: "Natrium",
+    unit: "mmol/L",
+    normal: "135 - 145",
+    forKidney: true,
+    forHeart: true,
+    forDiabetes: true,
+  ),
+  _ExamReference(
+    id: "gdp",
+    group: "Darah",
+    name: "Gula darah puasa",
+    unit: "mg/dL",
+    normal: "70 - 110",
+    forKidney: true,
+    forHeart: true,
+    forDiabetes: true,
+  ),
+  _ExamReference(
+    id: "gds",
+    group: "Darah",
+    name: "Gula darah sewaktu",
+    unit: "mg/dL",
+    normal: "< 200",
+    forKidney: true,
+    forHeart: true,
+    forDiabetes: true,
+  ),
+  _ExamReference(
+    id: "hba1c",
+    group: "Darah",
+    name: "HbA1c",
+    unit: "%",
+    normal: "< 5,7%",
+    forKidney: true,
+    forHeart: true,
+    forDiabetes: true,
+  ),
+  _ExamReference(
+    id: "ureum",
+    group: "Darah",
+    name: "Ureum",
+    unit: "mg/dL",
+    normal: "10 - 50",
+    forKidney: true,
+    forHeart: true,
+    forDiabetes: true,
+  ),
+  _ExamReference(
+    id: "kreatinin",
+    group: "Darah",
+    name: "Kreatinin",
+    unit: "mg/dL",
+    normal: "L: 0,7 - 1,3 | P: 0,6 - 1,1",
+    forKidney: true,
+    forHeart: true,
+    forDiabetes: true,
+  ),
+  _ExamReference(
+    id: "kalium",
+    group: "Darah",
+    name: "Kalium",
+    unit: "mmol/L",
+    normal: "3,5 - 5,1",
+    forKidney: true,
+    forHeart: true,
+    forDiabetes: true,
+  ),
+  _ExamReference(
+    id: "fosfat",
+    group: "Darah",
+    name: "Fosfat",
+    unit: "mg/dL",
+    normal: "2,5 - 4,5",
+    forKidney: true,
+    forHeart: true,
+    forDiabetes: true,
+  ),
+  _ExamReference(
+    id: "albumin",
+    group: "Darah",
+    name: "Albumin",
+    unit: "g/dL",
+    normal: "3,5 - 5,0",
+    forKidney: true,
+    forHeart: true,
+    forDiabetes: true,
+  ),
+  _ExamReference(
+    id: "hb_darah",
+    group: "Darah",
+    name: "Hemoglobin (Hb)",
+    unit: "g/dL",
+    normal: "L: 13,0 - 16,0 | P: 12,0 - 14,0",
+    forKidney: true,
+    forHeart: true,
+    forDiabetes: true,
+  ),
+  _ExamReference(
+    id: "ht",
+    group: "Darah",
+    name: "Hematokrit (Ht)",
+    unit: "%",
+    normal: "L: 40 - 50 | P: 36 - 44",
+    forKidney: true,
+    forHeart: true,
+    forDiabetes: true,
+  ),
 ];
 
 List<_ExamReference> _examReferencesForDiseaseType(DiseaseType diseaseType) {
@@ -5180,8 +6114,18 @@ class _StatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(999)),
-      child: Text(text, style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 11)),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w700,
+          fontSize: 11,
+        ),
+      ),
     );
   }
 }
@@ -5189,10 +6133,15 @@ class _StatusBadge extends StatelessWidget {
 Color _checkupCategoryColor(BuildContext context, String category) {
   final theme = Theme.of(context);
   switch (category.trim().toLowerCase()) {
-    case "tinggi": case "tidak normal": return theme.colorScheme.error;
-    case "rendah": return Colors.orange;
-    case "normal": return Colors.green;
-    default: return theme.hintColor;
+    case "tinggi":
+    case "tidak normal":
+      return theme.colorScheme.error;
+    case "rendah":
+      return Colors.orange;
+    case "normal":
+      return Colors.green;
+    default:
+      return theme.hintColor;
   }
 }
 
@@ -5207,8 +6156,21 @@ class _NormalValuesButtonCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(color: theme.cardTheme.color, borderRadius: BorderRadius.circular(12), border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3))),
-        child: Row(children: [Icon(Icons.info_outline, color: theme.primaryColor), SizedBox(width: 12), Text("Lihat Daftar Nilai Normal", style: TextStyle(fontWeight: FontWeight.bold))]),
+        decoration: BoxDecoration(
+          color: theme.cardTheme.color,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.info_outline, color: theme.primaryColor),
+            SizedBox(width: 12),
+            Text(
+              "Lihat Daftar Nilai Normal",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -5225,8 +6187,21 @@ class _InsulinGuideButtonCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(color: theme.cardTheme.color, borderRadius: BorderRadius.circular(12), border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3))),
-        child: Row(children: [Icon(Icons.help_outline, color: theme.primaryColor), SizedBox(width: 12), Text("Panduan Analisis Insulin", style: TextStyle(fontWeight: FontWeight.bold))]),
+        decoration: BoxDecoration(
+          color: theme.cardTheme.color,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.help_outline, color: theme.primaryColor),
+            SizedBox(width: 12),
+            Text(
+              "Panduan Analisis Insulin",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -5240,14 +6215,32 @@ class _InsulinGuideContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Panduan Terapi Insulin", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: theme.primaryColor)),
+        Text(
+          "Panduan Terapi Insulin",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            color: theme.primaryColor,
+          ),
+        ),
         SizedBox(height: 12),
-        Text("Langkah-langkah Analisis:", style: TextStyle(fontWeight: FontWeight.bold)),
+        Text(
+          "Langkah-langkah Analisis:",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         SizedBox(height: 8),
-        Text("1. Masukkan dosis Insulin Basal dan Prandial sesuai resep dokter."),
-        Text("2. Masukkan total Karbohidrat yang dikonsumsi (bisa otomatis dari Food Tracker)."),
-        Text("3. Sistem akan menghitung estimasi kebutuhan insulin berdasarkan ICR (Insulin to Carb Ratio)."),
-        Text("4. Bandingkan Dosis Aktual dengan Estimasi sistem untuk melihat keseimbangan."),
+        Text(
+          "1. Masukkan dosis Insulin Basal dan Prandial sesuai resep dokter.",
+        ),
+        Text(
+          "2. Masukkan total Karbohidrat yang dikonsumsi (bisa otomatis dari Food Tracker).",
+        ),
+        Text(
+          "3. Sistem akan menghitung estimasi kebutuhan insulin berdasarkan ICR (Insulin to Carb Ratio).",
+        ),
+        Text(
+          "4. Bandingkan Dosis Aktual dengan Estimasi sistem untuk melihat keseimbangan.",
+        ),
         SizedBox(height: 16),
         Text("Kategori Status:", style: TextStyle(fontWeight: FontWeight.bold)),
         SizedBox(height: 8),
@@ -5281,7 +6274,8 @@ class _DiabetesInsulinSummaryTable extends StatefulWidget {
       _DiabetesInsulinSummaryTableState();
 }
 
-class _DiabetesInsulinSummaryTableState extends State<_DiabetesInsulinSummaryTable> {
+class _DiabetesInsulinSummaryTableState
+    extends State<_DiabetesInsulinSummaryTable> {
   static final List<String> _mealOrder = [
     'Sarapan',
     'Selingan Pagi',
@@ -5338,7 +6332,10 @@ class _DiabetesInsulinSummaryTableState extends State<_DiabetesInsulinSummaryTab
     });
 
     try {
-      final entries = await FoodLogService.getEntries(widget.uid, _normalizedSelectedDate);
+      final entries = await FoodLogService.getEntries(
+        widget.uid,
+        _normalizedSelectedDate,
+      );
       if (!mounted) return;
       setState(() {
         _entriesOnDate = entries;
@@ -5375,12 +6372,16 @@ class _DiabetesInsulinSummaryTableState extends State<_DiabetesInsulinSummaryTab
 
   int _foodCountForMeal(String mealLabel) {
     final targetTypes = _mapMealLabelToTypes(mealLabel);
-    return _entriesOnDate.where((entry) => targetTypes.contains(entry.mealType)).length;
+    return _entriesOnDate
+        .where((entry) => targetTypes.contains(entry.mealType))
+        .length;
   }
 
   ({double carb, double gl}) _autoCarbAndGl(String mealLabel) {
     final targetTypes = _mapMealLabelToTypes(mealLabel);
-    final rows = _entriesOnDate.where((entry) => targetTypes.contains(entry.mealType));
+    final rows = _entriesOnDate.where(
+      (entry) => targetTypes.contains(entry.mealType),
+    );
     final carb = rows.fold<double>(0.0, (sum, e) => sum + e.karbohidrat);
     final fiber = rows.fold<double>(0.0, (sum, e) => sum + e.serat);
     final netCarb = (carb - fiber).clamp(0.0, double.infinity);
@@ -5388,13 +6389,21 @@ class _DiabetesInsulinSummaryTableState extends State<_DiabetesInsulinSummaryTab
   }
 
   DiabetesHealthRecord? _recordByMeal(String mealLabel) {
-    final dateRecords = widget.records.where((r) => _isSameDay(r.date, _normalizedSelectedDate));
+    final dateRecords = widget.records.where(
+      (r) => _isSameDay(r.date, _normalizedSelectedDate),
+    );
     final allowedLabels = <String>{mealLabel};
     if (mealLabel == 'Selingan Siang') {
       allowedLabels.add('Snack');
     }
-    final byMeal = dateRecords.where((r) => allowedLabels.contains((r.payload['meal'] ?? '').toString())).toList()
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final byMeal =
+        dateRecords
+            .where(
+              (r) =>
+                  allowedLabels.contains((r.payload['meal'] ?? '').toString()),
+            )
+            .toList()
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return byMeal.isEmpty ? null : byMeal.first;
   }
 
@@ -5451,9 +6460,9 @@ class _DiabetesInsulinSummaryTableState extends State<_DiabetesInsulinSummaryTab
       );
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sinkronisasi gagal. Coba lagi.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Sinkronisasi gagal. Coba lagi.')));
     } finally {
       if (mounted) setState(() => _isSyncLoading = false);
     }
@@ -5465,8 +6474,12 @@ class _DiabetesInsulinSummaryTableState extends State<_DiabetesInsulinSummaryTab
     final ext = theme.extension<AppThemeExtension>();
     final isDark = theme.brightness == Brightness.dark;
 
-    final dateRecords = widget.records.where((r) => _isSameDay(r.date, _normalizedSelectedDate)).toList();
-    final visibleMeals = _mealOrder.where((mealLabel) => _foodCountForMeal(mealLabel) > 0).toList();
+    final dateRecords = widget.records
+        .where((r) => _isSameDay(r.date, _normalizedSelectedDate))
+        .toList();
+    final visibleMeals = _mealOrder
+        .where((mealLabel) => _foodCountForMeal(mealLabel) > 0)
+        .toList();
 
     return _TableCard(
       title: 'Analisis Insulin (DM)',
@@ -5481,14 +6494,18 @@ class _DiabetesInsulinSummaryTableState extends State<_DiabetesInsulinSummaryTab
               decoration: BoxDecoration(
                 color: theme.dividerColor.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
+                border: Border.all(
+                  color: theme.dividerColor.withValues(alpha: 0.2),
+                ),
               ),
               child: Row(
                 children: [
                   IconButton(
                     onPressed: () {
                       setState(() {
-                        _selectedDate = _selectedDate.subtract(Duration(days: 1));
+                        _selectedDate = _selectedDate.subtract(
+                          Duration(days: 1),
+                        );
                       });
                       _loadFoodEntriesForDate();
                     },
@@ -5508,7 +6525,10 @@ class _DiabetesInsulinSummaryTableState extends State<_DiabetesInsulinSummaryTab
                         ),
                         Text(
                           '${dateRecords.length} data insulin',
-                          style: TextStyle(fontSize: 11, color: theme.hintColor),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: theme.hintColor,
+                          ),
                         ),
                       ],
                     ),
@@ -5518,7 +6538,9 @@ class _DiabetesInsulinSummaryTableState extends State<_DiabetesInsulinSummaryTab
                         ? null
                         : () {
                             setState(() {
-                              _selectedDate = _selectedDate.add(Duration(days: 1));
+                              _selectedDate = _selectedDate.add(
+                                Duration(days: 1),
+                              );
                             });
                             _loadFoodEntriesForDate();
                           },
@@ -5564,7 +6586,9 @@ class _DiabetesInsulinSummaryTableState extends State<_DiabetesInsulinSummaryTab
                 decoration: BoxDecoration(
                   color: AppColors.warning.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.warning.withValues(alpha: 0.35)),
+                  border: Border.all(
+                    color: AppColors.warning.withValues(alpha: 0.35),
+                  ),
                 ),
                 child: Text(
                   'Keterangan: Biru (belum input), Kuning (perlu update), Hijau (sinkron/aman).',
@@ -5613,48 +6637,115 @@ class _DiabetesInsulinSummaryTableState extends State<_DiabetesInsulinSummaryTab
 
                     final storedCarb = _toDouble(p['karbohidratMakan']);
                     final storedGl = _toDouble(p['gl']);
-                    final isSynced = r != null &&
+                    final isSynced =
+                        r != null &&
                         (storedCarb - auto.carb).abs() < 0.1 &&
                         (storedGl - auto.gl).abs() < 0.1;
                     final statusText = r == null
                         ? 'Belum input'
                         : isSynced
-                            ? 'Sinkron'
-                            : 'Perlu update';
+                        ? 'Sinkron'
+                        : 'Perlu update';
                     final statusColor = r == null
                         ? AppColors.warning
                         : isSynced
-                            ? AppColors.success
-                            : AppColors.warning;
+                        ? AppColors.success
+                        : AppColors.warning;
 
                     return DataRow(
-                      color: (statusText == 'Perlu update' || statusText == 'Belum input')
+                      color:
+                          (statusText == 'Perlu update' ||
+                              statusText == 'Belum input')
                           ? WidgetStatePropertyAll<Color?>(
-                              statusText == 'Belum input' 
-                                ? Colors.blue.withValues(alpha: isDark ? 0.25 : 0.12)
-                                : (ext?.diabetesColor ?? Colors.orange).withValues(alpha: 0.14),
+                              statusText == 'Belum input'
+                                  ? Colors.blue.withValues(
+                                      alpha: isDark ? 0.25 : 0.12,
+                                    )
+                                  : (ext?.diabetesColor ?? Colors.orange)
+                                        .withValues(alpha: 0.14),
                             )
                           : null,
                       cells: [
-                        DataCell(Text(mealLabel, style: TextStyle(color: theme.textTheme.bodyMedium?.color))),
-                        DataCell(Text('${auto.carb.toStringAsFixed(1)} g', style: TextStyle(color: theme.textTheme.bodyMedium?.color))),
-                        DataCell(Text(auto.gl.toStringAsFixed(1), style: TextStyle(color: theme.textTheme.bodyMedium?.color))),
-                        DataCell(Text(r == null ? '-' : basal.toStringAsFixed(1), style: TextStyle(color: theme.textTheme.bodyMedium?.color))),
-                        DataCell(Text(r == null ? '-' : prandial.toStringAsFixed(1), style: TextStyle(color: theme.textTheme.bodyMedium?.color))),
-                        DataCell(Text(r == null ? '-' : aktual.toStringAsFixed(1), style: TextStyle(color: theme.textTheme.bodyMedium?.color))),
-                        DataCell(Text(r == null ? '-' : estimasi.toStringAsFixed(1), style: TextStyle(color: theme.textTheme.bodyMedium?.color))),
-                        DataCell(Text(r == null ? '-' : diff.toStringAsFixed(1), style: TextStyle(color: theme.textTheme.bodyMedium?.color))),
-                        DataCell(_StatusBadge(text: statusText, color: statusColor)),
+                        DataCell(
+                          Text(
+                            mealLabel,
+                            style: TextStyle(
+                              color: theme.textTheme.bodyMedium?.color,
+                            ),
+                          ),
+                        ),
+                        DataCell(
+                          Text(
+                            '${auto.carb.toStringAsFixed(1)} g',
+                            style: TextStyle(
+                              color: theme.textTheme.bodyMedium?.color,
+                            ),
+                          ),
+                        ),
+                        DataCell(
+                          Text(
+                            auto.gl.toStringAsFixed(1),
+                            style: TextStyle(
+                              color: theme.textTheme.bodyMedium?.color,
+                            ),
+                          ),
+                        ),
+                        DataCell(
+                          Text(
+                            r == null ? '-' : basal.toStringAsFixed(1),
+                            style: TextStyle(
+                              color: theme.textTheme.bodyMedium?.color,
+                            ),
+                          ),
+                        ),
+                        DataCell(
+                          Text(
+                            r == null ? '-' : prandial.toStringAsFixed(1),
+                            style: TextStyle(
+                              color: theme.textTheme.bodyMedium?.color,
+                            ),
+                          ),
+                        ),
+                        DataCell(
+                          Text(
+                            r == null ? '-' : aktual.toStringAsFixed(1),
+                            style: TextStyle(
+                              color: theme.textTheme.bodyMedium?.color,
+                            ),
+                          ),
+                        ),
+                        DataCell(
+                          Text(
+                            r == null ? '-' : estimasi.toStringAsFixed(1),
+                            style: TextStyle(
+                              color: theme.textTheme.bodyMedium?.color,
+                            ),
+                          ),
+                        ),
+                        DataCell(
+                          Text(
+                            r == null ? '-' : diff.toStringAsFixed(1),
+                            style: TextStyle(
+                              color: theme.textTheme.bodyMedium?.color,
+                            ),
+                          ),
+                        ),
+                        DataCell(
+                          _StatusBadge(text: statusText, color: statusColor),
+                        ),
                         DataCell(
                           r == null
-                              ? Text('-', style: TextStyle(color: theme.hintColor))
+                              ? Text(
+                                  '-',
+                                  style: TextStyle(color: theme.hintColor),
+                                )
                               : _StatusBadge(
                                   text: computedCategory,
                                   color: computedCategory == 'Balance'
                                       ? AppColors.success
                                       : computedCategory == 'Lebih'
-                                          ? AppColors.warning
-                                          : AppColors.error,
+                                      ? AppColors.warning
+                                      : AppColors.error,
                                 ),
                         ),
                         DataCell(
@@ -5675,10 +6766,14 @@ class _DiabetesInsulinSummaryTableState extends State<_DiabetesInsulinSummaryTab
                                       ? SizedBox(
                                           width: 14,
                                           height: 14,
-                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
                                         )
                                       : Icon(Icons.sync, size: 18),
-                                  onPressed: _isSyncLoading ? null : () => _syncRow(r, mealLabel),
+                                  onPressed: _isSyncLoading
+                                      ? null
+                                      : () => _syncRow(r, mealLabel),
                                 ),
                                 IconButton(
                                   visualDensity: VisualDensity.compact,
@@ -5693,7 +6788,10 @@ class _DiabetesInsulinSummaryTableState extends State<_DiabetesInsulinSummaryTab
                               ] else
                                 Text(
                                   'Isi via form',
-                                  style: TextStyle(fontSize: 11, color: theme.textTheme.bodyMedium?.color),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: theme.textTheme.bodyMedium?.color,
+                                  ),
                                 ),
                             ],
                           ),
@@ -5709,7 +6807,6 @@ class _DiabetesInsulinSummaryTableState extends State<_DiabetesInsulinSummaryTab
       ),
     );
   }
-
 }
 
 class _DiabetesCheckupTable extends StatelessWidget {
@@ -5740,60 +6837,66 @@ class _DiabetesCheckupTable extends StatelessWidget {
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: DataTable(
-                columnSpacing: 20,
-                columns: [
-                  DataColumn(label: Text('Tgl')),
-                  DataColumn(label: Text('Jenis')),
-                  DataColumn(label: Text('Parameter')),
-                  DataColumn(label: Text('Hasil')),
-                  DataColumn(label: Text('Status')),
-                  DataColumn(label: Text('Aksi')),
-                ],
-                rows: todayCheckups.map((r) {
-                  final p = r.payload;
-                  final examType = (p['examType'] ?? '-').toString();
-                  final result = (p['result'] ?? '-').toString();
-                  final unit = (p['unit'] ?? '').toString();
-                  return DataRow(cells: [
-                    DataCell(Text(dateFmt.format(r.date))),
-                    DataCell(Text(examType)),
-                    DataCell(Text((p['exam'] ?? '-').toString())),
-                    DataCell(Text(unit.isNotEmpty ? '$result $unit' : result)),
-                    DataCell(
-                      _StatusBadge(
-                        text: (p['category'] ?? '-').toString(),
-                        color: _checkupCategoryColor(
-                          context,
-                          (p['category'] ?? '').toString(),
+                  columnSpacing: 20,
+                  columns: [
+                    DataColumn(label: Text('Tgl')),
+                    DataColumn(label: Text('Jenis')),
+                    DataColumn(label: Text('Parameter')),
+                    DataColumn(label: Text('Hasil')),
+                    DataColumn(label: Text('Status')),
+                    DataColumn(label: Text('Aksi')),
+                  ],
+                  rows: todayCheckups.map((r) {
+                    final p = r.payload;
+                    final examType = (p['examType'] ?? '-').toString();
+                    final result = (p['result'] ?? '-').toString();
+                    final unit = (p['unit'] ?? '').toString();
+                    return DataRow(
+                      cells: [
+                        DataCell(Text(dateFmt.format(r.date))),
+                        DataCell(Text(examType)),
+                        DataCell(Text((p['exam'] ?? '-').toString())),
+                        DataCell(
+                          Text(unit.isNotEmpty ? '$result $unit' : result),
                         ),
-                      ),
-                    ),
-                    DataCell(Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          visualDensity: VisualDensity.compact,
-                          tooltip: 'Edit',
-                          icon: Icon(Icons.edit_outlined, size: 18),
-                          onPressed: () => onEdit(r),
-                        ),
-                        IconButton(
-                          visualDensity: VisualDensity.compact,
-                          tooltip: 'Hapus',
-                          icon: Icon(
-                            Icons.delete_outline,
-                            size: 18,
-                            color: AppColors.error,
+                        DataCell(
+                          _StatusBadge(
+                            text: (p['category'] ?? '-').toString(),
+                            color: _checkupCategoryColor(
+                              context,
+                              (p['category'] ?? '').toString(),
+                            ),
                           ),
-                          onPressed: () => onDelete(r),
+                        ),
+                        DataCell(
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                visualDensity: VisualDensity.compact,
+                                tooltip: 'Edit',
+                                icon: Icon(Icons.edit_outlined, size: 18),
+                                onPressed: () => onEdit(r),
+                              ),
+                              IconButton(
+                                visualDensity: VisualDensity.compact,
+                                tooltip: 'Hapus',
+                                icon: Icon(
+                                  Icons.delete_outline,
+                                  size: 18,
+                                  color: AppColors.error,
+                                ),
+                                onPressed: () => onDelete(r),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
-                    )),
-                  ]);
-                }).toList(),
+                    );
+                  }).toList(),
+                ),
               ),
             ),
-          ),
     );
   }
 }
@@ -5811,7 +6914,8 @@ class _DiabetesCheckupTrendCards extends StatelessWidget {
     return match == null ? null : double.tryParse(match.group(0)!);
   }
 
-  DateTime _dayOnly(DateTime value) => DateTime(value.year, value.month, value.day);
+  DateTime _dayOnly(DateTime value) =>
+      DateTime(value.year, value.month, value.day);
 
   @override
   Widget build(BuildContext context) {
@@ -5867,10 +6971,7 @@ class _DiabetesCheckupTrendCards extends StatelessWidget {
           gdsSpots: glucoseSpotsGds,
         ),
         const SizedBox(height: 16),
-        _Hba1cTrendCard(
-          dates: visibleHba1cDates,
-          spots: hba1cSpots,
-        ),
+        _Hba1cTrendCard(dates: visibleHba1cDates, spots: hba1cSpots),
       ],
     );
   }
@@ -5901,10 +7002,7 @@ class _GlucoseTrendCard extends StatelessWidget {
       );
     }
 
-    final allY = [
-      ...gdpSpots.map((e) => e.y),
-      ...gdsSpots.map((e) => e.y),
-    ];
+    final allY = [...gdpSpots.map((e) => e.y), ...gdsSpots.map((e) => e.y)];
     final maxY = allY.reduce((a, b) => a > b ? a : b);
     final safeMaxY = maxY <= 0 ? 10.0 : maxY * 1.15;
     final interval = safeMaxY <= 50 ? 10.0 : (safeMaxY / 5).ceilToDouble();
@@ -5928,13 +7026,19 @@ class _GlucoseTrendCard extends StatelessWidget {
                     horizontalInterval: interval,
                     drawVerticalLine: false,
                     getDrawingHorizontalLine: (value) => FlLine(
-                      color: Theme.of(context).dividerColor.withValues(alpha: 0.25),
+                      color: Theme.of(
+                        context,
+                      ).dividerColor.withValues(alpha: 0.25),
                       strokeWidth: 0.8,
                     ),
                   ),
                   titlesData: FlTitlesData(
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
                     leftTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
@@ -5942,7 +7046,10 @@ class _GlucoseTrendCard extends StatelessWidget {
                         interval: interval,
                         getTitlesWidget: (value, meta) => Text(
                           value.toInt().toString(),
-                          style: TextStyle(fontSize: 10, color: Theme.of(context).hintColor),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Theme.of(context).hintColor,
+                          ),
                         ),
                       ),
                     ),
@@ -5952,12 +7059,16 @@ class _GlucoseTrendCard extends StatelessWidget {
                         reservedSize: 28,
                         getTitlesWidget: (value, meta) {
                           final idx = value.toInt();
-                          if (idx < 0 || idx >= dates.length) return const SizedBox.shrink();
+                          if (idx < 0 || idx >= dates.length)
+                            return const SizedBox.shrink();
                           return Padding(
                             padding: const EdgeInsets.only(top: 6),
                             child: Text(
                               DateFormat('d/M').format(dates[idx]),
-                              style: TextStyle(fontSize: 10, color: Theme.of(context).hintColor),
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Theme.of(context).hintColor,
+                              ),
                             ),
                           );
                         },
@@ -5967,8 +7078,16 @@ class _GlucoseTrendCard extends StatelessWidget {
                   borderData: FlBorderData(
                     show: true,
                     border: Border(
-                      left: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.3)),
-                      bottom: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.3)),
+                      left: BorderSide(
+                        color: Theme.of(
+                          context,
+                        ).dividerColor.withValues(alpha: 0.3),
+                      ),
+                      bottom: BorderSide(
+                        color: Theme.of(
+                          context,
+                        ).dividerColor.withValues(alpha: 0.3),
+                      ),
                     ),
                   ),
                   lineBarsData: [
@@ -6054,8 +7173,12 @@ class _Hba1cTrendCard extends StatelessWidget {
                 ),
               ),
               titlesData: FlTitlesData(
-                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+                rightTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
                 leftTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
@@ -6063,7 +7186,10 @@ class _Hba1cTrendCard extends StatelessWidget {
                     interval: interval.toDouble(),
                     getTitlesWidget: (value, meta) => Text(
                       value.toStringAsFixed(1),
-                      style: TextStyle(fontSize: 10, color: Theme.of(context).hintColor),
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Theme.of(context).hintColor,
+                      ),
                     ),
                   ),
                 ),
@@ -6073,12 +7199,16 @@ class _Hba1cTrendCard extends StatelessWidget {
                     reservedSize: 28,
                     getTitlesWidget: (value, meta) {
                       final idx = value.toInt();
-                      if (idx < 0 || idx >= dates.length) return const SizedBox.shrink();
+                      if (idx < 0 || idx >= dates.length)
+                        return const SizedBox.shrink();
                       return Padding(
                         padding: const EdgeInsets.only(top: 6),
                         child: Text(
                           DateFormat('d/M').format(dates[idx]),
-                          style: TextStyle(fontSize: 10, color: Theme.of(context).hintColor),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Theme.of(context).hintColor,
+                          ),
                         ),
                       );
                     },
@@ -6088,8 +7218,16 @@ class _Hba1cTrendCard extends StatelessWidget {
               borderData: FlBorderData(
                 show: true,
                 border: Border(
-                  left: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.3)),
-                  bottom: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.3)),
+                  left: BorderSide(
+                    color: Theme.of(
+                      context,
+                    ).dividerColor.withValues(alpha: 0.3),
+                  ),
+                  bottom: BorderSide(
+                    color: Theme.of(
+                      context,
+                    ).dividerColor.withValues(alpha: 0.3),
+                  ),
                 ),
               ),
               lineBarsData: [
@@ -6181,41 +7319,43 @@ class _DiabetesActivityTable extends StatelessWidget {
                 rows: todayActivities.map((r) {
                   final p = r.payload;
                   final category = (p['category'] ?? '-').toString();
-                  return DataRow(cells: [
-                    DataCell(Text(dateFmt.format(r.date))),
-                    DataCell(Text((p['activityName'] ?? '-').toString())),
-                    DataCell(Text('${p['duration'] ?? '-'} mnt')),
-                    DataCell(Text((p['complaint'] ?? '-').toString())),
-                    DataCell(
-                      _StatusBadge(
-                        text: category,
-                        color: _checkupCategoryColor(context, category),
+                  return DataRow(
+                    cells: [
+                      DataCell(Text(dateFmt.format(r.date))),
+                      DataCell(Text((p['activityName'] ?? '-').toString())),
+                      DataCell(Text('${p['duration'] ?? '-'} mnt')),
+                      DataCell(Text((p['complaint'] ?? '-').toString())),
+                      DataCell(
+                        _StatusBadge(
+                          text: category,
+                          color: _checkupCategoryColor(context, category),
+                        ),
                       ),
-                    ),
-                    DataCell(
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            visualDensity: VisualDensity.compact,
-                            tooltip: 'Edit',
-                            icon: Icon(Icons.edit_outlined, size: 18),
-                            onPressed: () => onEdit(r),
-                          ),
-                          IconButton(
-                            visualDensity: VisualDensity.compact,
-                            tooltip: 'Hapus',
-                            icon: Icon(
-                              Icons.delete_outline,
-                              size: 18,
-                              color: AppColors.error,
+                      DataCell(
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              visualDensity: VisualDensity.compact,
+                              tooltip: 'Edit',
+                              icon: Icon(Icons.edit_outlined, size: 18),
+                              onPressed: () => onEdit(r),
                             ),
-                            onPressed: () => onDelete(r),
-                          ),
-                        ],
+                            IconButton(
+                              visualDensity: VisualDensity.compact,
+                              tooltip: 'Hapus',
+                              icon: Icon(
+                                Icons.delete_outline,
+                                size: 18,
+                                color: AppColors.error,
+                              ),
+                              onPressed: () => onDelete(r),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ]);
+                    ],
+                  );
                 }).toList(),
               ),
             ),
@@ -6245,7 +7385,9 @@ class _DiabetesMedicationTable extends StatelessWidget {
               padding: EdgeInsets.all(16),
               child: Text(
                 'Belum ada input obat.',
-                style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
               ),
             )
           : SingleChildScrollView(
@@ -6263,29 +7405,37 @@ class _DiabetesMedicationTable extends StatelessWidget {
                 ],
                 rows: records.map((r) {
                   final p = r.payload;
-                  return DataRow(cells: [
-                    DataCell(Text(dateFmt.format(r.date))),
-                    DataCell(Text((p['name'] ?? '-').toString())),
-                    DataCell(Text((p['dose'] ?? '-').toString())),
-                    DataCell(Text((p['period'] ?? '-').toString())),
-                    DataCell(Text((p['consumed'] ?? '-').toString())),
-                    DataCell(Text((p['note'] ?? '-').toString())),
-                    DataCell(Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          visualDensity: VisualDensity.compact,
-                          icon: Icon(Icons.edit_outlined, size: 18),
-                          onPressed: () => onEdit(r),
+                  return DataRow(
+                    cells: [
+                      DataCell(Text(dateFmt.format(r.date))),
+                      DataCell(Text((p['name'] ?? '-').toString())),
+                      DataCell(Text((p['dose'] ?? '-').toString())),
+                      DataCell(Text((p['period'] ?? '-').toString())),
+                      DataCell(Text((p['consumed'] ?? '-').toString())),
+                      DataCell(Text((p['note'] ?? '-').toString())),
+                      DataCell(
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              visualDensity: VisualDensity.compact,
+                              icon: Icon(Icons.edit_outlined, size: 18),
+                              onPressed: () => onEdit(r),
+                            ),
+                            IconButton(
+                              visualDensity: VisualDensity.compact,
+                              icon: Icon(
+                                Icons.delete_outline,
+                                size: 18,
+                                color: AppColors.error,
+                              ),
+                              onPressed: () => onDelete(r),
+                            ),
+                          ],
                         ),
-                        IconButton(
-                          visualDensity: VisualDensity.compact,
-                          icon: Icon(Icons.delete_outline, size: 18, color: AppColors.error),
-                          onPressed: () => onDelete(r),
-                        ),
-                      ],
-                    )),
-                  ]);
+                      ),
+                    ],
+                  );
                 }).toList(),
               ),
             ),
@@ -6398,16 +7548,16 @@ class _EmptyTableState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.inbox_outlined,
-              color: theme.hintColor,
-              size: 28,
-            ),
+            Icon(Icons.inbox_outlined, color: theme.hintColor, size: 28),
             SizedBox(height: 8),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6)),
+              style: TextStyle(
+                color: theme.textTheme.bodyMedium?.color?.withValues(
+                  alpha: 0.6,
+                ),
+              ),
             ),
           ],
         ),
@@ -6493,7 +7643,9 @@ class _ActivityGauge extends StatelessWidget {
               SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  isWeekly ? 'Progres Aktivitas Mingguan' : 'Progres Aktivitas Harian',
+                  isWeekly
+                      ? 'Progres Aktivitas Mingguan'
+                      : 'Progres Aktivitas Harian',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
@@ -6535,10 +7687,7 @@ class _ActivityGauge extends StatelessWidget {
                       ),
                       Text(
                         '${totalDuration.toInt()} / ${target.toInt()} mnt',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: theme.hintColor,
-                        ),
+                        style: TextStyle(fontSize: 12, color: theme.hintColor),
                       ),
                     ],
                   ),
