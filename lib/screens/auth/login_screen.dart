@@ -246,13 +246,16 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _onLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final authProvider = context.read<AuthProvider>();
+    final diseaseProvider = context.read<DiseaseProvider>();
+
     // Cek apakah login sebagai admin
     final email = _emailCtrl.text.trim();
     final password = _passwordCtrl.text;
     if (email == AppConstants.adminEmail &&
         password == AppConstants.adminPassword) {
-      context.read<AuthProvider>().clearError();
-      final adminAuthSuccess = await context.read<AuthProvider>().loginAdmin(
+      authProvider.clearError();
+      final adminAuthSuccess = await authProvider.loginAdmin(
             email: email,
             password: password,
           );
@@ -262,18 +265,17 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    context.read<AuthProvider>().clearError();
-    final success = await context.read<AuthProvider>().login(
+    authProvider.clearError();
+    final success = await authProvider.login(
           email: email,
           password: password,
         );
     if (success && mounted) {
       // Sync DiseaseProvider dengan disease dari akun yang baru login,
       // supaya SharedPreferences tidak menyimpan disease dari akun lain.
-      final userDisease =
-          context.read<AuthProvider>().currentUser?.diseaseType;
+      final userDisease = authProvider.currentUser?.diseaseType;
       if (userDisease != null) {
-        await context.read<DiseaseProvider>().setDisease(userDisease);
+        await diseaseProvider.setDisease(userDisease);
       }
       if (mounted) {
         Navigator.pushReplacementNamed(context, AppConstants.routeMain);
@@ -282,10 +284,13 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _onGoogleSignIn() async {
-    context.read<AuthProvider>().clearError();
-    final success = await context.read<AuthProvider>().signInWithGoogle();
+    final authProvider = context.read<AuthProvider>();
+    final diseaseProvider = context.read<DiseaseProvider>();
+
+    authProvider.clearError();
+    final success = await authProvider.signInWithGoogle();
     if (success && mounted) {
-      final isNewUser = context.read<AuthProvider>().isNewGoogleUser;
+      final isNewUser = authProvider.isNewGoogleUser;
       if (isNewUser) {
         Navigator.pushReplacementNamed(
           context,
@@ -293,10 +298,9 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       } else {
         // Sync DiseaseProvider untuk Google login yang sudah punya profil
-        final userDisease =
-            context.read<AuthProvider>().currentUser?.diseaseType;
+        final userDisease = authProvider.currentUser?.diseaseType;
         if (userDisease != null) {
-          await context.read<DiseaseProvider>().setDisease(userDisease);
+          await diseaseProvider.setDisease(userDisease);
         }
         if (mounted) {
           Navigator.pushReplacementNamed(context, AppConstants.routeMain);
