@@ -148,7 +148,9 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
     await _loadEntriesInternal(showFullScreenLoading: true);
   }
 
-  Future<void> _loadEntriesInternal({required bool showFullScreenLoading}) async {
+  Future<void> _loadEntriesInternal({
+    required bool showFullScreenLoading,
+  }) async {
     if (_uid.isEmpty) {
       setState(() => _isLoading = false);
       return;
@@ -322,61 +324,58 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
               padding: const EdgeInsets.all(20),
               child: Text(
                 'Pilih Waktu Makan',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.textTheme.titleLarge?.color),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: theme.textTheme.titleLarge?.color,
+                ),
               ),
             ),
-            ...MealType.values
-                .map(
-                  (meal) => InkWell(
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      setState(() => _selectedMealType = meal);
-                      _proceedToFoodSearch(isGuest: isGuest);
-                    },
-                    child: Container(
-                      color: Colors.transparent,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 12,
-                      ),
-                      child: Row(
-                        children: [
-                          Text(
-                            meal.emoji,
-                            style: const TextStyle(fontSize: 28),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  meal.label,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: theme.textTheme.bodyLarge?.color,
-                                  ),
-                                ),
-                                Text(
-                                  meal.timeRange,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: theme.hintColor,
-                                  ),
-                                ),
-                              ],
+            ...MealType.values.map(
+              (meal) => InkWell(
+                onTap: () {
+                  Navigator.pop(ctx);
+                  setState(() => _selectedMealType = meal);
+                  _proceedToFoodSearch(isGuest: isGuest);
+                },
+                child: Container(
+                  color: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
+                  child: Row(
+                    children: [
+                      Text(meal.emoji, style: const TextStyle(fontSize: 28)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              meal.label,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: theme.textTheme.bodyLarge?.color,
+                              ),
                             ),
-                          ),
-                          Icon(
-                            Icons.chevron_right,
-                            color: theme.primaryColor,
-                          ),
-                        ],
+                            Text(
+                              meal.timeRange,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: theme.hintColor,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
+                      Icon(Icons.chevron_right, color: theme.primaryColor),
+                    ],
                   ),
                 ),
+              ),
+            ),
             const SizedBox(height: 12),
           ],
         ),
@@ -399,11 +398,13 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
           if (cartItems.isEmpty) return;
           final mealType = _selectedMealType!;
           final entries = cartItems
-              .map((item) => FoodLogEntry.create(
-                    food: item.food,
-                    grams: item.grams,
-                    mealType: mealType,
-                  ))
+              .map(
+                (item) => FoodLogEntry.create(
+                  food: item.food,
+                  grams: item.grams,
+                  mealType: mealType,
+                ),
+              )
               .toList();
           await FoodLogService.addEntries(uid, _selectedDate, entries);
           if (mounted) {
@@ -543,7 +544,7 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
                           else if (needs != null) ...[
                             // 1. Weekly fluid chart for kidney patients
                             if (auth.currentUser?.diseaseType ==
-                                    DiseaseType.chronicKidneyDisease) ...[ 
+                                DiseaseType.chronicKidneyDisease) ...[
                               _WeeklyFluidChart(
                                 target: needs.cairan,
                                 uid: _uid,
@@ -569,7 +570,9 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
                             if (auth.currentUser?.diseaseType ==
                                 DiseaseType.type2DiabetesMellitus) ...[
                               _GlycemicLoadChart(
-                                key: ValueKey('gl_chart_${_selectedDate.millisecondsSinceEpoch}_${_entries.length}'),
+                                key: ValueKey(
+                                  'gl_chart_${_selectedDate.millisecondsSinceEpoch}_${_entries.length}',
+                                ),
                                 entries: _entries,
                               ),
                               const SizedBox(height: 20),
@@ -676,7 +679,9 @@ class _DateHeader extends StatelessWidget {
             context: context,
             onTap: onPrev,
             icon: Icons.chevron_left,
-            fillColor: const Color(0xFF64B5F6).withValues(alpha: 0.52), // light blue transparent
+            fillColor: const Color(
+              0xFF64B5F6,
+            ).withValues(alpha: 0.52), // light blue transparent
           ),
           Expanded(
             child: Text(
@@ -694,7 +699,9 @@ class _DateHeader extends StatelessWidget {
             onTap: canGoNext ? onNext : null,
             icon: Icons.chevron_right,
             fillColor: canGoNext
-                ? const Color(0xFF64B5F6).withValues(alpha: 0.52) // light blue transparent
+                ? const Color(0xFF64B5F6).withValues(
+                    alpha: 0.52,
+                  ) // light blue transparent
                 : const Color(0xFFE5EAF1), // light gray when disabled
             iconColor: canGoNext ? Colors.white : const Color(0xFF9AA4B2),
           ),
@@ -727,11 +734,7 @@ class _DateHeader extends StatelessWidget {
             ),
           ],
         ),
-        child: Icon(
-          icon,
-          color: iconColor ?? Colors.white,
-          size: 18,
-        ),
+        child: Icon(icon, color: iconColor ?? Colors.white, size: 18),
       ),
     );
   }
@@ -767,7 +770,10 @@ class _NutritionLoadingCard extends StatelessWidget {
           SizedBox(
             width: 18,
             height: 18,
-            child: CircularProgressIndicator(strokeWidth: 2.5, color: theme.primaryColor),
+            child: CircularProgressIndicator(
+              strokeWidth: 2.5,
+              color: theme.primaryColor,
+            ),
           ),
           const SizedBox(width: 12),
           Text(
@@ -802,7 +808,9 @@ class _NutritionSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final ext = theme.extension<AppThemeExtension>();
-    final themeColor = _isDM ? (ext?.diabetesColor ?? Colors.orange) : (ext?.kidneyColor ?? Colors.red);
+    final themeColor = _isDM
+        ? (ext?.diabetesColor ?? Colors.orange)
+        : (ext?.kidneyColor ?? Colors.red);
     final energyRatio = needs.energi > 0 ? intake.energi / needs.energi : 0.0;
 
     // Nutrisi dasar (semua penyakit)
@@ -884,12 +892,14 @@ class _NutritionSummaryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(16),
-        border: theme.brightness == Brightness.dark 
+        border: theme.brightness == Brightness.dark
             ? Border.all(color: theme.dividerColor)
             : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: theme.brightness == Brightness.dark ? 0.2 : 0.05),
+            color: Colors.black.withValues(
+              alpha: theme.brightness == Brightness.dark ? 0.2 : 0.05,
+            ),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -939,10 +949,7 @@ class _NutritionSummaryCard extends StatelessWidget {
                     ),
                     Text(
                       'energi',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: theme.hintColor,
-                      ),
+                      style: TextStyle(fontSize: 10, color: theme.hintColor),
                     ),
                   ],
                 ),
@@ -1011,8 +1018,11 @@ class _WeeklyFluidChartState extends State<_WeeklyFluidChart> {
   // ── Tanggal akhir dari minggu yang sedang ditampilkan ──
   DateTime get _endDate {
     final today = DateTime.now();
-    return DateTime(today.year, today.month, today.day)
-        .add(Duration(days: _weekOffset * 7));
+    return DateTime(
+      today.year,
+      today.month,
+      today.day,
+    ).add(Duration(days: _weekOffset * 7));
   }
 
   DateTime get _startDate => _endDate.subtract(const Duration(days: 6));
@@ -1052,8 +1062,19 @@ class _WeeklyFluidChartState extends State<_WeeklyFluidChart> {
 
   String _formatDate(DateTime d) {
     const bulan = [
-      '', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
     ];
     return '${d.day} ${bulan[d.month]} ${d.year}';
   }
@@ -1126,15 +1147,19 @@ class _WeeklyFluidChartState extends State<_WeeklyFluidChart> {
             height: 130,
             child: Center(
               child: CircularProgressIndicator(
-                  strokeWidth: 2, color: theme.primaryColor),
+                strokeWidth: 2,
+                color: theme.primaryColor,
+              ),
             ),
           )
         else if (weeklyData.isEmpty)
           SizedBox(
             height: 100,
             child: Center(
-              child: Text('Tidak ada data',
-                  style: TextStyle(color: theme.hintColor, fontSize: 12)),
+              child: Text(
+                'Tidak ada data',
+                style: TextStyle(color: theme.hintColor, fontSize: 12),
+              ),
             ),
           )
         else
@@ -1158,14 +1183,27 @@ class _WeeklyFluidChartState extends State<_WeeklyFluidChart> {
   Widget _buildBars(BuildContext context, List<DailyNutrition> data) {
     final theme = Theme.of(context);
     final target = widget.target;
-    final maxValue = data
-        .map((d) => d.cairan)
-        .fold(target, (prev, v) => v > prev ? v : prev) * 1.1;
+    final maxValue =
+        data
+            .map((d) => d.cairan)
+            .fold(target, (prev, v) => v > prev ? v : prev) *
+        1.1;
 
     const dayLabels = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
     const bulan = [
-      '', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
     ];
     final today = DateTime.now();
 
@@ -1174,15 +1212,16 @@ class _WeeklyFluidChartState extends State<_WeeklyFluidChart> {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: data.map((day) {
         final ratio = maxValue > 0 ? day.cairan / maxValue : 0.0;
-        final isToday = day.date.year == today.year &&
+        final isToday =
+            day.date.year == today.year &&
             day.date.month == today.month &&
             day.date.day == today.day;
         final targetRatio = target > 0 ? day.cairan / target : 0.0;
         final color = targetRatio >= 1.1
             ? AppColors.error
             : targetRatio >= 0.9
-                ? AppColors.success
-                : AppColors.warning;
+            ? AppColors.success
+            : AppColors.warning;
 
         final dayLabel = dayLabels[day.date.weekday % 7];
         final dateLabel = '${day.date.day} ${bulan[day.date.month]}';
@@ -1197,8 +1236,9 @@ class _WeeklyFluidChartState extends State<_WeeklyFluidChart> {
                   height: 80,
                   decoration: BoxDecoration(
                     color: theme.dividerColor.withValues(alpha: 0.1),
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(6)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(6),
+                    ),
                   ),
                   alignment: Alignment.bottomCenter,
                   child: Container(
@@ -1208,16 +1248,15 @@ class _WeeklyFluidChartState extends State<_WeeklyFluidChart> {
                           ? theme.dividerColor.withValues(alpha: 0.2)
                           : color,
                       borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(6)),
+                        top: Radius.circular(6),
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 4),
                 // ml label
                 Text(
-                  day.cairan == 0
-                      ? '–'
-                      : '${day.cairan.toInt()}',
+                  day.cairan == 0 ? '–' : '${day.cairan.toInt()}',
                   style: TextStyle(
                     fontSize: 9,
                     fontWeight: FontWeight.w600,
@@ -1326,15 +1365,14 @@ class _LegendDot extends StatelessWidget {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 3),
-        Text(label,
-            style: TextStyle(
-                fontSize: 9,
-                color: Theme.of(context).hintColor)),
+        Text(
+          label,
+          style: TextStyle(fontSize: 9, color: Theme.of(context).hintColor),
+        ),
       ],
     );
   }
 }
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DAY FLUID DATA MODEL
@@ -1385,6 +1423,9 @@ class _NutrientRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final valueText = diseaseType == DiseaseType.chronicKidneyDisease
+        ? '${(data.ratio * 100).round()}%'
+        : '${_fmt(data.intake)} / ${_fmt(data.target)} ${data.unit}';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1419,11 +1460,8 @@ class _NutrientRow extends StatelessWidget {
                 ),
               ),
             Text(
-              '${_fmt(data.intake)} / ${_fmt(data.target)} ${data.unit}',
-              style: TextStyle(
-                fontSize: 11,
-                color: theme.hintColor,
-              ),
+              valueText,
+              style: TextStyle(fontSize: 11, color: theme.hintColor),
             ),
           ],
         ),
@@ -1494,11 +1532,7 @@ class _KidneyFluidGauge extends StatelessWidget {
           // Title
           Row(
             children: [
-              Icon(
-                Icons.opacity_outlined,
-                color: kidneyColor,
-                size: 20,
-              ),
+              Icon(Icons.opacity_outlined, color: kidneyColor, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -1534,7 +1568,9 @@ class _KidneyFluidGauge extends StatelessWidget {
                     painter: _CircleProgressPainter(
                       progress: _ratio.clamp(0.0, 1.0),
                       color: _gaugeColor,
-                      backgroundColor: theme.dividerColor.withValues(alpha: 0.05),
+                      backgroundColor: theme.dividerColor.withValues(
+                        alpha: 0.05,
+                      ),
                       strokeWidth: 12,
                     ),
                     size: const Size(200, 200),
@@ -1554,10 +1590,7 @@ class _KidneyFluidGauge extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         'dari ${target.toStringAsFixed(0)} ml',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: theme.hintColor,
-                        ),
+                        style: TextStyle(fontSize: 12, color: theme.hintColor),
                       ),
                     ],
                   ),
@@ -1573,7 +1606,9 @@ class _KidneyFluidGauge extends StatelessWidget {
             decoration: BoxDecoration(
               color: theme.dividerColor.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
+              border: Border.all(
+                color: theme.dividerColor.withValues(alpha: 0.2),
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1584,7 +1619,11 @@ class _KidneyFluidGauge extends StatelessWidget {
                   value: '${intake.toStringAsFixed(0)} ml',
                   color: AppColors.success,
                 ),
-                Container(width: 1, height: 40, color: theme.dividerColor.withValues(alpha: 0.3)),
+                Container(
+                  width: 1,
+                  height: 40,
+                  color: theme.dividerColor.withValues(alpha: 0.3),
+                ),
                 _StatItem(
                   icon: _exceeded
                       ? Icons.warning_outlined
@@ -1676,10 +1715,7 @@ class _StatItem extends StatelessWidget {
       children: [
         Icon(icon, color: color, size: 20),
         const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(fontSize: 11, color: theme.hintColor),
-        ),
+        Text(label, style: TextStyle(fontSize: 11, color: theme.hintColor)),
         Text(
           value,
           style: TextStyle(
@@ -1718,11 +1754,7 @@ class _NoFormulaCard extends StatelessWidget {
           Text(
             'Formula nutrisi untuk penyakit Anda\nsedang dikembangkan.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: theme.hintColor,
-              fontSize: 13,
-              height: 1.5,
-            ),
+            style: TextStyle(color: theme.hintColor, fontSize: 13, height: 1.5),
           ),
         ],
       ),
@@ -1841,7 +1873,10 @@ class _EmptyFoodState extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             'Tap tombol + untuk menambahkan',
-            style: TextStyle(fontSize: 12, color: theme.hintColor.withValues(alpha: 0.7)),
+            style: TextStyle(
+              fontSize: 12,
+              color: theme.hintColor.withValues(alpha: 0.7),
+            ),
           ),
         ],
       ),
@@ -1899,7 +1934,8 @@ class _MealSection extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(
-                alpha: theme.brightness == Brightness.dark ? 0.15 : 0.04),
+              alpha: theme.brightness == Brightness.dark ? 0.15 : 0.04,
+            ),
             blurRadius: 4,
             offset: const Offset(0, 1),
           ),
@@ -1913,9 +1949,11 @@ class _MealSection extends StatelessWidget {
           tilePadding: EdgeInsets.zero,
           childrenPadding: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
+            borderRadius: BorderRadius.circular(12),
+          ),
           collapsedShape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
+            borderRadius: BorderRadius.circular(12),
+          ),
           // Background header sesuai status (mirip DM)
           collapsedBackgroundColor: entries.isEmpty
               ? Colors.transparent
@@ -1932,21 +1970,22 @@ class _MealSection extends StatelessWidget {
                 // Badge jumlah item
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 3),
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                        color: statusColor.withValues(alpha: 0.35)),
+                      color: statusColor.withValues(alpha: 0.35),
+                    ),
                   ),
                   child: Text(
                     '${entries.length}',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: entries.isEmpty
-                          ? theme.hintColor
-                          : statusColor,
+                      color: entries.isEmpty ? theme.hintColor : statusColor,
                     ),
                   ),
                 ),
@@ -1959,14 +1998,13 @@ class _MealSection extends StatelessWidget {
                     color: statusColor.withValues(alpha: 0.18),
                     shape: BoxShape.circle,
                     border: Border.all(
-                        color: statusColor.withValues(alpha: 0.35)),
+                      color: statusColor.withValues(alpha: 0.35),
+                    ),
                   ),
                   child: Icon(
                     Icons.keyboard_arrow_down_rounded,
                     size: 18,
-                    color: entries.isEmpty
-                        ? theme.hintColor
-                        : statusColor,
+                    color: entries.isEmpty ? theme.hintColor : statusColor,
                   ),
                 ),
               ],
@@ -1977,8 +2015,7 @@ class _MealSection extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(12, 10, 0, 10),
             child: Row(
               children: [
-                Text(mealType.emoji,
-                    style: const TextStyle(fontSize: 22)),
+                Text(mealType.emoji, style: const TextStyle(fontSize: 22)),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -1996,10 +2033,7 @@ class _MealSection extends StatelessWidget {
                         entries.isEmpty
                             ? mealType.timeRange
                             : '${mealType.timeRange}  ·  ${kkal.toStringAsFixed(0)} kkal',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: theme.hintColor,
-                        ),
+                        style: TextStyle(fontSize: 11, color: theme.hintColor),
                       ),
                     ],
                   ),
@@ -2013,13 +2047,16 @@ class _MealSection extends StatelessWidget {
             if (entries.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(
-                    vertical: 16, horizontal: 16),
+                  vertical: 16,
+                  horizontal: 16,
+                ),
                 child: Text(
                   'Belum ada makanan untuk ${mealType.label}',
                   style: TextStyle(
-                      fontSize: 12,
-                      color: theme.hintColor,
-                      fontStyle: FontStyle.italic),
+                    fontSize: 12,
+                    color: theme.hintColor,
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
               )
             else ...[
@@ -2027,11 +2064,13 @@ class _MealSection extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
                 child: Column(
                   children: entries
-                      .map((e) => _FoodEntryCard(
-                            entry: e,
-                            onDelete: () => onDelete(e),
-                            onEdit: () => onEdit(e),
-                          ))
+                      .map(
+                        (e) => _FoodEntryCard(
+                          entry: e,
+                          onDelete: () => onDelete(e),
+                          onEdit: () => onEdit(e),
+                        ),
+                      )
                       .toList(),
                 ),
               ),
@@ -2039,12 +2078,15 @@ class _MealSection extends StatelessWidget {
               Container(
                 margin: const EdgeInsets.fromLTRB(12, 0, 12, 10),
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 8),
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: theme.dividerColor.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                      color: theme.dividerColor.withValues(alpha: 0.2)),
+                    color: theme.dividerColor.withValues(alpha: 0.2),
+                  ),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -2060,9 +2102,9 @@ class _MealSection extends StatelessWidget {
                     Text(
                       'Na: ${subtotals['natrium']!.toStringAsFixed(0)} mg  ·  P: ${subtotals['protein']!.toStringAsFixed(1)} g',
                       style: TextStyle(
-                          fontSize: 11,
-                          color:
-                              theme.hintColor.withValues(alpha: 0.8)),
+                        fontSize: 11,
+                        color: theme.hintColor.withValues(alpha: 0.8),
+                      ),
                     ),
                   ],
                 ),
@@ -2094,10 +2136,14 @@ class _FoodEntryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(12),
-        border: theme.brightness == Brightness.dark ? Border.all(color: theme.dividerColor) : null,
+        border: theme.brightness == Brightness.dark
+            ? Border.all(color: theme.dividerColor)
+            : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: theme.brightness == Brightness.dark ? 0.2 : 0.04),
+            color: Colors.black.withValues(
+              alpha: theme.brightness == Brightness.dark ? 0.2 : 0.04,
+            ),
             blurRadius: 4,
             offset: const Offset(0, 1),
           ),
@@ -2140,26 +2186,16 @@ class _FoodEntryCard extends StatelessWidget {
               children: [
                 Text(
                   'P: ${entry.protein.toStringAsFixed(1)} g',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: theme.hintColor,
-                  ),
+                  style: TextStyle(fontSize: 10, color: theme.hintColor),
                 ),
                 Text(
                   'Na: ${entry.natrium.toStringAsFixed(1)} mg',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: theme.hintColor,
-                  ),
+                  style: TextStyle(fontSize: 10, color: theme.hintColor),
                 ),
               ],
             ),
             PopupMenuButton<String>(
-              icon: Icon(
-                Icons.more_vert,
-                size: 20,
-                color: theme.hintColor,
-              ),
+              icon: Icon(Icons.more_vert, size: 20, color: theme.hintColor),
               onSelected: (val) {
                 if (val == 'edit') onEdit();
                 if (val == 'delete') onDelete();
@@ -2189,7 +2225,10 @@ class _FoodEntryCard extends StatelessWidget {
                         color: theme.colorScheme.error,
                       ),
                       const SizedBox(width: 10),
-                      Text('Hapus', style: TextStyle(color: theme.colorScheme.error)),
+                      Text(
+                        'Hapus',
+                        style: TextStyle(color: theme.colorScheme.error),
+                      ),
                     ],
                   ),
                 ),
@@ -2512,13 +2551,7 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: theme.hintColor,
-            ),
-          ),
+          Text(label, style: TextStyle(fontSize: 12, color: theme.hintColor)),
           Text(
             '${value.toStringAsFixed(1)} $unit',
             style: TextStyle(
@@ -2595,7 +2628,9 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 5),
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
                           decoration: BoxDecoration(
                             // Dark mode: fill lebih solid agar badge terlihat
                             color: theme.brightness == Brightness.dark
@@ -2650,18 +2685,24 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                     color: theme.primaryColor.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                        color: theme.primaryColor.withValues(alpha: 0.2)),
+                      color: theme.primaryColor.withValues(alpha: 0.2),
+                    ),
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                         child: Row(
                           children: [
-                            Icon(Icons.shopping_cart,
-                                size: 14, color: theme.primaryColor),
+                            Icon(
+                              Icons.shopping_cart,
+                              size: 14,
+                              color: theme.primaryColor,
+                            ),
                             const SizedBox(width: 6),
                             Text(
                               'Keranjang ($cartCount item)',
@@ -2683,8 +2724,9 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                         ),
                       ),
                       Divider(
-                          height: 1,
-                          color: theme.primaryColor.withValues(alpha: 0.15)),
+                        height: 1,
+                        color: theme.primaryColor.withValues(alpha: 0.15),
+                      ),
                       Flexible(
                         child: ListView.separated(
                           shrinkWrap: true,
@@ -2700,24 +2742,31 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                             return ListTile(
                               dense: true,
                               contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 0),
+                                horizontal: 12,
+                                vertical: 0,
+                              ),
                               title: Text(
                                 item.food.nama,
                                 style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                               subtitle: Text(
                                 '${item.grams.toInt()} g  ·  $kkal kkal',
                                 style: TextStyle(
-                                    fontSize: 11, color: theme.hintColor),
+                                  fontSize: 11,
+                                  color: theme.hintColor,
+                                ),
                               ),
                               trailing: IconButton(
-                                icon: Icon(Icons.close,
-                                    size: 16,
-                                    color: theme.colorScheme.error),
+                                icon: Icon(
+                                  Icons.close,
+                                  size: 16,
+                                  color: theme.colorScheme.error,
+                                ),
                                 onPressed: () => _removeFromCart(i),
                                 padding: EdgeInsets.zero,
                                 constraints: const BoxConstraints(),
@@ -2768,30 +2817,35 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                       final selected = cat == _selectedCategory;
                       final isDark = theme.brightness == Brightness.dark;
                       return GestureDetector(
-                        onTap: () =>
-                            setState(() => _selectedCategory = cat),
+                        onTap: () => setState(() => _selectedCategory = cat),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 6),
+                            horizontal: 14,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: selected
                                 ? theme.primaryColor.withValues(
-                                    alpha: isDark ? 0.9 : 1)
+                                    alpha: isDark ? 0.9 : 1,
+                                  )
                                 : theme.dividerColor.withValues(
-                                    alpha: isDark ? 0.16 : 0.1),
+                                    alpha: isDark ? 0.16 : 0.1,
+                                  ),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: selected
                                   ? theme.primaryColor
                                   : theme.dividerColor.withValues(
-                                      alpha: isDark ? 0.35 : 0.2),
+                                      alpha: isDark ? 0.35 : 0.2,
+                                    ),
                             ),
                             boxShadow: selected
                                 ? [
                                     BoxShadow(
                                       color: theme.primaryColor.withValues(
-                                          alpha: isDark ? 0.28 : 0.12),
+                                        alpha: isDark ? 0.28 : 0.12,
+                                      ),
                                       blurRadius: 12,
                                       offset: const Offset(0, 4),
                                     ),
@@ -2821,56 +2875,69 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                 child: _isSearching
                     ? Center(
                         child: CircularProgressIndicator(
-                            color: theme.primaryColor))
+                          color: theme.primaryColor,
+                        ),
+                      )
                     : _results.isEmpty
-                        ? Center(
-                            child: Text('Tidak ditemukan',
-                                style: TextStyle(color: theme.hintColor)))
-                        : _filteredResults.isEmpty
-                            ? Center(
-                                child: Text(
-                                  _selectedCategory == 'Semua'
-                                      ? 'Tidak ditemukan'
-                                      : 'Tidak ada makanan di kategori "$_selectedCategory"',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                      color: theme.hintColor, fontSize: 13),
-                                ),
-                              )
-                            : ListView.separated(
-                                controller: scrollCtrl,
-                                padding: EdgeInsets.fromLTRB(
-                                    16, 4, 16, cartCount > 0 ? 16 : 4),
-                                itemCount: _filteredResults.length,
-                                separatorBuilder: (_, __) => Divider(
-                                    height: 1, color: theme.dividerColor),
-                                itemBuilder: (_, i) {
-                                  final food = _filteredResults[i];
-                                  return ListTile(
-                                    contentPadding:
-                                        const EdgeInsets.symmetric(
-                                            vertical: 4),
-                                    title: Text(
-                                      food.nama,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                        color:
-                                            theme.textTheme.bodyLarge?.color,
-                                      ),
-                                    ),
-                                    subtitle: Text(
-                                      '${food.energi.toInt()} kkal  ·  P: ${food.protein}g  ·  Na: ${food.natrium.toInt()}mg',
-                                      style: TextStyle(
-                                          fontSize: 12,
-                                          color: theme.hintColor),
-                                    ),
-                                    trailing: Icon(Icons.add_circle_outline,
-                                        color: theme.primaryColor),
-                                    onTap: () => _selectFood(food),
-                                  );
-                                },
+                    ? Center(
+                        child: Text(
+                          'Tidak ditemukan',
+                          style: TextStyle(color: theme.hintColor),
+                        ),
+                      )
+                    : _filteredResults.isEmpty
+                    ? Center(
+                        child: Text(
+                          _selectedCategory == 'Semua'
+                              ? 'Tidak ditemukan'
+                              : 'Tidak ada makanan di kategori "$_selectedCategory"',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: theme.hintColor,
+                            fontSize: 13,
+                          ),
+                        ),
+                      )
+                    : ListView.separated(
+                        controller: scrollCtrl,
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          4,
+                          16,
+                          cartCount > 0 ? 16 : 4,
+                        ),
+                        itemCount: _filteredResults.length,
+                        separatorBuilder: (_, __) =>
+                            Divider(height: 1, color: theme.dividerColor),
+                        itemBuilder: (_, i) {
+                          final food = _filteredResults[i];
+                          return ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 4,
+                            ),
+                            title: Text(
+                              food.nama,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: theme.textTheme.bodyLarge?.color,
                               ),
+                            ),
+                            subtitle: Text(
+                              '${food.energi.toInt()} kkal  ·  P: ${food.protein}g  ·  Na: ${food.natrium.toInt()}mg',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: theme.hintColor,
+                              ),
+                            ),
+                            trailing: Icon(
+                              Icons.add_circle_outline,
+                              color: theme.primaryColor,
+                            ),
+                            onTap: () => _selectFood(food),
+                          );
+                        },
+                      ),
               ),
 
               // ── Cart submit bar (fixed bottom) ──
@@ -2880,8 +2947,10 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                   decoration: BoxDecoration(
                     color: theme.cardTheme.color,
                     border: Border(
-                        top: BorderSide(
-                            color: theme.dividerColor.withValues(alpha: 0.4))),
+                      top: BorderSide(
+                        color: theme.dividerColor.withValues(alpha: 0.4),
+                      ),
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.06),
@@ -2929,15 +2998,21 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                                 width: 16,
                                 height: 16,
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.white),
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
                               )
                             : const Icon(Icons.save_alt_rounded, size: 18),
                         label: const Text('Simpan Semua'),
                         style: FilledButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 14),
+                            horizontal: 20,
+                            vertical: 14,
+                          ),
                           textStyle: const TextStyle(
-                              fontWeight: FontWeight.w700, fontSize: 14),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                          ),
                         ),
                       ),
                     ],
@@ -3142,10 +3217,7 @@ class _EditGramDialogState extends State<_EditGramDialog> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(fontSize: 13, color: theme.hintColor),
-          ),
+          Text(label, style: TextStyle(fontSize: 13, color: theme.hintColor)),
           Text(
             value,
             style: TextStyle(
@@ -3175,7 +3247,9 @@ class _EditGramDialogState extends State<_EditGramDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.food.satuanNama == 'Gelas' ? 'Jumlah (ml)' : 'Jumlah (gram)',
+              widget.food.satuanNama == 'Gelas'
+                  ? 'Jumlah (ml)'
+                  : 'Jumlah (gram)',
               style: TextStyle(fontSize: 13, color: theme.hintColor),
             ),
             const SizedBox(height: 6),
@@ -3319,17 +3393,19 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
     );
   }
 
-  Widget _previewRow(BuildContext context, String label, double value, String unit) {
+  Widget _previewRow(
+    BuildContext context,
+    String label,
+    double value,
+    String unit,
+  ) {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 3),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(fontSize: 12, color: theme.hintColor),
-          ),
+          Text(label, style: TextStyle(fontSize: 12, color: theme.hintColor)),
           Text(
             '${value.toStringAsFixed(1)} $unit',
             style: TextStyle(
@@ -3461,11 +3537,15 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
                   shape: BoxShape.circle,
                   color: _count > 1
                       ? theme.primaryColor
-                      : theme.dividerColor.withValues(alpha: isDark ? 0.18 : 0.08),
+                      : theme.dividerColor.withValues(
+                          alpha: isDark ? 0.18 : 0.08,
+                        ),
                   border: Border.all(
                     color: _count > 1
                         ? theme.primaryColor
-                        : theme.dividerColor.withValues(alpha: isDark ? 0.35 : 0.2),
+                        : theme.dividerColor.withValues(
+                            alpha: isDark ? 0.35 : 0.2,
+                          ),
                   ),
                 ),
                 child: IconButton(
@@ -3493,9 +3573,7 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: theme.primaryColor,
-                  border: Border.all(
-                    color: theme.primaryColor,
-                  ),
+                  border: Border.all(color: theme.primaryColor),
                 ),
                 child: IconButton(
                   icon: const Icon(Icons.add, size: 24),
@@ -3508,7 +3586,12 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
           const SizedBox(height: 18),
 
           // ── Sisa di piring ──
-          _sectionLabel(context, widget.food.satuanNama == 'Gelas' ? 'Sisa di Gelas' : 'Sisa di Piring'),
+          _sectionLabel(
+            context,
+            widget.food.satuanNama == 'Gelas'
+                ? 'Sisa di Gelas'
+                : 'Sisa di Piring',
+          ),
           const SizedBox(height: 8),
           Wrap(
             alignment: WrapAlignment.spaceEvenly,
@@ -3603,7 +3686,12 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
                   _previewRow(context, 'Energi', preview['energi']!, 'kkal'),
                   _previewRow(context, 'Protein', preview['protein']!, 'g'),
                   _previewRow(context, 'Lemak', preview['lemak']!, 'g'),
-                  _previewRow(context, 'Karbohidrat', preview['karbohidrat']!, 'g'),
+                  _previewRow(
+                    context,
+                    'Karbohidrat',
+                    preview['karbohidrat']!,
+                    'g',
+                  ),
                   _previewRow(context, 'Natrium', preview['natrium']!, 'mg'),
                   _previewRow(context, 'Kalium', preview['kalium']!, 'mg'),
                   _previewRow(context, 'Fosfor', preview['fosfor']!, 'mg'),
@@ -3622,10 +3710,7 @@ class _TakaranSajiContentState extends State<_TakaranSajiContent> {
               child: Center(
                 child: Text(
                   'Makanan tidak dicatat (sisa 100%)',
-                  style: TextStyle(
-                    color: theme.hintColor,
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: theme.hintColor, fontSize: 13),
                 ),
               ),
             ),
@@ -3877,19 +3962,47 @@ class _MealTableSection extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildMealHeader(context, energiRatio, statusColor, isEnlarged: true),
+                _buildMealHeader(
+                  context,
+                  energiRatio,
+                  statusColor,
+                  isEnlarged: true,
+                ),
                 const SizedBox(height: 32),
-                Text('Daftar Makanan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: theme.textTheme.titleLarge?.color)),
+                Text(
+                  'Daftar Makanan',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: theme.textTheme.titleLarge?.color,
+                  ),
+                ),
                 const SizedBox(height: 12),
                 _buildFoodTable(context, isEnlarged: true),
                 const SizedBox(height: 32),
-                Text('Ringkasan Gizi Harian', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: theme.textTheme.titleLarge?.color)),
+                Text(
+                  'Ringkasan Gizi Harian',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: theme.textTheme.titleLarge?.color,
+                  ),
+                ),
                 const SizedBox(height: 12),
                 _buildTotalsTable(
                   context,
-                  actualEnergi, actualProtein, actualLemak, actualKarbo, actualSerat,
-                  targetEnergi, targetProtein, targetLemak, targetKarbo, targetSerat,
-                  percentage, statusColor,
+                  actualEnergi,
+                  actualProtein,
+                  actualLemak,
+                  actualKarbo,
+                  actualSerat,
+                  targetEnergi,
+                  targetProtein,
+                  targetLemak,
+                  targetKarbo,
+                  targetSerat,
+                  percentage,
+                  statusColor,
                   isEnlarged: true,
                   fulfillmentRatio: energiRatio,
                 ),
@@ -3902,7 +4015,12 @@ class _MealTableSection extends StatelessWidget {
     );
   }
 
-  Widget _buildMealHeader(BuildContext context, double ratio, Color statusColor, {bool isEnlarged = false}) {
+  Widget _buildMealHeader(
+    BuildContext context,
+    double ratio,
+    Color statusColor, {
+    bool isEnlarged = false,
+  }) {
     final theme = Theme.of(context);
     if (isEnlarged) {
       return Container(
@@ -3929,10 +4047,7 @@ class _MealTableSection extends StatelessWidget {
                   ),
                   Text(
                     '${(mealType.dmCaloriePercentage * 100).toStringAsFixed(0)}% dari kebutuhan harian',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: theme.hintColor,
-                    ),
+                    style: TextStyle(fontSize: 14, color: theme.hintColor),
                   ),
                 ],
               ),
@@ -3962,10 +4077,7 @@ class _MealTableSection extends StatelessWidget {
                 ),
                 Text(
                   '${(mealType.dmCaloriePercentage * 100).toStringAsFixed(0)}% dari kebutuhan harian',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: theme.hintColor,
-                  ),
+                  style: TextStyle(fontSize: 12, color: theme.hintColor),
                 ),
               ],
             ),
@@ -4014,7 +4126,14 @@ class _MealTableSection extends StatelessWidget {
         if (entries.isEmpty)
           Padding(
             padding: const EdgeInsets.all(12),
-            child: Text('Belum ada makanan', style: TextStyle(fontSize: isEnlarged ? 14 : 12, color: theme.hintColor, fontStyle: FontStyle.italic)),
+            child: Text(
+              'Belum ada makanan',
+              style: TextStyle(
+                fontSize: isEnlarged ? 14 : 12,
+                color: theme.hintColor,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
           )
         else
           Table(
@@ -4023,13 +4142,42 @@ class _MealTableSection extends StatelessWidget {
               for (final entry in entries)
                 TableRow(
                   children: [
-                    _tableDataCell(context, entry.foodName, isBold: false, isEnlarged: isEnlarged),
-                    _tableDataCell(context, entry.energi.toStringAsFixed(0), isEnlarged: isEnlarged),
-                    _tableDataCell(context, entry.protein.toStringAsFixed(1), isEnlarged: isEnlarged),
-                    _tableDataCell(context, entry.lemak.toStringAsFixed(1), isEnlarged: isEnlarged),
-                    _tableDataCell(context, entry.karbohidrat.toStringAsFixed(1), isEnlarged: isEnlarged),
-                    _tableDataCell(context, entry.serat.toStringAsFixed(1), isEnlarged: isEnlarged),
-                    _tableDataCell(context, entry.grams.toStringAsFixed(0), isEnlarged: isEnlarged),
+                    _tableDataCell(
+                      context,
+                      entry.foodName,
+                      isBold: false,
+                      isEnlarged: isEnlarged,
+                    ),
+                    _tableDataCell(
+                      context,
+                      entry.energi.toStringAsFixed(0),
+                      isEnlarged: isEnlarged,
+                    ),
+                    _tableDataCell(
+                      context,
+                      entry.protein.toStringAsFixed(1),
+                      isEnlarged: isEnlarged,
+                    ),
+                    _tableDataCell(
+                      context,
+                      entry.lemak.toStringAsFixed(1),
+                      isEnlarged: isEnlarged,
+                    ),
+                    _tableDataCell(
+                      context,
+                      entry.karbohidrat.toStringAsFixed(1),
+                      isEnlarged: isEnlarged,
+                    ),
+                    _tableDataCell(
+                      context,
+                      entry.serat.toStringAsFixed(1),
+                      isEnlarged: isEnlarged,
+                    ),
+                    _tableDataCell(
+                      context,
+                      entry.grams.toStringAsFixed(0),
+                      isEnlarged: isEnlarged,
+                    ),
                     _tableActionCell(context, entry, isEnlarged: isEnlarged),
                   ],
                 ),
@@ -4041,11 +4189,21 @@ class _MealTableSection extends StatelessWidget {
 
   Widget _buildTotalsTable(
     BuildContext context,
-    double actualEnergi, double actualProtein, double actualLemak, double actualKarbo, double actualSerat,
-    double targetEnergi, double targetProtein, double targetLemak, double targetKarbo, double targetSerat,
-    double percentage, Color statusColor,
-    {bool isEnlarged = false, double fulfillmentRatio = 0.0}
-  ) {
+    double actualEnergi,
+    double actualProtein,
+    double actualLemak,
+    double actualKarbo,
+    double actualSerat,
+    double targetEnergi,
+    double targetProtein,
+    double targetLemak,
+    double targetKarbo,
+    double targetSerat,
+    double percentage,
+    Color statusColor, {
+    bool isEnlarged = false,
+    double fulfillmentRatio = 0.0,
+  }) {
     final theme = Theme.of(context);
     final pE = targetEnergi > 0 ? actualEnergi / targetEnergi : 0.0;
     final pP = targetProtein > 0 ? actualProtein / targetProtein : 0.0;
@@ -4067,27 +4225,107 @@ class _MealTableSection extends StatelessWidget {
           },
           children: [
             TableRow(
-              decoration: BoxDecoration(color: theme.dividerColor.withValues(alpha: 0.03)),
+              decoration: BoxDecoration(
+                color: theme.dividerColor.withValues(alpha: 0.03),
+              ),
               children: [
-                _tableDataCell(context, 'Total Asupan', isBold: true, isEnlarged: isEnlarged),
-                _tableDataCell(context, actualEnergi.toStringAsFixed(0), isBold: true, isEnlarged: isEnlarged),
-                _tableDataCell(context, actualProtein.toStringAsFixed(1), isBold: true, isEnlarged: isEnlarged),
-                _tableDataCell(context, actualLemak.toStringAsFixed(1), isBold: true, isEnlarged: isEnlarged),
-                _tableDataCell(context, actualKarbo.toStringAsFixed(1), isBold: true, isEnlarged: isEnlarged),
-                _tableDataCell(context, actualSerat.toStringAsFixed(1), isBold: true, isEnlarged: isEnlarged),
-                _tableDataCell(context, '', isBold: true, isEnlarged: isEnlarged),
+                _tableDataCell(
+                  context,
+                  'Total Asupan',
+                  isBold: true,
+                  isEnlarged: isEnlarged,
+                ),
+                _tableDataCell(
+                  context,
+                  actualEnergi.toStringAsFixed(0),
+                  isBold: true,
+                  isEnlarged: isEnlarged,
+                ),
+                _tableDataCell(
+                  context,
+                  actualProtein.toStringAsFixed(1),
+                  isBold: true,
+                  isEnlarged: isEnlarged,
+                ),
+                _tableDataCell(
+                  context,
+                  actualLemak.toStringAsFixed(1),
+                  isBold: true,
+                  isEnlarged: isEnlarged,
+                ),
+                _tableDataCell(
+                  context,
+                  actualKarbo.toStringAsFixed(1),
+                  isBold: true,
+                  isEnlarged: isEnlarged,
+                ),
+                _tableDataCell(
+                  context,
+                  actualSerat.toStringAsFixed(1),
+                  isBold: true,
+                  isEnlarged: isEnlarged,
+                ),
+                _tableDataCell(
+                  context,
+                  '',
+                  isBold: true,
+                  isEnlarged: isEnlarged,
+                ),
               ],
             ),
             TableRow(
-              decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.05)),
+              decoration: BoxDecoration(
+                color: statusColor.withValues(alpha: 0.05),
+              ),
               children: [
-                _tableDataCell(context, 'Total Kebutuhan', isBold: true, color: statusColor, isEnlarged: isEnlarged),
-                _tableDataCell(context, targetEnergi.toStringAsFixed(0), isBold: true, color: statusColor, isEnlarged: isEnlarged),
-                _tableDataCell(context, targetProtein.toStringAsFixed(1), isBold: true, color: statusColor, isEnlarged: isEnlarged),
-                _tableDataCell(context, targetLemak.toStringAsFixed(1), isBold: true, color: statusColor, isEnlarged: isEnlarged),
-                _tableDataCell(context, targetKarbo.toStringAsFixed(1), isBold: true, color: statusColor, isEnlarged: isEnlarged),
-                _tableDataCell(context, targetSerat.toStringAsFixed(1), isBold: true, color: statusColor, isEnlarged: isEnlarged),
-                _tableDataCell(context, '', isBold: true, isEnlarged: isEnlarged),
+                _tableDataCell(
+                  context,
+                  'Total Kebutuhan',
+                  isBold: true,
+                  color: statusColor,
+                  isEnlarged: isEnlarged,
+                ),
+                _tableDataCell(
+                  context,
+                  targetEnergi.toStringAsFixed(0),
+                  isBold: true,
+                  color: statusColor,
+                  isEnlarged: isEnlarged,
+                ),
+                _tableDataCell(
+                  context,
+                  targetProtein.toStringAsFixed(1),
+                  isBold: true,
+                  color: statusColor,
+                  isEnlarged: isEnlarged,
+                ),
+                _tableDataCell(
+                  context,
+                  targetLemak.toStringAsFixed(1),
+                  isBold: true,
+                  color: statusColor,
+                  isEnlarged: isEnlarged,
+                ),
+                _tableDataCell(
+                  context,
+                  targetKarbo.toStringAsFixed(1),
+                  isBold: true,
+                  color: statusColor,
+                  isEnlarged: isEnlarged,
+                ),
+                _tableDataCell(
+                  context,
+                  targetSerat.toStringAsFixed(1),
+                  isBold: true,
+                  color: statusColor,
+                  isEnlarged: isEnlarged,
+                ),
+                _tableDataCell(
+                  context,
+                  '',
+                  isBold: true,
+                  isEnlarged: isEnlarged,
+                ),
               ],
             ),
             TableRow(
@@ -4137,7 +4375,7 @@ class _MealTableSection extends StatelessWidget {
     final rP = targetProtein > 0 ? actualProtein / targetProtein : 0.0;
     final rL = targetLemak > 0 ? actualLemak / targetLemak : 0.0;
     final rK = targetKarbo > 0 ? actualKarbo / targetKarbo : 0.0;
-    
+
     // Rata-rata ketercapaian untuk status total waktu makan
     final totalFulfillmentRatio = (rE + rP + rL + rK) / 4.0;
     final statusColor = getStatusColor(totalFulfillmentRatio);
@@ -4147,7 +4385,10 @@ class _MealTableSection extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
-        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5), width: 1),
+        border: Border.all(
+          color: theme.dividerColor.withValues(alpha: 0.5),
+          width: 1,
+        ),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Theme(
@@ -4184,11 +4425,7 @@ class _MealTableSection extends StatelessWidget {
                     padding: EdgeInsets.zero,
                     splashRadius: 16,
                     tooltip: 'Perbesar',
-                    icon: Icon(
-                      Icons.fullscreen,
-                      size: 16,
-                      color: statusColor,
-                    ),
+                    icon: Icon(Icons.fullscreen, size: 16, color: statusColor),
                     onPressed: () => _showEnlargedMealTable(context),
                   ),
                 ),
@@ -4224,9 +4461,18 @@ class _MealTableSection extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               child: _buildTotalsTable(
                 context,
-                actualEnergi, actualProtein, actualLemak, actualKarbo, actualSerat,
-                targetEnergi, targetProtein, targetLemak, targetKarbo, targetSerat,
-                percentage, statusColor,
+                actualEnergi,
+                actualProtein,
+                actualLemak,
+                actualKarbo,
+                actualSerat,
+                targetEnergi,
+                targetProtein,
+                targetLemak,
+                targetKarbo,
+                targetSerat,
+                percentage,
+                statusColor,
                 fulfillmentRatio: totalFulfillmentRatio,
               ),
             ),
@@ -4249,38 +4495,39 @@ class _MealTableSection extends StatelessWidget {
           width: isEnlarged ? 24 : 20,
           height: isEnlarged ? 24 : 20,
           child: PopupMenuButton<String>(
-          tooltip: 'Aksi',
-          icon: Icon(
-            Icons.more_vert,
-            size: isEnlarged ? 16 : 14,
-            color: theme.hintColor,
-          ),
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 140),
-          onSelected: (value) {
-            if (value == 'edit') onEditEntry(entry);
-            if (value == 'delete') onDeleteEntry(entry);
-          },
-          itemBuilder: (context) => [
-            const PopupMenuItem<String>(
-              value: 'edit',
-              child: Text('Edit'),
+            tooltip: 'Aksi',
+            icon: Icon(
+              Icons.more_vert,
+              size: isEnlarged ? 16 : 14,
+              color: theme.hintColor,
             ),
-            PopupMenuItem<String>(
-              value: 'delete',
-              child: Text(
-                'Hapus',
-                style: TextStyle(color: theme.colorScheme.error),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 140),
+            onSelected: (value) {
+              if (value == 'edit') onEditEntry(entry);
+              if (value == 'delete') onDeleteEntry(entry);
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem<String>(value: 'edit', child: Text('Edit')),
+              PopupMenuItem<String>(
+                value: 'delete',
+                child: Text(
+                  'Hapus',
+                  style: TextStyle(color: theme.colorScheme.error),
+                ),
               ),
-            ),
-          ],
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _tableHeaderCell(BuildContext context, String text, {bool isEnlarged = false}) {
+  Widget _tableHeaderCell(
+    BuildContext context,
+    String text, {
+    bool isEnlarged = false,
+  }) {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
@@ -4298,7 +4545,13 @@ class _MealTableSection extends StatelessWidget {
     );
   }
 
-  Widget _tableDataCell(BuildContext context, String text, {bool isBold = false, Color? color, bool isEnlarged = false}) {
+  Widget _tableDataCell(
+    BuildContext context,
+    String text, {
+    bool isBold = false,
+    Color? color,
+    bool isEnlarged = false,
+  }) {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
@@ -4399,11 +4652,25 @@ class _DailyInterpretationTable extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Ringkasan Makan Sehari', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: theme.textTheme.titleLarge?.color)),
+                Text(
+                  'Ringkasan Makan Sehari',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: theme.textTheme.titleLarge?.color,
+                  ),
+                ),
                 const SizedBox(height: 12),
                 _buildBaseTable(context, mealOrder, isPercentage: false),
                 const SizedBox(height: 32),
-                Text('Persentase Ketercapaian Gizi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: theme.textTheme.titleLarge?.color)),
+                Text(
+                  'Persentase Ketercapaian Gizi',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: theme.textTheme.titleLarge?.color,
+                  ),
+                ),
                 const SizedBox(height: 12),
                 _buildBaseTable(context, mealOrder, isPercentage: true),
                 const SizedBox(height: 60),
@@ -4415,7 +4682,11 @@ class _DailyInterpretationTable extends StatelessWidget {
     );
   }
 
-  Widget _buildBaseTable(BuildContext context, List<MealType> mealOrder, {required bool isPercentage}) {
+  Widget _buildBaseTable(
+    BuildContext context,
+    List<MealType> mealOrder, {
+    required bool isPercentage,
+  }) {
     final theme = Theme.of(context);
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -4438,17 +4709,47 @@ class _DailyInterpretationTable extends StatelessWidget {
               ),
               children: [
                 _interpHeaderCell(context, 'Waktu Makan', isEnlarged: true),
-                _interpHeaderCell(context, isPercentage ? '% Energi' : 'Energi', isEnlarged: true),
-                _interpHeaderCell(context, isPercentage ? '% Prot' : 'Prot', isEnlarged: true),
-                _interpHeaderCell(context, isPercentage ? '% Lemak' : 'Lemak', isEnlarged: true),
-                _interpHeaderCell(context, isPercentage ? '% Karbo' : 'Karbo', isEnlarged: true),
-                _interpHeaderCell(context, isPercentage ? '% Serat' : 'Serat', isEnlarged: true),
+                _interpHeaderCell(
+                  context,
+                  isPercentage ? '% Energi' : 'Energi',
+                  isEnlarged: true,
+                ),
+                _interpHeaderCell(
+                  context,
+                  isPercentage ? '% Prot' : 'Prot',
+                  isEnlarged: true,
+                ),
+                _interpHeaderCell(
+                  context,
+                  isPercentage ? '% Lemak' : 'Lemak',
+                  isEnlarged: true,
+                ),
+                _interpHeaderCell(
+                  context,
+                  isPercentage ? '% Karbo' : 'Karbo',
+                  isEnlarged: true,
+                ),
+                _interpHeaderCell(
+                  context,
+                  isPercentage ? '% Serat' : 'Serat',
+                  isEnlarged: true,
+                ),
               ],
             ),
             for (final meal in mealOrder)
-              isPercentage 
-                ? _buildMealPercentageRow(context, meal, entriesByMeal[meal] ?? [], isEnlarged: true)
-                : _buildMealInterpretationRow(context, meal, entriesByMeal[meal] ?? [], isEnlarged: true),
+              isPercentage
+                  ? _buildMealPercentageRow(
+                      context,
+                      meal,
+                      entriesByMeal[meal] ?? [],
+                      isEnlarged: true,
+                    )
+                  : _buildMealInterpretationRow(
+                      context,
+                      meal,
+                      entriesByMeal[meal] ?? [],
+                      isEnlarged: true,
+                    ),
           ],
         ),
       ),
@@ -4472,11 +4773,21 @@ class _DailyInterpretationTable extends StatelessWidget {
         : theme.primaryColor;
 
     final dailyTotals = calculateDailyTotals();
-    final pE = totalNeeds.energi > 0 ? dailyTotals['energi']! / totalNeeds.energi : 0.0;
-    final pP = totalNeeds.protein > 0 ? dailyTotals['protein']! / totalNeeds.protein : 0.0;
-    final pL = totalNeeds.lemak > 0 ? dailyTotals['lemak']! / totalNeeds.lemak : 0.0;
-    final pK = totalNeeds.karbohidrat > 0 ? dailyTotals['karbohidrat']! / totalNeeds.karbohidrat : 0.0;
-    final pS = totalNeeds.serat > 0 ? dailyTotals['serat']! / totalNeeds.serat : 0.0;
+    final pE = totalNeeds.energi > 0
+        ? dailyTotals['energi']! / totalNeeds.energi
+        : 0.0;
+    final pP = totalNeeds.protein > 0
+        ? dailyTotals['protein']! / totalNeeds.protein
+        : 0.0;
+    final pL = totalNeeds.lemak > 0
+        ? dailyTotals['lemak']! / totalNeeds.lemak
+        : 0.0;
+    final pK = totalNeeds.karbohidrat > 0
+        ? dailyTotals['karbohidrat']! / totalNeeds.karbohidrat
+        : 0.0;
+    final pS = totalNeeds.serat > 0
+        ? dailyTotals['serat']! / totalNeeds.serat
+        : 0.0;
 
     return Container(
       decoration: BoxDecoration(
@@ -4503,13 +4814,17 @@ class _DailyInterpretationTable extends StatelessWidget {
                 Text(
                   'Ringkasan Makan Sehari',
                   style: TextStyle(
-                    fontWeight: FontWeight.bold, 
+                    fontWeight: FontWeight.bold,
                     fontSize: 14,
                     color: theme.textTheme.titleSmall?.color,
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.fullscreen, size: 20, color: actionIconColor),
+                  icon: Icon(
+                    Icons.fullscreen,
+                    size: 20,
+                    color: actionIconColor,
+                  ),
                   onPressed: () => _showEnlargedInterpretationTable(context),
                 ),
               ],
@@ -4561,10 +4876,16 @@ class _DailyInterpretationTable extends StatelessWidget {
                     TableRow(
                       decoration: BoxDecoration(
                         color: Colors.green.withValues(alpha: 0.1),
-                        border: Border(top: BorderSide(color: theme.dividerColor, width: 2)),
+                        border: Border(
+                          top: BorderSide(color: theme.dividerColor, width: 2),
+                        ),
                       ),
                       children: [
-                        _interpDataCell(context, 'Total Ketercapaian (%)', isBold: true),
+                        _interpDataCell(
+                          context,
+                          'Total Ketercapaian (%)',
+                          isBold: true,
+                        ),
                         _interpPercentageCell(context, pE),
                         _interpPercentageCell(context, pP),
                         _interpPercentageCell(context, pL),
@@ -4585,9 +4906,9 @@ class _DailyInterpretationTable extends StatelessWidget {
   TableRow _buildMealInterpretationRow(
     BuildContext context,
     MealType meal,
-    List<FoodLogEntry> entries,
-    {bool isEnlarged = false}
-  ) {
+    List<FoodLogEntry> entries, {
+    bool isEnlarged = false,
+  }) {
     final percentage = meal.dmCaloriePercentage;
     final targetEnergi = totalNeeds.energi * percentage;
     final targetProt = totalNeeds.protein * percentage;
@@ -4606,19 +4927,43 @@ class _DailyInterpretationTable extends StatelessWidget {
     final rP = targetProt > 0 ? actualProt / targetProt : 0.0;
     final rL = targetLemak > 0 ? actualLemak / targetLemak : 0.0;
     final rK = targetKarbo > 0 ? actualKarbo / targetKarbo : 0.0;
-    
+
     final totalRatio = (rE + rP + rL + rK) / 4.0;
     final statusColor = getStatusColor(totalRatio);
 
     return TableRow(
       decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.05)),
       children: [
-        _interpDataCell(context, '${meal.emoji} ${meal.label}', isEnlarged: isEnlarged),
-        _interpDataCell(context, '${actualEnergi.toInt()} / ${targetEnergi.toInt()}', isEnlarged: isEnlarged),
-        _interpDataCell(context, '${actualProt.toStringAsFixed(1)} / ${targetProt.toStringAsFixed(1)}', isEnlarged: isEnlarged),
-        _interpDataCell(context, '${actualLemak.toStringAsFixed(1)} / ${targetLemak.toStringAsFixed(1)}', isEnlarged: isEnlarged),
-        _interpDataCell(context, '${actualKarbo.toStringAsFixed(1)} / ${targetKarbo.toStringAsFixed(1)}', isEnlarged: isEnlarged),
-        _interpDataCell(context, '${actualSerat.toStringAsFixed(1)} / ${targetSerat.toStringAsFixed(1)}', isEnlarged: isEnlarged),
+        _interpDataCell(
+          context,
+          '${meal.emoji} ${meal.label}',
+          isEnlarged: isEnlarged,
+        ),
+        _interpDataCell(
+          context,
+          '${actualEnergi.toInt()} / ${targetEnergi.toInt()}',
+          isEnlarged: isEnlarged,
+        ),
+        _interpDataCell(
+          context,
+          '${actualProt.toStringAsFixed(1)} / ${targetProt.toStringAsFixed(1)}',
+          isEnlarged: isEnlarged,
+        ),
+        _interpDataCell(
+          context,
+          '${actualLemak.toStringAsFixed(1)} / ${targetLemak.toStringAsFixed(1)}',
+          isEnlarged: isEnlarged,
+        ),
+        _interpDataCell(
+          context,
+          '${actualKarbo.toStringAsFixed(1)} / ${targetKarbo.toStringAsFixed(1)}',
+          isEnlarged: isEnlarged,
+        ),
+        _interpDataCell(
+          context,
+          '${actualSerat.toStringAsFixed(1)} / ${targetSerat.toStringAsFixed(1)}',
+          isEnlarged: isEnlarged,
+        ),
       ],
     );
   }
@@ -4626,9 +4971,9 @@ class _DailyInterpretationTable extends StatelessWidget {
   TableRow _buildMealPercentageRow(
     BuildContext context,
     MealType meal,
-    List<FoodLogEntry> entries,
-    {bool isEnlarged = false}
-  ) {
+    List<FoodLogEntry> entries, {
+    bool isEnlarged = false,
+  }) {
     final percentage = meal.dmCaloriePercentage;
     final targetEnergi = totalNeeds.energi * percentage;
     final targetProt = totalNeeds.protein * percentage;
@@ -4654,7 +4999,11 @@ class _DailyInterpretationTable extends StatelessWidget {
     return TableRow(
       decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.05)),
       children: [
-        _interpDataCell(context, '${meal.emoji} ${meal.label}', isEnlarged: isEnlarged),
+        _interpDataCell(
+          context,
+          '${meal.emoji} ${meal.label}',
+          isEnlarged: isEnlarged,
+        ),
         _interpPercentageCell(context, pE, isEnlarged: isEnlarged),
         _interpPercentageCell(context, pP, isEnlarged: isEnlarged),
         _interpPercentageCell(context, pL, isEnlarged: isEnlarged),
@@ -4664,10 +5013,17 @@ class _DailyInterpretationTable extends StatelessWidget {
     );
   }
 
-  Widget _interpPercentageCell(BuildContext context, double ratio, {bool isEnlarged = false}) {
+  Widget _interpPercentageCell(
+    BuildContext context,
+    double ratio, {
+    bool isEnlarged = false,
+  }) {
     final statusColor = getStatusColor(ratio);
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: isEnlarged ? 12 : 8, horizontal: 4),
+      padding: EdgeInsets.symmetric(
+        vertical: isEnlarged ? 12 : 8,
+        horizontal: 4,
+      ),
       child: Container(
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
@@ -4687,10 +5043,17 @@ class _DailyInterpretationTable extends StatelessWidget {
     );
   }
 
-  Widget _interpHeaderCell(BuildContext context, String text, {bool isEnlarged = false}) {
+  Widget _interpHeaderCell(
+    BuildContext context,
+    String text, {
+    bool isEnlarged = false,
+  }) {
     final theme = Theme.of(context);
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: isEnlarged ? 12 : 8, horizontal: 4),
+      padding: EdgeInsets.symmetric(
+        vertical: isEnlarged ? 12 : 8,
+        horizontal: 4,
+      ),
       child: Text(
         text,
         style: TextStyle(
@@ -4705,10 +5068,19 @@ class _DailyInterpretationTable extends StatelessWidget {
     );
   }
 
-  Widget _interpDataCell(BuildContext context, String text, {bool isBold = false, Color? color, bool isEnlarged = false}) {
+  Widget _interpDataCell(
+    BuildContext context,
+    String text, {
+    bool isBold = false,
+    Color? color,
+    bool isEnlarged = false,
+  }) {
     final theme = Theme.of(context);
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: isEnlarged ? 12 : 8, horizontal: 4),
+      padding: EdgeInsets.symmetric(
+        vertical: isEnlarged ? 12 : 8,
+        horizontal: 4,
+      ),
       child: Text(
         text,
         style: TextStyle(
@@ -4860,7 +5232,9 @@ class _GlycemicLoadChart extends StatelessWidget {
               showTitles: true,
               getTitlesWidget: (value, meta) {
                 final index = value.toInt();
-                if (index < 0 || index >= _dmMealOrder.length) return const SizedBox();
+                if (index < 0 || index >= _dmMealOrder.length) {
+                  return const SizedBox();
+                }
                 return Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
@@ -4890,8 +5264,12 @@ class _GlycemicLoadChart extends StatelessWidget {
               },
             ),
           ),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
         ),
         gridData: FlGridData(
           show: true,
@@ -4911,7 +5289,9 @@ class _GlycemicLoadChart extends StatelessWidget {
                 toY: gl,
                 color: _getGLColor(gl),
                 width: isEnlarged ? 30 : 16,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(6),
+                ),
                 backDrawRodData: BackgroundBarChartRodData(
                   show: true,
                   toY: (maxGL < 25) ? 25 : (maxGL * 1.2),
@@ -4954,12 +5334,14 @@ class _GlycemicLoadChart extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(16),
-        border: theme.brightness == Brightness.dark 
+        border: theme.brightness == Brightness.dark
             ? Border.all(color: theme.dividerColor)
             : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: theme.brightness == Brightness.dark ? 0.2 : 0.05),
+            color: Colors.black.withValues(
+              alpha: theme.brightness == Brightness.dark ? 0.2 : 0.05,
+            ),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -5003,21 +5385,15 @@ class _GlycemicLoadChart extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             'Total GL hari ini: ${totalGL.toStringAsFixed(1)} ($totalPercentage%) • $peakInfo',
-            style: TextStyle(
-              fontSize: 11,
-              color: theme.hintColor,
-            ),
+            style: TextStyle(fontSize: 11, color: theme.hintColor),
           ),
           const SizedBox(height: 20),
-          
+
           // Chart
-          SizedBox(
-            height: 200,
-            child: _buildChart(context),
-          ),
-          
+          SizedBox(height: 200, child: _buildChart(context)),
+
           const SizedBox(height: 20),
-          
+
           // Legend
           _buildLegend(),
         ],
