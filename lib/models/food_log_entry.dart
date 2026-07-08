@@ -49,18 +49,21 @@ class FoodLogEntry {
   }
 
   /// Buat entri baru dari [food] dan jumlah [grams].
+  /// [loggedAt] opsional — jika tidak diisi pakai DateTime.now().
   factory FoodLogEntry.create({
     required FoodItem food,
     required double grams,
     required MealType mealType,
+    DateTime? loggedAt,
   }) {
     final n = food.calcFor(grams);
+    final now = loggedAt ?? DateTime.now();
     return FoodLogEntry(
-      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      id: now.microsecondsSinceEpoch.toString(),
       foodId: food.id,
       foodName: food.nama,
       grams: grams,
-      loggedAt: DateTime.now(),
+      loggedAt: now,
       mealType: mealType,
       energi: (n['energi'] ?? 0.0).toDouble(),
       protein: (n['protein'] ?? 0.0).toDouble(),

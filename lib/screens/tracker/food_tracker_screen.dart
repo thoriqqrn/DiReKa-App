@@ -188,6 +188,22 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
         _selectedDate.day == now.day;
   }
 
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(now.year, now.month, now.day),
+      locale: const Locale('id', 'ID'),
+    );
+    if (!mounted || picked == null) return;
+    setState(
+      () => _selectedDate = DateTime(picked.year, picked.month, picked.day),
+    );
+    _loadEntriesInternal(showFullScreenLoading: false);
+  }
+
   Future<void> _deleteEntry(FoodLogEntry entry) async {
     final theme = Theme.of(context);
     final confirm = await showDialog<bool>(
@@ -310,6 +326,56 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
     _showMealTimeSelector(isGuest: isGuest);
   }
 
+  Future<void> _editEntryTime(FoodLogEntry entry) async {
+    final uid =
+        context.read<AuthProvider>().currentUser?.uid ??
+        context.read<AuthProvider>().firebaseUser?.uid ??
+        '';
+    if (uid.isEmpty) return;
+
+    final initialTime = TimeOfDay(
+      hour: entry.loggedAt.hour,
+      minute: entry.loggedAt.minute,
+    );
+
+    if (!mounted) return;
+    final picked = await showDialog<TimeOfDay>(
+      context: context,
+      builder: (ctx) =>
+          _EatTimeDialog(mealType: entry.mealType, initialTime: initialTime),
+    );
+    if (picked == null || !mounted) return;
+
+    final oldDate = entry.loggedAt;
+    final newLoggedAt = DateTime(
+      oldDate.year,
+      oldDate.month,
+      oldDate.day,
+      picked.hour,
+      picked.minute,
+    );
+    final updated = FoodLogEntry(
+      id: entry.id,
+      foodId: entry.foodId,
+      foodName: entry.foodName,
+      grams: entry.grams,
+      loggedAt: newLoggedAt,
+      mealType: entry.mealType,
+      energi: entry.energi,
+      protein: entry.protein,
+      lemak: entry.lemak,
+      karbohidrat: entry.karbohidrat,
+      natrium: entry.natrium,
+      kalium: entry.kalium,
+      fosfor: entry.fosfor,
+      air: entry.air,
+      serat: entry.serat,
+      indeksGlikemik: entry.indeksGlikemik,
+    );
+    await FoodLogService.updateEntry(uid, _selectedDate, updated);
+    if (mounted) _loadEntries();
+  }
+
   void _showMealTimeSelector({bool isGuest = false}) {
     final theme = Theme.of(context);
     showDialog(
@@ -394,15 +460,24 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
       builder: (ctx) => _AddFoodSheet(
         mealType: _selectedMealType!,
         isGuest: isGuest,
-        onAddAll: (cartItems) async {
+        onAddAll: (cartItems, eatTime) async {
           if (cartItems.isEmpty) return;
           final mealType = _selectedMealType!;
+          final base = _selectedDate;
+          final loggedAt = DateTime(
+            base.year,
+            base.month,
+            base.day,
+            eatTime.hour,
+            eatTime.minute,
+          );
           final entries = cartItems
               .map(
                 (item) => FoodLogEntry.create(
                   food: item.food,
                   grams: item.grams,
                   mealType: mealType,
+                  loggedAt: loggedAt,
                 ),
               )
               .toList();
@@ -525,6 +600,7 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
             isToday: _isToday,
             onPrev: () => _changeDate(-1),
             onNext: () => _changeDate(1),
+            onPickDate: _pickDate,
             canGoNext: !_isToday,
           ),
           Expanded(
@@ -600,6 +676,7 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
                               entries: _entries,
                               onDelete: _deleteEntry,
                               onEdit: _editEntry,
+                              onEditTime: _editEntryTime,
                             ),
                         ],
                       ),
@@ -654,6 +731,7 @@ class _DateHeader extends StatelessWidget {
   final bool canGoNext;
   final VoidCallback onPrev;
   final VoidCallback onNext;
+  final VoidCallback onPickDate;
 
   const _DateHeader({
     required this.date,
@@ -661,14 +739,15 @@ class _DateHeader extends StatelessWidget {
     required this.canGoNext,
     required this.onPrev,
     required this.onNext,
+    required this.onPickDate,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final label = isToday
-        ? 'Hari Ini · ${DateFormat('d MMM y').format(date)}'
-        : DateFormat('EEE, d MMM y').format(date);
+        ? 'Hari Ini · ${DateFormat('d MMMM y', 'id_ID').format(date)}'
+        : DateFormat('EEEE, d MMMM y', 'id_ID').format(date);
 
     return Container(
       color: theme.cardTheme.color,
@@ -679,18 +758,35 @@ class _DateHeader extends StatelessWidget {
             context: context,
             onTap: onPrev,
             icon: Icons.chevron_left,
-            fillColor: const Color(
-              0xFF64B5F6,
-            ).withValues(alpha: 0.52), // light blue transparent
+            fillColor: const Color(0xFF64B5F6).withValues(alpha: 0.52),
           ),
           Expanded(
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-                color: theme.textTheme.bodyLarge?.color,
+            child: InkWell(
+              onTap: onPickDate,
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      label,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: theme.textTheme.bodyLarge?.color,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.expand_more_rounded,
+                      size: 16,
+                      color: theme.hintColor,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -699,10 +795,8 @@ class _DateHeader extends StatelessWidget {
             onTap: canGoNext ? onNext : null,
             icon: Icons.chevron_right,
             fillColor: canGoNext
-                ? const Color(0xFF64B5F6).withValues(
-                    alpha: 0.52,
-                  ) // light blue transparent
-                : const Color(0xFFE5EAF1), // light gray when disabled
+                ? const Color(0xFF64B5F6).withValues(alpha: 0.52)
+                : const Color(0xFFE5EAF1),
             iconColor: canGoNext ? Colors.white : const Color(0xFF9AA4B2),
           ),
         ],
@@ -1770,11 +1864,13 @@ class _FoodListSection extends StatelessWidget {
   final List<FoodLogEntry> entries;
   final Future<void> Function(FoodLogEntry) onDelete;
   final Future<void> Function(FoodLogEntry) onEdit;
+  final Future<void> Function(FoodLogEntry) onEditTime;
 
   const _FoodListSection({
     required this.entries,
     required this.onDelete,
     required this.onEdit,
+    required this.onEditTime,
   });
 
   // Helper: Group entries by meal type
@@ -1834,6 +1930,7 @@ class _FoodListSection extends StatelessWidget {
               entries: mealEntries,
               onDelete: onDelete,
               onEdit: onEdit,
+              onEditTime: onEditTime,
             );
           }),
       ],
@@ -1890,12 +1987,14 @@ class _MealSection extends StatelessWidget {
   final List<FoodLogEntry> entries;
   final Future<void> Function(FoodLogEntry) onDelete;
   final Future<void> Function(FoodLogEntry) onEdit;
+  final Future<void> Function(FoodLogEntry) onEditTime;
 
   const _MealSection({
     required this.mealType,
     required this.entries,
     required this.onDelete,
     required this.onEdit,
+    required this.onEditTime,
   });
 
   Map<String, double> _calculateSubtotals() {
@@ -2069,6 +2168,7 @@ class _MealSection extends StatelessWidget {
                           entry: e,
                           onDelete: () => onDelete(e),
                           onEdit: () => onEdit(e),
+                          onEditTime: () => onEditTime(e),
                         ),
                       )
                       .toList(),
@@ -2091,16 +2191,20 @@ class _MealSection extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Subtotal: ${kkal.toStringAsFixed(0)} kkal',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: theme.hintColor,
+                    Flexible(
+                      child: Text(
+                        'Subtotal: ${kkal.toStringAsFixed(0)} kkal',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: theme.hintColor,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    const SizedBox(width: 8),
                     Text(
-                      'Na: ${subtotals['natrium']!.toStringAsFixed(0)} mg  ·  P: ${subtotals['protein']!.toStringAsFixed(1)} g',
+                      'Na: ${subtotals['natrium']!.toStringAsFixed(0)}  P: ${subtotals['protein']!.toStringAsFixed(1)} g',
                       style: TextStyle(
                         fontSize: 11,
                         color: theme.hintColor.withValues(alpha: 0.8),
@@ -2121,12 +2225,17 @@ class _FoodEntryCard extends StatelessWidget {
   final FoodLogEntry entry;
   final VoidCallback onDelete;
   final VoidCallback onEdit;
+  final VoidCallback onEditTime;
 
   const _FoodEntryCard({
     required this.entry,
     required this.onDelete,
     required this.onEdit,
+    required this.onEditTime,
   });
+
+  String _fmtTime(DateTime dt) =>
+      '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
 
   @override
   Widget build(BuildContext context) {
@@ -2172,67 +2281,87 @@ class _FoodEntryCard extends StatelessWidget {
             fontSize: 14,
             color: theme.textTheme.bodyLarge?.color,
           ),
+          overflow: TextOverflow.ellipsis,
         ),
-        subtitle: Text(
-          '${entry.grams.toInt()} g  ·  ${entry.energi.toStringAsFixed(0)} kkal',
-          style: TextStyle(fontSize: 12, color: theme.hintColor),
-        ),
-        trailing: Row(
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
+            Text(
+              '${entry.grams.toInt()} g  ·  ${entry.energi.toStringAsFixed(0)} kkal',
+              style: TextStyle(fontSize: 12, color: theme.hintColor),
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
+                Icon(Icons.schedule_rounded, size: 11, color: theme.hintColor),
+                const SizedBox(width: 3),
                 Text(
-                  'P: ${entry.protein.toStringAsFixed(1)} g',
-                  style: TextStyle(fontSize: 10, color: theme.hintColor),
-                ),
-                Text(
-                  'Na: ${entry.natrium.toStringAsFixed(1)} mg',
-                  style: TextStyle(fontSize: 10, color: theme.hintColor),
+                  _fmtTime(entry.loggedAt),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: theme.hintColor,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
-            PopupMenuButton<String>(
-              icon: Icon(Icons.more_vert, size: 20, color: theme.hintColor),
-              onSelected: (val) {
-                if (val == 'edit') onEdit();
-                if (val == 'delete') onDelete();
-              },
-              itemBuilder: (_) => [
-                PopupMenuItem(
-                  value: 'edit',
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.edit_outlined,
-                        size: 18,
-                        color: theme.primaryColor,
-                      ),
-                      const SizedBox(width: 10),
-                      const Text('Edit Gram'),
-                    ],
+          ],
+        ),
+        trailing: PopupMenuButton<String>(
+          icon: Icon(Icons.more_vert, size: 20, color: theme.hintColor),
+          onSelected: (val) {
+            if (val == 'edit') onEdit();
+            if (val == 'edit_time') onEditTime();
+            if (val == 'delete') onDelete();
+          },
+          itemBuilder: (_) => [
+            PopupMenuItem(
+              value: 'edit',
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.edit_outlined,
+                    size: 18,
+                    color: theme.primaryColor,
                   ),
-                ),
-                PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.delete_outline,
-                        size: 18,
-                        color: theme.colorScheme.error,
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Hapus',
-                        style: TextStyle(color: theme.colorScheme.error),
-                      ),
-                    ],
+                  const SizedBox(width: 10),
+                  const Text('Edit Gram'),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'edit_time',
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.access_time_rounded,
+                    size: 18,
+                    color: theme.primaryColor,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 10),
+                  const Text('Edit Jam'),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'delete',
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.delete_outline,
+                    size: 18,
+                    color: theme.colorScheme.error,
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Hapus',
+                    style: TextStyle(color: theme.colorScheme.error),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -2255,7 +2384,8 @@ class _CartItem {
 class _AddFoodSheet extends StatefulWidget {
   final MealType mealType;
   final bool isGuest;
-  final Future<void> Function(List<_CartItem> cartItems) onAddAll;
+  final Future<void> Function(List<_CartItem> cartItems, TimeOfDay eatTime)
+  onAddAll;
   const _AddFoodSheet({
     required this.mealType,
     required this.onAddAll,
@@ -2989,9 +3119,40 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
                         onPressed: _isSubmitting
                             ? null
                             : () async {
+                                // Parse default jam dari timeRange mealType
+                                final rangeParts = widget.mealType.timeRange
+                                    .split(' - ');
+                                TimeOfDay defaultTime = TimeOfDay.now();
+                                if (rangeParts.isNotEmpty) {
+                                  final parts = rangeParts.first.split(':');
+                                  if (parts.length == 2) {
+                                    final h = int.tryParse(parts[0]);
+                                    final m = int.tryParse(parts[1]);
+                                    if (h != null && m != null) {
+                                      defaultTime = TimeOfDay(
+                                        hour: h,
+                                        minute: m,
+                                      );
+                                    }
+                                  }
+                                }
+
+                                // Modal konfirmasi jam makan
+                                final confirmed = await showDialog<TimeOfDay>(
+                                  context: context,
+                                  builder: (ctx) => _EatTimeDialog(
+                                    mealType: widget.mealType,
+                                    initialTime: defaultTime,
+                                  ),
+                                );
+                                if (confirmed == null) return;
+
                                 setState(() => _isSubmitting = true);
                                 Navigator.pop(context);
-                                await widget.onAddAll(List.from(_cart));
+                                await widget.onAddAll(
+                                  List.from(_cart),
+                                  confirmed,
+                                );
                               },
                         icon: _isSubmitting
                             ? const SizedBox(
@@ -3022,6 +3183,222 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
           ),
         );
       },
+    );
+  }
+}
+
+// ─── Eat Time Dialog ──────────────────────────────────────────────────────────
+
+class _EatTimeDialog extends StatefulWidget {
+  final MealType mealType;
+  final TimeOfDay initialTime;
+
+  const _EatTimeDialog({required this.mealType, required this.initialTime});
+
+  @override
+  State<_EatTimeDialog> createState() => _EatTimeDialogState();
+}
+
+class _EatTimeDialogState extends State<_EatTimeDialog> {
+  late TextEditingController _hourCtrl;
+  late TextEditingController _minCtrl;
+  String? _error;
+
+  (int, int)? get _rangeMins {
+    final parts = widget.mealType.timeRange.split(' - ');
+    if (parts.length != 2) return null;
+    int? parseMin(String s) {
+      final p = s.trim().split(':');
+      if (p.length != 2) return null;
+      final h = int.tryParse(p[0]);
+      final m = int.tryParse(p[1]);
+      if (h == null || m == null) return null;
+      return h * 60 + m;
+    }
+
+    final s = parseMin(parts[0]);
+    final e = parseMin(parts[1]);
+    if (s == null || e == null) return null;
+    return (s, e);
+  }
+
+  bool _isOutOfRange(int h, int m) {
+    final r = _rangeMins;
+    if (r == null) return false;
+    final (s, e) = r;
+    final v = h * 60 + m;
+    final eAdj = e < s ? e + 24 * 60 : e;
+    final vAdj = v < s ? v + 24 * 60 : v;
+    return vAdj < s || vAdj > eAdj;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _hourCtrl = TextEditingController(
+      text: widget.initialTime.hour.toString().padLeft(2, '0'),
+    );
+    _minCtrl = TextEditingController(
+      text: widget.initialTime.minute.toString().padLeft(2, '0'),
+    );
+  }
+
+  @override
+  void dispose() {
+    _hourCtrl.dispose();
+    _minCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _onSave() async {
+    final h = int.tryParse(_hourCtrl.text.trim());
+    final m = int.tryParse(_minCtrl.text.trim());
+    if (h == null || m == null || h < 0 || h > 23 || m < 0 || m > 59) {
+      setState(() => _error = 'Jam 00-23, menit 00-59.');
+      return;
+    }
+    setState(() => _error = null);
+
+    if (_isOutOfRange(h, m)) {
+      String pad(int v) => v.toString().padLeft(2, '0');
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Jam di luar kisaran'),
+          content: Text(
+            'Jam ${pad(h)}:${pad(m)} di luar kisaran '
+            '${widget.mealType.label} (${widget.mealType.timeRange}).\n\nTetap simpan?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Ubah Jam'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.warning),
+              child: const Text(
+                'Tetap Simpan',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+
+    if (mounted) Navigator.pop(context, TimeOfDay(hour: h, minute: m));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AlertDialog(
+      title: Row(
+        children: [
+          Text(widget.mealType.emoji, style: const TextStyle(fontSize: 20)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Jam ${widget.mealType.label}',
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Kisaran: ${widget.mealType.timeRange}',
+            style: TextStyle(fontSize: 12, color: theme.hintColor),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _hourCtrl,
+                  keyboardType: TextInputType.number,
+                  maxLength: 2,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2,
+                  ),
+                  decoration: InputDecoration(
+                    counterText: '',
+                    labelText: 'Jam',
+                    hintText: '00',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onChanged: (_) => setState(() => _error = null),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Text(
+                  ':',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: theme.textTheme.bodyLarge?.color,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: TextField(
+                  controller: _minCtrl,
+                  keyboardType: TextInputType.number,
+                  maxLength: 2,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2,
+                  ),
+                  decoration: InputDecoration(
+                    counterText: '',
+                    labelText: 'Menit',
+                    hintText: '00',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onChanged: (_) => setState(() => _error = null),
+                ),
+              ),
+            ],
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.error_outline, size: 14, color: AppColors.error),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    _error!,
+                    style: TextStyle(fontSize: 11, color: AppColors.error),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Batal'),
+        ),
+        FilledButton(onPressed: _onSave, child: const Text('Simpan')),
+      ],
     );
   }
 }
