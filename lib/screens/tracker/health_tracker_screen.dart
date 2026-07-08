@@ -3826,130 +3826,144 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
               return Center(child: CircularProgressIndicator());
             }
 
-            return RefreshIndicator(
-              onRefresh: _loadHeartRecords,
-              child: SingleChildScrollView(
-                physics: AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.fromLTRB(16, 16, 16, 140),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _HeartHeader(onInput: _showHeartInputTypeSheet),
-                    SizedBox(height: 16),
-                    if (_uid.isEmpty) ...[
-                      _GuestReadOnlyBanner(
-                        message:
-                            'Mode Guest (Read-only). Kamu bisa buka form, tapi tidak bisa menyimpan input tanpa login.',
-                      ),
-                      SizedBox(height: 12),
-                    ],
-                    if (_heartError != null)
-                      Container(
-                        width: double.infinity,
-                        padding: EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.error.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: AppColors.error.withValues(alpha: 0.3),
+            return Stack(
+              children: [
+                RefreshIndicator(
+                  onRefresh: _loadHeartRecords,
+                  child: SingleChildScrollView(
+                    physics: AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.fromLTRB(16, 140, 16, 140),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_uid.isEmpty) ...[
+                          _GuestReadOnlyBanner(
+                            message:
+                                'Mode Guest (Read-only). Kamu bisa buka form, tapi tidak bisa menyimpan input tanpa login.',
                           ),
+                          SizedBox(height: 12),
+                        ],
+                        if (_heartError != null)
+                          Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.error.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColors.error.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Text(
+                              _heartError!,
+                              style: TextStyle(color: AppColors.error),
+                            ),
+                          ),
+                        if (_heartError != null) SizedBox(height: 14),
+                        _HeartTrendCard(
+                          records: _heartWeightRecords,
+                          idealWeight:
+                              auth.currentUser?.bbi ??
+                              auth.currentUser?.weight ??
+                              0,
                         ),
-                        child: Text(
-                          _heartError!,
-                          style: TextStyle(color: AppColors.error),
+                        SizedBox(height: 16),
+                        // Activity Gauge for Heart
+                        () {
+                          final now = DateTime.now();
+                          final today = DateTime(now.year, now.month, now.day);
+                          final sevenDaysAgo = today.subtract(
+                            Duration(days: 6),
+                          );
+
+                          final weeklyRecords = _heartActivityRecords.where(
+                            (r) =>
+                                r.date.isAfter(
+                                  sevenDaysAgo.subtract(Duration(seconds: 1)),
+                                ) &&
+                                r.date.isBefore(today.add(Duration(days: 1))),
+                          );
+
+                          final totalDuration = weeklyRecords.fold<double>(
+                            0,
+                            (sum, r) =>
+                                sum +
+                                (double.tryParse(
+                                      r.payload['duration']?.toString() ?? '0',
+                                    ) ??
+                                    0),
+                          );
+                          return _ActivityGauge(
+                            totalDuration: totalDuration,
+                            target: 150.0,
+                            themeColor: AppColors.primary,
+                            isWeekly: true,
+                          );
+                        }(),
+                        SizedBox(height: 16),
+                        _heartSymptomRecords.isEmpty
+                            ? _EmptyTableState(
+                                message: 'Belum ada input gejala jantung.',
+                              )
+                            : _HeartSymptomTable(
+                                records: _heartSymptomRecords,
+                                dateFmt: _dateFmt,
+                                onEdit: _editHeartRecord,
+                                onDelete: _deleteHeartRecord,
+                              ),
+                        SizedBox(height: 16),
+                        _heartActivityRecords.isEmpty
+                            ? _EmptyTableState(
+                                message: 'Belum ada input aktivitas jantung.',
+                              )
+                            : _HeartActivityTable(
+                                records: _heartActivityRecords,
+                                dateFmt: _dateFmt,
+                                onEdit: _editHeartRecord,
+                                onDelete: _deleteHeartRecord,
+                              ),
+                        SizedBox(height: 16),
+                        _heartMedicationRecords.isEmpty
+                            ? _EmptyTableState(
+                                message: 'Belum ada input obat jantung.',
+                              )
+                            : _HeartMedicationTable(
+                                records: _heartMedicationRecords,
+                                dateFmt: _dateFmt,
+                                onEdit: _editHeartRecord,
+                                onDelete: _deleteHeartRecord,
+                              ),
+                        SizedBox(height: 16),
+                        _heartCheckupRecords.isEmpty
+                            ? _EmptyTableState(
+                                message: 'Belum ada input pemeriksaan jantung.',
+                              )
+                            : _HeartCheckupTable(
+                                records: _heartCheckupRecords,
+                                dateFmt: _dateFmt,
+                                onEdit: _editHeartRecord,
+                                onDelete: _deleteHeartRecord,
+                              ),
+                        SizedBox(height: 16),
+                        _NormalValuesButtonCard(
+                          onTap: () =>
+                              _showNormalValuesDialog(DiseaseType.heartFailure),
                         ),
-                      ),
-                    if (_heartError != null) SizedBox(height: 14),
-                    _HeartTrendCard(
-                      records: _heartWeightRecords,
-                      idealWeight:
-                          auth.currentUser?.bbi ??
-                          auth.currentUser?.weight ??
-                          0,
+                      ],
                     ),
-                    SizedBox(height: 16),
-                    // Activity Gauge for Heart
-                    () {
-                      final now = DateTime.now();
-                      final today = DateTime(now.year, now.month, now.day);
-                      final sevenDaysAgo = today.subtract(Duration(days: 6));
-
-                      final weeklyRecords = _heartActivityRecords.where(
-                        (r) =>
-                            r.date.isAfter(
-                              sevenDaysAgo.subtract(Duration(seconds: 1)),
-                            ) &&
-                            r.date.isBefore(today.add(Duration(days: 1))),
-                      );
-
-                      final totalDuration = weeklyRecords.fold<double>(
-                        0,
-                        (sum, r) =>
-                            sum +
-                            (double.tryParse(
-                                  r.payload['duration']?.toString() ?? '0',
-                                ) ??
-                                0),
-                      );
-                      return _ActivityGauge(
-                        totalDuration: totalDuration,
-                        target: 150.0,
-                        themeColor: AppColors.primary,
-                        isWeekly: true,
-                      );
-                    }(),
-                    SizedBox(height: 16),
-                    _heartSymptomRecords.isEmpty
-                        ? _EmptyTableState(
-                            message: 'Belum ada input gejala jantung.',
-                          )
-                        : _HeartSymptomTable(
-                            records: _heartSymptomRecords,
-                            dateFmt: _dateFmt,
-                            onEdit: _editHeartRecord,
-                            onDelete: _deleteHeartRecord,
-                          ),
-                    SizedBox(height: 16),
-                    _heartActivityRecords.isEmpty
-                        ? _EmptyTableState(
-                            message: 'Belum ada input aktivitas jantung.',
-                          )
-                        : _HeartActivityTable(
-                            records: _heartActivityRecords,
-                            dateFmt: _dateFmt,
-                            onEdit: _editHeartRecord,
-                            onDelete: _deleteHeartRecord,
-                          ),
-                    SizedBox(height: 16),
-                    _heartMedicationRecords.isEmpty
-                        ? _EmptyTableState(
-                            message: 'Belum ada input obat jantung.',
-                          )
-                        : _HeartMedicationTable(
-                            records: _heartMedicationRecords,
-                            dateFmt: _dateFmt,
-                            onEdit: _editHeartRecord,
-                            onDelete: _deleteHeartRecord,
-                          ),
-                    SizedBox(height: 16),
-                    _heartCheckupRecords.isEmpty
-                        ? _EmptyTableState(
-                            message: 'Belum ada input pemeriksaan jantung.',
-                          )
-                        : _HeartCheckupTable(
-                            records: _heartCheckupRecords,
-                            dateFmt: _dateFmt,
-                            onEdit: _editHeartRecord,
-                            onDelete: _deleteHeartRecord,
-                          ),
-                    SizedBox(height: 16),
-                    _NormalValuesButtonCard(
-                      onTap: () =>
-                          _showNormalValuesDialog(DiseaseType.heartFailure),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: _HeartHeader(onInput: _showHeartInputTypeSheet),
+                  ),
+                ),
+              ],
             );
           }
 
@@ -3960,129 +3974,146 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
             final usesInsulinTherapy =
                 auth.currentUser?.usesInsulinTherapy ?? false;
 
-            return RefreshIndicator(
-              onRefresh: _loadDmRecords,
-              child: SingleChildScrollView(
-                physics: AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.fromLTRB(16, 16, 16, 140),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _DiabetesHeader(onInput: _showDmInputTypeSheet),
-                    SizedBox(height: 16),
-                    if (_uid.isEmpty) ...[
-                      _GuestReadOnlyBanner(
-                        message:
-                            'Mode Guest (Read-only). Kamu bisa buka form, tapi tidak bisa menyimpan input tanpa login.',
-                      ),
-                      SizedBox(height: 12),
-                    ],
-                    if (_dmError != null)
-                      Container(
-                        width: double.infinity,
-                        padding: EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.error.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: AppColors.error.withValues(alpha: 0.3),
+            return Stack(
+              children: [
+                RefreshIndicator(
+                  onRefresh: _loadDmRecords,
+                  child: SingleChildScrollView(
+                    physics: AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.fromLTRB(16, 140, 16, 140),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_uid.isEmpty) ...[
+                          _GuestReadOnlyBanner(
+                            message:
+                                'Mode Guest (Read-only). Kamu bisa buka form, tapi tidak bisa menyimpan input tanpa login.',
+                          ),
+                          SizedBox(height: 12),
+                        ],
+                        if (_dmError != null)
+                          Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.error.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColors.error.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Text(
+                              _dmError!,
+                              style: TextStyle(color: AppColors.error),
+                            ),
+                          ),
+                        if (_dmError != null) SizedBox(height: 14),
+                        _DiabetesCheckupTrendCards(records: _dmCheckupRecords),
+                        if (usesInsulinTherapy) ...[
+                          SizedBox(height: 16),
+                          _DiabetesInsulinSummaryTable(
+                            records: _dmInsulinRecords,
+                            dateFmt: _dateFmt,
+                            uid: _uid,
+                            onDataChanged: _loadDmRecords,
+                            onEdit: _editDmRecord,
+                            onDelete: _deleteDmRecord,
+                          ),
+                        ],
+                        SizedBox(height: 16),
+                        // Activity Gauge for Diabetes
+                        () {
+                          final now = DateTime.now();
+                          final today = DateTime(now.year, now.month, now.day);
+                          final sevenDaysAgo = today.subtract(
+                            Duration(days: 6),
+                          );
+
+                          final weeklyRecords = _dmActivityRecords.where(
+                            (r) =>
+                                r.date.isAfter(
+                                  sevenDaysAgo.subtract(Duration(seconds: 1)),
+                                ) &&
+                                r.date.isBefore(today.add(Duration(days: 1))),
+                          );
+
+                          final totalDuration = weeklyRecords.fold<double>(
+                            0,
+                            (sum, r) =>
+                                sum +
+                                (double.tryParse(
+                                      r.payload['duration']?.toString() ?? '0',
+                                    ) ??
+                                    0),
+                          );
+                          return _ActivityGauge(
+                            totalDuration: totalDuration,
+                            target: 150.0,
+                            themeColor: Colors.orange.shade700,
+                            isWeekly: true,
+                          );
+                        }(),
+                        SizedBox(height: 16),
+                        _dmActivityRecords.isEmpty
+                            ? _EmptyTableState(
+                                message: 'Belum ada input aktivitas diabetes.',
+                              )
+                            : _DiabetesActivityTable(
+                                records: _dmActivityRecords,
+                                dateFmt: _dateFmt,
+                                onEdit: _editDmRecord,
+                                onDelete: _deleteDmRecord,
+                              ),
+                        SizedBox(height: 16),
+                        _dmMedicationRecords.isEmpty
+                            ? _EmptyTableState(
+                                message: 'Belum ada input obat diabetes.',
+                              )
+                            : _DiabetesMedicationTable(
+                                records: _dmMedicationRecords,
+                                dateFmt: _dateFmt,
+                                onEdit: _editDmRecord,
+                                onDelete: _deleteDmRecord,
+                              ),
+                        SizedBox(height: 16),
+                        _dmCheckupRecords.isEmpty
+                            ? _EmptyTableState(
+                                message:
+                                    'Belum ada input pemeriksaan diabetes.',
+                              )
+                            : _DiabetesCheckupTable(
+                                records: _dmCheckupRecords,
+                                dateFmt: _dateFmt,
+                                onEdit: _editDmRecord,
+                                onDelete: _deleteDmRecord,
+                              ),
+                        SizedBox(height: 16),
+                        _NormalValuesButtonCard(
+                          onTap: () => _showNormalValuesDialog(
+                            DiseaseType.type2DiabetesMellitus,
                           ),
                         ),
-                        child: Text(
-                          _dmError!,
-                          style: TextStyle(color: AppColors.error),
-                        ),
-                      ),
-                    if (_dmError != null) SizedBox(height: 14),
-                    _DiabetesCheckupTrendCards(records: _dmCheckupRecords),
-                    if (usesInsulinTherapy) ...[
-                      SizedBox(height: 16),
-                      _DiabetesInsulinSummaryTable(
-                        records: _dmInsulinRecords,
-                        dateFmt: _dateFmt,
-                        uid: _uid,
-                        onDataChanged: _loadDmRecords,
-                        onEdit: _editDmRecord,
-                        onDelete: _deleteDmRecord,
-                      ),
-                    ],
-                    SizedBox(height: 16),
-                    // Activity Gauge for Diabetes
-                    () {
-                      final now = DateTime.now();
-                      final today = DateTime(now.year, now.month, now.day);
-                      final sevenDaysAgo = today.subtract(Duration(days: 6));
-
-                      final weeklyRecords = _dmActivityRecords.where(
-                        (r) =>
-                            r.date.isAfter(
-                              sevenDaysAgo.subtract(Duration(seconds: 1)),
-                            ) &&
-                            r.date.isBefore(today.add(Duration(days: 1))),
-                      );
-
-                      final totalDuration = weeklyRecords.fold<double>(
-                        0,
-                        (sum, r) =>
-                            sum +
-                            (double.tryParse(
-                                  r.payload['duration']?.toString() ?? '0',
-                                ) ??
-                                0),
-                      );
-                      return _ActivityGauge(
-                        totalDuration: totalDuration,
-                        target: 150.0,
-                        themeColor: Colors.orange.shade700,
-                        isWeekly: true,
-                      );
-                    }(),
-                    SizedBox(height: 16),
-                    _dmActivityRecords.isEmpty
-                        ? _EmptyTableState(
-                            message: 'Belum ada input aktivitas diabetes.',
-                          )
-                        : _DiabetesActivityTable(
-                            records: _dmActivityRecords,
-                            dateFmt: _dateFmt,
-                            onEdit: _editDmRecord,
-                            onDelete: _deleteDmRecord,
+                        if (usesInsulinTherapy) ...[
+                          SizedBox(height: 16),
+                          _InsulinGuideButtonCard(
+                            onTap: _showInsulinGuideDialog,
                           ),
-                    SizedBox(height: 16),
-                    _dmMedicationRecords.isEmpty
-                        ? _EmptyTableState(
-                            message: 'Belum ada input obat diabetes.',
-                          )
-                        : _DiabetesMedicationTable(
-                            records: _dmMedicationRecords,
-                            dateFmt: _dateFmt,
-                            onEdit: _editDmRecord,
-                            onDelete: _deleteDmRecord,
-                          ),
-                    SizedBox(height: 16),
-                    _dmCheckupRecords.isEmpty
-                        ? _EmptyTableState(
-                            message: 'Belum ada input pemeriksaan diabetes.',
-                          )
-                        : _DiabetesCheckupTable(
-                            records: _dmCheckupRecords,
-                            dateFmt: _dateFmt,
-                            onEdit: _editDmRecord,
-                            onDelete: _deleteDmRecord,
-                          ),
-                    SizedBox(height: 16),
-                    _NormalValuesButtonCard(
-                      onTap: () => _showNormalValuesDialog(
-                        DiseaseType.type2DiabetesMellitus,
-                      ),
+                        ],
+                      ],
                     ),
-                    if (usesInsulinTherapy) ...[
-                      SizedBox(height: 16),
-                      _InsulinGuideButtonCard(onTap: _showInsulinGuideDialog),
-                    ],
-                  ],
+                  ),
                 ),
-              ),
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: _DiabetesHeader(onInput: _showDmInputTypeSheet),
+                  ),
+                ),
+              ],
             );
           }
 
@@ -4094,15 +4125,98 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
             return Center(child: CircularProgressIndicator());
           }
 
-          return RefreshIndicator(
-            onRefresh: _loadRecords,
-            child: SingleChildScrollView(
-              physics: AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 140),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
+          return Stack(
+            children: [
+              RefreshIndicator(
+                onRefresh: _loadRecords,
+                child: SingleChildScrollView(
+                  physics: AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.fromLTRB(16, 140, 16, 140),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (_uid.isEmpty) ...[
+                        _GuestReadOnlyBanner(
+                          message:
+                              'Mode Guest (Read-only). Kamu bisa buka form, tapi tidak bisa menyimpan input tanpa login.',
+                        ),
+                        SizedBox(height: 12),
+                      ],
+                      if (_error != null)
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.error.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: AppColors.error.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Text(
+                            _error!,
+                            style: TextStyle(color: AppColors.error),
+                          ),
+                        ),
+                      if (_error != null) SizedBox(height: 14),
+                      _TrendCard(
+                        records: _hemodialysisRecords,
+                        riskCategory: _riskCategory,
+                        riskColor: _riskColor,
+                        onViewHistory: _showMonthlyKidneyTrendDialog,
+                      ),
+                      SizedBox(height: 16),
+                      _HemodialysisTable(
+                        records: _hemodialysisRecords,
+                        dateFmt: _dateFmt,
+                        riskCategory: _riskCategory,
+                        riskColor: _riskColor,
+                        onEdit: _editRecord,
+                        onDelete: _deleteRecord,
+                      ),
+                      SizedBox(height: 16),
+                      _MedicationTable(
+                        records: _medicationRecords,
+                        dateFmt: _dateFmt,
+                        onEdit: _editRecord,
+                        onDelete: _deleteRecord,
+                      ),
+                      SizedBox(height: 16),
+                      _SimpleListCard(
+                        title: 'Riwayat Gejala',
+                        emptyText: 'Belum ada input gejala.',
+                        records: _symptomRecords,
+                        icon: Icons.sick,
+                        onEdit: _editRecord,
+                        onDelete: _deleteRecord,
+                        buildLine: (r) =>
+                            '${_dateFmt.format(r.date)} • ${(r.payload['symptom'] ?? '-')} (${r.payload['intensity'] ?? '-'})',
+                      ),
+                      SizedBox(height: 16),
+                      _KidneyCheckupTable(
+                        records: _checkupRecords,
+                        dateFmt: _dateFmt,
+                        onEdit: _editRecord,
+                        onDelete: _deleteRecord,
+                      ),
+                      SizedBox(height: 16),
+                      _NormalValuesButtonCard(
+                        onTap: () => _showNormalValuesDialog(
+                          DiseaseType.chronicKidneyDisease,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Container(
                     width: double.infinity,
                     padding: EdgeInsets.all(14),
                     decoration: BoxDecoration(
@@ -4204,80 +4318,9 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                       ],
                     ),
                   ),
-                  SizedBox(height: 16),
-                  if (_uid.isEmpty) ...[
-                    _GuestReadOnlyBanner(
-                      message:
-                          'Mode Guest (Read-only). Kamu bisa buka form, tapi tidak bisa menyimpan input tanpa login.',
-                    ),
-                    SizedBox(height: 12),
-                  ],
-                  if (_error != null)
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.error.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppColors.error.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: Text(
-                        _error!,
-                        style: TextStyle(color: AppColors.error),
-                      ),
-                    ),
-                  if (_error != null) SizedBox(height: 14),
-                  _TrendCard(
-                    records: _hemodialysisRecords,
-                    riskCategory: _riskCategory,
-                    riskColor: _riskColor,
-                    onViewHistory: _showMonthlyKidneyTrendDialog,
-                  ),
-                  SizedBox(height: 16),
-                  _HemodialysisTable(
-                    records: _hemodialysisRecords,
-                    dateFmt: _dateFmt,
-                    riskCategory: _riskCategory,
-                    riskColor: _riskColor,
-                    onEdit: _editRecord,
-                    onDelete: _deleteRecord,
-                  ),
-                  SizedBox(height: 16),
-                  _MedicationTable(
-                    records: _medicationRecords,
-                    dateFmt: _dateFmt,
-                    onEdit: _editRecord,
-                    onDelete: _deleteRecord,
-                  ),
-                  SizedBox(height: 16),
-                  _SimpleListCard(
-                    title: 'Riwayat Gejala',
-                    emptyText: 'Belum ada input gejala.',
-                    records: _symptomRecords,
-                    icon: Icons.sick,
-                    onEdit: _editRecord,
-                    onDelete: _deleteRecord,
-                    buildLine: (r) =>
-                        '${_dateFmt.format(r.date)} • ${(r.payload['symptom'] ?? '-')} (${r.payload['intensity'] ?? '-'})',
-                  ),
-                  SizedBox(height: 16),
-                  _KidneyCheckupTable(
-                    records: _checkupRecords,
-                    dateFmt: _dateFmt,
-                    onEdit: _editRecord,
-                    onDelete: _deleteRecord,
-                  ),
-                  SizedBox(height: 16),
-                  _NormalValuesButtonCard(
-                    onTap: () => _showNormalValuesDialog(
-                      DiseaseType.chronicKidneyDisease,
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
+            ],
           );
         },
       ),
@@ -4618,7 +4661,8 @@ class _TrendCard extends StatelessWidget {
           ),
           SizedBox(height: 10),
           SizedBox(
-            height: 170,
+            height:
+                200, // Diperbesar dari 170 agar label tanggal tidak terpotong
             child: spots.isEmpty
                 ? Center(
                     child: Text(
@@ -7014,7 +7058,7 @@ class _GlucoseTrendCard extends StatelessWidget {
         child: Column(
           children: [
             SizedBox(
-              height: 190,
+              height: 220, // Diperbesar dari 190 agar tanggal tidak terpotong
               child: LineChart(
                 LineChartData(
                   minX: 0,
@@ -7156,7 +7200,7 @@ class _Hba1cTrendCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(10, 8, 10, 14),
         child: SizedBox(
-          height: 190,
+          height: 220, // Diperbesar dari 190 agar tanggal tidak terpotong
           child: LineChart(
             LineChartData(
               minX: 0,
