@@ -3832,7 +3832,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                   onRefresh: _loadHeartRecords,
                   child: SingleChildScrollView(
                     physics: AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.fromLTRB(16, 140, 16, 140),
+                    padding: EdgeInsets.fromLTRB(16, 180, 16, 140),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -3980,7 +3980,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                   onRefresh: _loadDmRecords,
                   child: SingleChildScrollView(
                     physics: AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.fromLTRB(16, 140, 16, 140),
+                    padding: EdgeInsets.fromLTRB(16, 180, 16, 140),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -4131,7 +4131,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                 onRefresh: _loadRecords,
                 child: SingleChildScrollView(
                   physics: AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.fromLTRB(16, 140, 16, 140),
+                  padding: EdgeInsets.fromLTRB(16, 180, 16, 140),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
