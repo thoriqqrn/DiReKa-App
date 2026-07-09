@@ -46,6 +46,7 @@ class AdminHealthRecordSummary {
   final String source;
   final String type;
   final DateTime date;
+  final DateTime? createdAt;
   final Map<String, dynamic> payload;
 
   const AdminHealthRecordSummary({
@@ -55,6 +56,7 @@ class AdminHealthRecordSummary {
     required this.source,
     required this.type,
     required this.date,
+    this.createdAt,
     required this.payload,
   });
 }
@@ -342,6 +344,7 @@ class AdminService {
       source: source,
       type: (data['type'] ?? '-').toString(),
       date: (data['date'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
       payload: Map<String, dynamic>.from(data['payload'] ?? {}),
     );
   }

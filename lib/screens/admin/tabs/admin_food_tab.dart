@@ -53,21 +53,87 @@ class _AdminFoodTabState extends State<AdminFoodTab> {
       return;
     }
 
+    // Map uid → UserModel untuk hitung target nutrisi
+    final userMap = { for (final u in _users) u.uid: u };
+
     final workbook = xlsio.Workbook();
     final sheet = workbook.worksheets[0];
-    final headers = ['Nama', 'Email', 'Tgl', 'Meal', 'Makanan', 'Gram', 'Energi'];
-    for (var i = 0; i < headers.length; i++) { sheet.getRangeByIndex(1, i+1).setText(headers[i]); }
+
+    // Header baris 1: grup
+    sheet.getRangeByIndex(1, 1).setText('Nama');
+    sheet.getRangeByIndex(1, 2).setText('Email');
+    sheet.getRangeByIndex(1, 3).setText('Tgl');
+    sheet.getRangeByIndex(1, 4).setText('Meal');
+    sheet.getRangeByIndex(1, 5).setText('Makanan');
+    sheet.getRangeByIndex(1, 6).setText('Gram');
+    // Asupan per entry
+    sheet.getRangeByIndex(1, 7).setText('Energi (kkal)');
+    sheet.getRangeByIndex(1, 8).setText('Protein (g)');
+    sheet.getRangeByIndex(1, 9).setText('Lemak (g)');
+    sheet.getRangeByIndex(1, 10).setText('Karbohidrat (g)');
+    // Total harian & persentase target
+    sheet.getRangeByIndex(1, 11).setText('Total Energi (kkal)');
+    sheet.getRangeByIndex(1, 12).setText('Target Energi (kkal)');
+    sheet.getRangeByIndex(1, 13).setText('% Energi');
+    sheet.getRangeByIndex(1, 14).setText('Total Protein (g)');
+    sheet.getRangeByIndex(1, 15).setText('Target Protein (g)');
+    sheet.getRangeByIndex(1, 16).setText('% Protein');
+    sheet.getRangeByIndex(1, 17).setText('Total Lemak (g)');
+    sheet.getRangeByIndex(1, 18).setText('Target Lemak (g)');
+    sheet.getRangeByIndex(1, 19).setText('% Lemak');
+    sheet.getRangeByIndex(1, 20).setText('Total Karbohidrat (g)');
+    sheet.getRangeByIndex(1, 21).setText('Target Karbohidrat (g)');
+    sheet.getRangeByIndex(1, 22).setText('% Karbohidrat');
 
     var rIdx = 2;
     for (final log in rows) {
-      for (final e in log.entries) {
+      if (log.entries.isEmpty) continue;
+
+      // Hitung total harian dari semua entry dalam log ini
+      final totalEnergi = log.entries.fold(0.0, (s, e) => s + (e['energi'] ?? 0).toDouble());
+      final totalProtein = log.entries.fold(0.0, (s, e) => s + (e['protein'] ?? 0).toDouble());
+      final totalLemak = log.entries.fold(0.0, (s, e) => s + (e['lemak'] ?? 0).toDouble());
+      final totalKarbo = log.entries.fold(0.0, (s, e) => s + (e['karbohidrat'] ?? 0).toDouble());
+
+      // Target nutrisi dari profil user
+      final needs = userMap[log.uid]?.nutritionNeeds;
+      final tEnergi = needs?.energi ?? 0.0;
+      final tProtein = needs?.protein ?? 0.0;
+      final tLemak = needs?.lemak ?? 0.0;
+      final tKarbo = needs?.karbohidrat ?? 0.0;
+
+      // Persentase (0 jika target tidak diketahui)
+      String pct(double actual, double target) =>
+          target > 0 ? '${(actual / target * 100).toStringAsFixed(1)}%' : '-';
+
+      for (var i = 0; i < log.entries.length; i++) {
+        final e = log.entries[i];
         sheet.getRangeByIndex(rIdx, 1).setText(log.userName);
         sheet.getRangeByIndex(rIdx, 2).setText(log.userEmail);
         sheet.getRangeByIndex(rIdx, 3).setText(DateFormat('yyyy-MM-dd').format(log.date));
         sheet.getRangeByIndex(rIdx, 4).setText(e['mealType']?.toString() ?? '-');
         sheet.getRangeByIndex(rIdx, 5).setText(e['foodName']?.toString() ?? '-');
         sheet.getRangeByIndex(rIdx, 6).setNumber((e['grams'] ?? 0).toDouble());
+        // Nutrisi per entry
         sheet.getRangeByIndex(rIdx, 7).setNumber((e['energi'] ?? 0).toDouble());
+        sheet.getRangeByIndex(rIdx, 8).setNumber((e['protein'] ?? 0).toDouble());
+        sheet.getRangeByIndex(rIdx, 9).setNumber((e['lemak'] ?? 0).toDouble());
+        sheet.getRangeByIndex(rIdx, 10).setNumber((e['karbohidrat'] ?? 0).toDouble());
+        // Total & persentase hanya di baris pertama entry setiap log (ringkasan hari)
+        if (i == 0) {
+          sheet.getRangeByIndex(rIdx, 11).setNumber(totalEnergi);
+          if (tEnergi > 0) sheet.getRangeByIndex(rIdx, 12).setNumber(tEnergi);
+          sheet.getRangeByIndex(rIdx, 13).setText(pct(totalEnergi, tEnergi));
+          sheet.getRangeByIndex(rIdx, 14).setNumber(totalProtein);
+          if (tProtein > 0) sheet.getRangeByIndex(rIdx, 15).setNumber(tProtein);
+          sheet.getRangeByIndex(rIdx, 16).setText(pct(totalProtein, tProtein));
+          sheet.getRangeByIndex(rIdx, 17).setNumber(totalLemak);
+          if (tLemak > 0) sheet.getRangeByIndex(rIdx, 18).setNumber(tLemak);
+          sheet.getRangeByIndex(rIdx, 19).setText(pct(totalLemak, tLemak));
+          sheet.getRangeByIndex(rIdx, 20).setNumber(totalKarbo);
+          if (tKarbo > 0) sheet.getRangeByIndex(rIdx, 21).setNumber(tKarbo);
+          sheet.getRangeByIndex(rIdx, 22).setText(pct(totalKarbo, tKarbo));
+        }
         rIdx++;
       }
     }

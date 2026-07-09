@@ -64,23 +64,162 @@ class _AdminHealthTabState extends State<AdminHealthTab> {
     final sheet = workbook.worksheets[0];
     sheet.name = 'Health Tracker';
 
-    final headers = ['Nama User', 'Email', 'Tanggal', 'Jam', 'Kategori', 'Detail Data', 'Sumber'];
+    // ── Header ──────────────────────────────────────────────────────────────
+    const headers = [
+      'Nama User',         // 1
+      'Email',             // 2
+      'Penyakit',          // 3  (Diabetes / Ginjal / Jantung)
+      'Kategori Input',    // 4  (label dari type)
+      'Tanggal Pemeriksaan', // 5
+      'Tanggal Input',     // 6  (createdAt date)
+      'Jam Input',         // 7  (createdAt time)
+      'Jenis Pemeriksaan', // 8  (examType / tipe spesifik)
+      'Nama Item',         // 9  (exam / activityName / symptom / nama obat / dll)
+      'Hasil / Nilai',     // 10 (result / duration / weight / dose / dll)
+      'Satuan',            // 11 (unit)
+      'Nilai Normal',      // 12 (normalRange)
+      'Kategori / Status', // 13 (category / status / intensity)
+      'Catatan',           // 14 (note / complaint)
+      'Detail Tambahan',   // 15 (field spesifik lain)
+    ];
     for (var i = 0; i < headers.length; i++) {
       sheet.getRangeByIndex(1, i + 1).setText(headers[i]);
     }
 
+    // ── Label mapping ────────────────────────────────────────────────────────
+    String resolveTypeLabel(String source, String type) {
+      switch (type) {
+        case 'pemeriksaan': return 'Pemeriksaan';
+        case 'insulin':     return 'Analisis Insulin';
+        case 'aktivitas':   return 'Aktivitas';
+        case 'obat':        return 'Obat';
+        case 'hemodialisa': return 'Hemodialisa';
+        case 'gejala':      return 'Gejala';
+        case 'berat_badan': return 'Berat Badan';
+        default:            return type;
+      }
+    }
+
+    String s(dynamic v) => v?.toString() ?? '';
+
     var rIdx = 2;
     for (final r in rows) {
+      final p = r.payload;
+      final dateStr   = DateFormat('yyyy-MM-dd').format(r.date);
+      final inputDate = r.createdAt != null ? DateFormat('yyyy-MM-dd').format(r.createdAt!) : '-';
+      final inputTime = r.createdAt != null ? DateFormat('HH:mm:ss').format(r.createdAt!) : '-';
+      final typeLabel = resolveTypeLabel(r.source, r.type);
+
+      // Kolom 8-15 disesuaikan per tipe
+      String jenisPeriksa = '';
+      String namaItem     = '';
+      String hasilNilai   = '';
+      String satuan       = '';
+      String nilaiNormal  = '';
+      String kategoriStatus = '';
+      String catatan      = '';
+      String detailTambahan = '';
+
+      switch (r.type) {
+        case 'pemeriksaan':
+          jenisPeriksa    = s(p['examType']);
+          namaItem        = s(p['exam']);
+          hasilNilai      = s(p['result']);
+          satuan          = s(p['unit']);
+          nilaiNormal     = s(p['normalRange']);
+          kategoriStatus  = s(p['category']);
+          catatan         = s(p['sampleTime']); // waktu pengambilan urin jika ada
+          break;
+
+        case 'insulin':
+          jenisPeriksa    = s(p['meal']); // waktu makan
+          namaItem        = 'Analisis Insulin';
+          hasilNilai      = s(p['dosisAktual']); // dosis aktual (F)
+          satuan          = 'unit';
+          nilaiNormal     = s(p['estimasiInsulin']); // estimasi (E)
+          kategoriStatus  = s(p['category']); // Balance/Lebih/Kurang
+          catatan         = 'Selisih: ${s(p['selisih'])} unit';
+          detailTambahan  = 'Basal: ${s(p['insulinBasal'])} | Prandial: ${s(p['insulinPrandial'])} | '
+                            'ICR: ${s(p['icr'])} | KarbMakan: ${s(p['karbohidratMakan'])} g | GL: ${s(p['gl'])}';
+          break;
+
+        case 'aktivitas':
+          namaItem        = s(p['activityName']);
+          hasilNilai      = s(p['duration']);
+          satuan          = 'menit';
+          kategoriStatus  = s(p['status']);
+          catatan         = s(p['complaint']);
+          break;
+
+        case 'obat':
+          namaItem        = s(p['name']);
+          jenisPeriksa    = s(p['form']); // Tablet/Kapsul/Sirup
+          hasilNilai      = s(p['dose']); // dosis ringkas
+          satuan          = s(p['doseUnit']);
+          kategoriStatus  = s(p['consumed']) != '' ? 'Dikonsumsi: ${s(p['consumed'])}' : '';
+          catatan         = s(p['note']);
+          final timeParts = <String>[];
+          if (s(p['period']).isNotEmpty) timeParts.add('Waktu: ${s(p['period'])}');
+          if (s(p['mealTiming']).isNotEmpty) timeParts.add(s(p['mealTiming']));
+          if (s(p['hdTiming']).isNotEmpty) timeParts.add('HD: ${s(p['hdTiming'])}');
+          detailTambahan  = timeParts.join(' | ');
+          break;
+
+        case 'hemodialisa':
+          namaItem        = 'Hemodialisa';
+          hasilNilai      = s(p['postHd1']); // BB setelah HD I
+          satuan          = 'kg';
+          nilaiNormal     = s(p['preHd2']); // BB sebelum HD II
+          catatan         = s(p['note']);
+          final post = (p['postHd1'] as num?)?.toDouble() ?? 0;
+          final pre  = (p['preHd2'] as num?)?.toDouble() ?? 0;
+          final gain = pre - post;
+          final gainPct = post > 0 ? (gain / post * 100).toStringAsFixed(1) : '-';
+          kategoriStatus  = 'IDWG: ${gain.toStringAsFixed(2)} kg ($gainPct%)';
+          detailTambahan  = 'BB post-HD I: ${s(p['postHd1'])} kg | BB pre-HD II: ${s(p['preHd2'])} kg';
+          break;
+
+        case 'gejala':
+          namaItem        = s(p['symptom']);
+          kategoriStatus  = s(p['intensity']); // Ringan/Sedang/Berat — kidney
+          catatan         = s(p['note']);
+          // Heart gejala punya field berbeda
+          if (p.containsKey('sesakNafas')) {
+            namaItem       = 'Gejala Jantung';
+            hasilNilai     = 'BB: ${s(p['bb'])} kg';
+            kategoriStatus = s(p['category']);
+            detailTambahan = 'Sesak napas: ${s(p['sesakNafas'])} | '
+                             'Bengkak: ${s(p['bengkak'])} | '
+                             'Cepat lelah: ${s(p['cepatLelah'])}';
+          }
+          break;
+
+        case 'berat_badan':
+          namaItem        = 'Berat Badan';
+          hasilNilai      = s(p['weight']);
+          satuan          = 'kg';
+          nilaiNormal     = s(p['idealWeight']);
+          break;
+
+        default:
+          detailTambahan = p.entries.map((e) => '${e.key}: ${e.value}').join(' | ');
+      }
+
       sheet.getRangeByIndex(rIdx, 1).setText(r.userName);
       sheet.getRangeByIndex(rIdx, 2).setText(r.userEmail);
-      sheet.getRangeByIndex(rIdx, 3).setText(DateFormat('yyyy-MM-dd').format(r.date));
-      sheet.getRangeByIndex(rIdx, 4).setText(DateFormat('HH:mm').format(r.date));
-      sheet.getRangeByIndex(rIdx, 5).setText(r.type);
-      
-      // Flatten payload to string
-      final details = r.payload.entries.map((e) => '${e.key}: ${e.value}').join(', ');
-      sheet.getRangeByIndex(rIdx, 6).setText(details);
-      sheet.getRangeByIndex(rIdx, 7).setText(r.source);
+      sheet.getRangeByIndex(rIdx, 3).setText(r.source);
+      sheet.getRangeByIndex(rIdx, 4).setText(typeLabel);
+      sheet.getRangeByIndex(rIdx, 5).setText(dateStr);
+      sheet.getRangeByIndex(rIdx, 6).setText(inputDate);
+      sheet.getRangeByIndex(rIdx, 7).setText(inputTime);
+      sheet.getRangeByIndex(rIdx, 8).setText(jenisPeriksa);
+      sheet.getRangeByIndex(rIdx, 9).setText(namaItem);
+      sheet.getRangeByIndex(rIdx, 10).setText(hasilNilai);
+      sheet.getRangeByIndex(rIdx, 11).setText(satuan);
+      sheet.getRangeByIndex(rIdx, 12).setText(nilaiNormal);
+      sheet.getRangeByIndex(rIdx, 13).setText(kategoriStatus);
+      sheet.getRangeByIndex(rIdx, 14).setText(catatan);
+      sheet.getRangeByIndex(rIdx, 15).setText(detailTambahan);
       rIdx++;
     }
 
