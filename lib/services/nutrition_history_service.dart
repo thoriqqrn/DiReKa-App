@@ -7,10 +7,12 @@ class DailyNutrition {
   final DateTime date;
   final double energi;
   final double lemak;
+  final double karbohidrat;
   final double natrium;
   final double cairan;
   final double targetEnergi;
   final double targetLemak;
+  final double targetKarbohidrat;
   final double targetNatrium;
   final double targetCairan;
 
@@ -18,10 +20,12 @@ class DailyNutrition {
     required this.date,
     required this.energi,
     required this.lemak,
+    this.karbohidrat = 0.0,
     required this.natrium,
     required this.cairan,
     required this.targetEnergi,
     required this.targetLemak,
+    this.targetKarbohidrat = 0.0,
     required this.targetNatrium,
     required this.targetCairan,
   });
@@ -51,53 +55,63 @@ class NutritionHistoryService {
     });
 
     // Jalankan semua fetch secara paralel
-    final results = await Future.wait(days.map((date) async {
-      final docId = _docId(uid, date);
-      try {
-        final doc = await _db.collection('food_logs').doc(docId).get();
-        final entries = <FoodLogEntry>[];
+    final results = await Future.wait(
+      days.map((date) async {
+        final docId = _docId(uid, date);
+        try {
+          final doc = await _db.collection('food_logs').doc(docId).get();
+          final entries = <FoodLogEntry>[];
 
-        if (doc.exists) {
-          final entriesData = doc.data()!['entries'] as List<dynamic>? ?? [];
-          entries.addAll(
-            entriesData
-                .map((e) => FoodLogEntry.fromMap(e as Map<String, dynamic>))
-                .toList(),
+          if (doc.exists) {
+            final entriesData = doc.data()!['entries'] as List<dynamic>? ?? [];
+            entries.addAll(
+              entriesData
+                  .map((e) => FoodLogEntry.fromMap(e as Map<String, dynamic>))
+                  .toList(),
+            );
+          }
+
+          // Sum nutrients untuk hari tersebut
+          final energi = entries.fold(0.0, (total, e) => total + e.energi);
+          final lemak = entries.fold(0.0, (total, e) => total + e.lemak);
+          final karbohidrat = entries.fold(
+            0.0,
+            (total, e) => total + e.karbohidrat,
+          );
+          final natrium = entries.fold(0.0, (total, e) => total + e.natrium);
+          final cairan = entries.fold(0.0, (total, e) => total + e.air);
+
+          return DailyNutrition(
+            date: date,
+            energi: energi,
+            lemak: lemak,
+            karbohidrat: karbohidrat,
+            natrium: natrium,
+            cairan: cairan,
+            targetEnergi: targets.energi,
+            targetLemak: targets.lemak,
+            targetKarbohidrat: targets.karbohidrat,
+            targetNatrium: targets.natrium,
+            targetCairan: targets.cairan,
+          );
+        } catch (e) {
+          // Fallback: 0 consumption jika error
+          return DailyNutrition(
+            date: date,
+            energi: 0,
+            lemak: 0,
+            karbohidrat: 0,
+            natrium: 0,
+            cairan: 0,
+            targetEnergi: targets.energi,
+            targetLemak: targets.lemak,
+            targetKarbohidrat: targets.karbohidrat,
+            targetNatrium: targets.natrium,
+            targetCairan: targets.cairan,
           );
         }
-
-        // Sum nutrients untuk hari tersebut
-        final energi = entries.fold(0.0, (total, e) => total + e.energi);
-        final lemak = entries.fold(0.0, (total, e) => total + e.lemak);
-        final natrium = entries.fold(0.0, (total, e) => total + e.natrium);
-        final cairan = entries.fold(0.0, (total, e) => total + e.air);
-
-        return DailyNutrition(
-          date: date,
-          energi: energi,
-          lemak: lemak,
-          natrium: natrium,
-          cairan: cairan,
-          targetEnergi: targets.energi,
-          targetLemak: targets.lemak,
-          targetNatrium: targets.natrium,
-          targetCairan: targets.cairan,
-        );
-      } catch (e) {
-        // Fallback: 0 consumption jika error
-        return DailyNutrition(
-          date: date,
-          energi: 0,
-          lemak: 0,
-          natrium: 0,
-          cairan: 0,
-          targetEnergi: targets.energi,
-          targetLemak: targets.lemak,
-          targetNatrium: targets.natrium,
-          targetCairan: targets.cairan,
-        );
-      }
-    }));
+      }),
+    );
 
     return results;
   }

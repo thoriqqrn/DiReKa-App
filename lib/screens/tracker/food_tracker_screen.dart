@@ -523,6 +523,16 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
           getTarget: (data) => data.targetEnergi,
         ),
         const SizedBox(height: 12),
+        // Karbohidrat Chart
+        _buildHFNutritionChart(
+          title: 'Karbohidrat',
+          unit: 'g',
+          weeklyData: weeklyData,
+          lineColor: Colors.green.shade600,
+          getActual: (data) => data.karbohidrat,
+          getTarget: (data) => data.targetKarbohidrat,
+        ),
+        const SizedBox(height: 12),
         // Lemak Chart
         _buildHFNutritionChart(
           title: 'Lemak',
@@ -531,7 +541,6 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
           lineColor: Colors.orange.shade700,
           getActual: (data) => data.lemak,
           getTarget: (data) => data.targetLemak,
-          showTargetLine: false,
         ),
         const SizedBox(height: 12),
         // Natrium Chart
@@ -905,17 +914,17 @@ class _NutritionSummaryCard extends StatelessWidget {
     final themeColor = _isDM
         ? (ext?.diabetesColor ?? Colors.orange)
         : (ext?.kidneyColor ?? Colors.red);
-    final energyRatio = needs.energi > 0 ? intake.energi / needs.energi : 0.0;
 
     // Nutrisi dasar (semua penyakit)
     final nutrients = [
-      _NutrientData(
-        'Energi',
-        intake.energi,
-        needs.energi,
-        'kkal',
-        Icons.local_fire_department_outlined,
-      ),
+      if (!_isHF)
+        _NutrientData(
+          'Energi',
+          intake.energi,
+          needs.energi,
+          'kkal',
+          Icons.local_fire_department_outlined,
+        ),
       _NutrientData(
         'Protein',
         intake.protein,
@@ -923,20 +932,22 @@ class _NutritionSummaryCard extends StatelessWidget {
         'g',
         Icons.egg_outlined,
       ),
-      _NutrientData(
-        'Lemak',
-        intake.lemak,
-        needs.lemak,
-        'g',
-        Icons.water_drop_outlined,
-      ),
-      _NutrientData(
-        'Karbohidrat',
-        intake.karbohidrat,
-        needs.karbohidrat,
-        'g',
-        Icons.grain,
-      ),
+      if (!_isHF)
+        _NutrientData(
+          'Lemak',
+          intake.lemak,
+          needs.lemak,
+          'g',
+          Icons.water_drop_outlined,
+        ),
+      if (!_isHF)
+        _NutrientData(
+          'Karbohidrat',
+          intake.karbohidrat,
+          needs.karbohidrat,
+          'g',
+          Icons.grain,
+        ),
       // DM: serat + tidak ada Na/K/P/cairan
       if (_isDM)
         _NutrientData(
@@ -947,13 +958,14 @@ class _NutritionSummaryCard extends StatelessWidget {
           Icons.grass_outlined,
         )
       else ...[
-        _NutrientData(
-          'Natrium',
-          intake.natrium,
-          needs.natrium,
-          'mg',
-          Icons.science_outlined,
-        ),
+        if (!_isHF)
+          _NutrientData(
+            'Natrium',
+            intake.natrium,
+            needs.natrium,
+            'mg',
+            Icons.science_outlined,
+          ),
         // Kalium & Fosfor: tidak relevan untuk Jantung Koroner (HF),
         // hanya ditampilkan untuk CKD dan penyakit lainnya.
         if (!_isHF) ...[
@@ -1030,23 +1042,6 @@ class _NutritionSummaryCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '${(energyRatio * 100).toInt()}%',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                        color: _progressColor(energyRatio),
-                      ),
-                    ),
-                    Text(
-                      'energi',
-                      style: TextStyle(fontSize: 10, color: theme.hintColor),
-                    ),
-                  ],
-                ),
               ],
             ),
           ),
@@ -1069,18 +1064,6 @@ class _NutritionSummaryCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Color _progressColor(double ratio) {
-    if (diseaseType == DiseaseType.chronicKidneyDisease) {
-      if (ratio >= 1.1) return AppColors.error; // Merah >= 110%
-      if (ratio >= 0.9) return AppColors.success; // Hijau 90% - 110%
-      return AppColors.warning; // Kuning < 90%
-    }
-    // Default/DM logic
-    if (ratio >= 1.0) return AppColors.error;
-    if (ratio >= 0.8) return AppColors.warning;
-    return AppColors.success;
   }
 }
 
