@@ -43,6 +43,8 @@ class FoodItem {
   final String emoji; // placeholder sampai asset designer tersedia
   final String satuanNama; // nama satuan: Centong, Potong, Butir, Sendok, dll
   final double serat; // g per 100g
+  final double kalsium; // mg per 100g
+  final double magnesium; // mg per 100g
 
   const FoodItem({
     required this.id,
@@ -62,6 +64,8 @@ class FoodItem {
     this.emoji = '🍽️',
     this.satuanNama = 'Takaran',
     this.serat = 0.0,
+    this.kalsium = 0.0,
+    this.magnesium = 0.0,
   });
 
   factory FoodItem.fromJson(Map<String, dynamic> json) {
@@ -85,6 +89,8 @@ class FoodItem {
       fosfor: toDouble(json['fosfor']),
       air: toDouble(json['air']),
       serat: toDouble(json['serat']),
+      kalsium: toDouble(json['kalsium']),
+      magnesium: toDouble(json['magnesium']),
       takaranSaji: (json['takaranSaji'] as List<dynamic>? ?? [])
           .map((e) => TakaranSaji.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -112,6 +118,8 @@ class FoodItem {
       'fosfor': fosfor,
       'air': air,
       'serat': serat,
+      'kalsium': kalsium,
+      'magnesium': magnesium,
     };
   }
 
@@ -129,6 +137,8 @@ class FoodItem {
       'fosfor': fosfor * r,
       'air': air * r,
       'serat': serat * r,
+      'kalsium': kalsium * r,
+      'magnesium': magnesium * r,
     };
   }
 }

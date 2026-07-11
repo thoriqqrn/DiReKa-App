@@ -108,7 +108,9 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
         ka = 0,
         fo = 0,
         air = 0,
-        serat = 0;
+        serat = 0,
+        kalsium = 0,
+        magnesium = 0;
     for (final entry in _entries) {
       e += entry.energi;
       p += entry.protein;
@@ -119,6 +121,8 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
       fo += entry.fosfor;
       air += entry.air;
       serat += entry.serat;
+      kalsium += entry.kalsium;
+      magnesium += entry.magnesium;
     }
     return NutritionIntake(
       energi: e,
@@ -130,6 +134,8 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
       fosfor: fo,
       cairan: air,
       serat: serat,
+      kalsium: kalsium,
+      magnesium: magnesium,
     );
   }
 
@@ -666,6 +672,14 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
                                 needs: needs,
                                 onEditEntry: _editEntry,
                                 onDeleteEntry: _deleteEntry,
+                              ),
+                            ]
+                            // 4. Hypertension: Show dedicated natrium-highlight summary
+                            else if (auth.currentUser?.diseaseType ==
+                                DiseaseType.hypertension) ...[
+                              _HypertensionSummaryCard(
+                                needs: needs,
+                                intake: intake,
                               ),
                             ]
                             // 3. Other patients: Show nutrition summary
@@ -1835,6 +1849,349 @@ class _NoFormulaCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HYPERTENSION SUMMARY CARD
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _HypertensionSummaryCard extends StatelessWidget {
+  final NutritionNeeds needs;
+  final NutritionIntake intake;
+
+  const _HypertensionSummaryCard({
+    required this.needs,
+    required this.intake,
+  });
+
+  static const Color _htColor = Color(0xFF00897B); // teal-700
+
+  /// Traffic light for hypertension nutrients.
+  /// wideRange (Kalium, Serat, Kalsium, Magnesium, Protein): 80-110% hijau
+  /// others (Energi, Lemak, Karbohidrat, Natrium): 80-110% hijau, 60-79% kuning
+  Color _getHtStatusColor(String nutrient, double percentage) {
+    const wideRange = {'kalium', 'serat', 'kalsium', 'magnesium', 'protein'};
+    if (wideRange.contains(nutrient)) {
+      if (percentage >= 0.80 && percentage <= 1.10) return AppColors.success;
+      if (percentage > 1.10 && percentage <= 1.20) return AppColors.warning;
+      return AppColors.error;
+    } else {
+      if (percentage >= 0.80 && percentage <= 1.10) return AppColors.success;
+      if (percentage >= 0.60 && percentage < 0.80) return AppColors.warning;
+      return AppColors.error;
+    }
+  }
+
+  double _pct(double actual, double target) =>
+      target > 0 ? actual / target : 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    // Natrium highlight values
+    final naActual = intake.natrium;
+    final naTarget = needs.natrium;
+    final naPct = _pct(naActual, naTarget);
+    final naColor = _getHtStatusColor('natrium', naPct);
+
+    // Nutrient rows data: [key, label, actual, target, unit]
+    final rows = [
+      ('energi', 'Energi', intake.energi, needs.energi, 'kkal'),
+      ('protein', 'Protein', intake.protein, needs.protein, 'g'),
+      ('lemak', 'Lemak', intake.lemak, needs.lemak, 'g'),
+      ('karbohidrat', 'Karbohidrat', intake.karbohidrat, needs.karbohidrat, 'g'),
+      ('natrium', 'Natrium', intake.natrium, needs.natrium, 'mg'),
+      ('kalium', 'Kalium', intake.kalium, needs.kalium, 'mg'),
+      ('serat', 'Serat', intake.serat, needs.serat, 'g'),
+      ('kalsium', 'Kalsium', intake.kalsium, needs.kalsium, 'mg'),
+      ('magnesium', 'Magnesium', intake.magnesium, needs.magnesium, 'mg'),
+    ];
+
+    String fmtVal(double v) {
+      if (v >= 1000) return '${(v / 1000).toStringAsFixed(1)}k';
+      if (v == v.roundToDouble()) return v.toInt().toString();
+      return v.toStringAsFixed(1);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Natrium highlight card ──
+        Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                _htColor.withValues(alpha: 0.15),
+                _htColor.withValues(alpha: 0.08),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: _htColor.withValues(alpha: 0.25)),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: _htColor.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.water_drop_outlined,
+                      color: _htColor,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Batas Natrium Harian',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: theme.textTheme.bodyLarge?.color,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: naColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '${(naPct * 100).toStringAsFixed(0)}%',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: naColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    fmtVal(naActual),
+                    style: TextStyle(
+                      fontSize: 38,
+                      fontWeight: FontWeight.bold,
+                      color: naColor,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4, top: 16),
+                    child: Text(
+                      'mg',
+                      style: TextStyle(
+                          fontSize: 14, color: theme.hintColor),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Center(
+                child: Text(
+                  'dari ${fmtVal(naTarget)} mg target',
+                  style: TextStyle(fontSize: 12, color: theme.hintColor),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: LinearProgressIndicator(
+                  value: naPct.clamp(0.0, 1.0),
+                  minHeight: 10,
+                  backgroundColor:
+                      theme.dividerColor.withValues(alpha: 0.12),
+                  valueColor: AlwaysStoppedAnimation<Color>(naColor),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _StatItem(
+                    icon: Icons.check_circle_outline,
+                    label: 'Dikonsumsi',
+                    value: '${fmtVal(naActual)} mg',
+                    color: AppColors.success,
+                  ),
+                  Container(
+                    width: 1,
+                    height: 40,
+                    color: theme.dividerColor.withValues(alpha: 0.3),
+                  ),
+                  _StatItem(
+                    icon: naActual > naTarget
+                        ? Icons.warning_outlined
+                        : Icons.hourglass_bottom_outlined,
+                    label: naActual > naTarget ? 'Berlebih' : 'Sisa',
+                    value: naActual > naTarget
+                        ? '${fmtVal(naActual - naTarget)} mg'
+                        : '${fmtVal(naTarget - naActual)} mg',
+                    color: naActual > naTarget
+                        ? AppColors.error
+                        : AppColors.warning,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        // ── Nutrient rows card ──
+        Container(
+          decoration: BoxDecoration(
+            color: theme.cardTheme.color,
+            borderRadius: BorderRadius.circular(16),
+            border: theme.brightness == Brightness.dark
+                ? Border.all(color: theme.dividerColor)
+                : null,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(
+                  alpha: theme.brightness == Brightness.dark ? 0.2 : 0.05,
+                ),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: _htColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.bar_chart_rounded,
+                        color: _htColor,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Ringkasan Nutrisi Harian',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: theme.textTheme.titleMedium?.color,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Divider(height: 1, color: theme.dividerColor),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                child: Column(
+                  children: rows.map((r) {
+                    final key = r.$1;
+                    final label = r.$2;
+                    final actual = r.$3;
+                    final target = r.$4;
+                    final unit = r.$5;
+                    final pct = _pct(actual, target);
+                    final color = _getHtStatusColor(key, pct);
+                    final exceeded = key == 'kalium' ||
+                            key == 'serat' ||
+                            key == 'kalsium' ||
+                            key == 'magnesium' ||
+                            key == 'protein'
+                        ? pct > 1.20
+                        : pct > 1.10;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                label,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color:
+                                      theme.textTheme.bodyLarge?.color,
+                                ),
+                              ),
+                              const Spacer(),
+                              if (exceeded)
+                                Container(
+                                  margin:
+                                      const EdgeInsets.only(right: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.error
+                                        .withValues(alpha: 0.12),
+                                    borderRadius:
+                                        BorderRadius.circular(6),
+                                  ),
+                                  child: const Text(
+                                    'Melebihi!',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: AppColors.error,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              Text(
+                                '${fmtVal(actual)} / ${fmtVal(target)} $unit',
+                                style: TextStyle(
+                                    fontSize: 11,
+                                    color: theme.hintColor),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: pct.clamp(0.0, 1.0),
+                              minHeight: 7,
+                              backgroundColor: theme.dividerColor
+                                  .withValues(alpha: 0.1),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(color),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

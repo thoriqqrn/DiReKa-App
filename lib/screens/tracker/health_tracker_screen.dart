@@ -19,6 +19,8 @@ import '../../services/food_log_service.dart';
 import '../../services/app_notification_service.dart';
 import '../../services/heart_health_service.dart';
 import '../../services/kidney_health_service.dart';
+import '../../models/hypertension_health_record.dart';
+import '../../services/hypertension_health_service.dart';
 
 class HealthTrackerScreen extends StatefulWidget {
   const HealthTrackerScreen({super.key});
@@ -51,12 +53,20 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   List<KidneyHealthRecord> _records = [];
   List<HeartHealthRecord> _heartRecords = [];
   List<DiabetesHealthRecord> _dmRecords = [];
+  List<HypertensionHealthRecord> _htRecords = [];
   bool _isLoading = true;
   bool _isHeartLoading = true;
   bool _isDmLoading = true;
+  bool _htLoading = true;
   String? _error;
   String? _heartError;
   String? _dmError;
+
+  List<HypertensionHealthRecord> get _htBpRecords => _htRecords.where((e) => e.type == HypertensionInputType.tekananDarah).toList();
+  List<HypertensionHealthRecord> get _htActivityRecords => _htRecords.where((e) => e.type == HypertensionInputType.aktivitas).toList();
+  List<HypertensionHealthRecord> get _htMedicationRecords => _htRecords.where((e) => e.type == HypertensionInputType.obat).toList();
+  List<HypertensionHealthRecord> get _htSymptomRecords => _htRecords.where((e) => e.type == HypertensionInputType.gejala).toList();
+  List<HypertensionHealthRecord> get _htCheckupRecords => _htRecords.where((e) => e.type == HypertensionInputType.pemeriksaan).toList();
 
   Color get _inputButtonForeground =>
       Theme.of(context).brightness == Brightness.dark
@@ -75,6 +85,212 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     _loadRecords();
     _loadHeartRecords();
     _loadDmRecords();
+    _loadHypertensionRecords();
+  }
+
+  Future<void> _loadHypertensionRecords() async {
+    if (_uid.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _htRecords = [];
+          _htLoading = false;
+        });
+      }
+      return;
+    }
+    setState(() => _htLoading = true);
+    try {
+      final records = await HypertensionHealthService.getRecords(_uid);
+      if (mounted) {
+        setState(() {
+          _htRecords = records;
+          _htLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _htLoading = false);
+    }
+  }
+
+  Future<void> _addHtRecord(HypertensionHealthRecord record) async {
+    if (!_canSubmitHealthInput()) return;
+    try {
+      await HypertensionHealthService.addRecord(_uid, record);
+      if (mounted) {
+        final auth = context.read<AuthProvider>();
+        auth.updateActivityStreak();
+        if (auth.currentUser != null) {
+          AppNotificationService.refreshForUser(auth.currentUser!);
+        }
+      }
+      await _loadHypertensionRecords();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Gagal menyimpan data hipertensi.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _updateHtRecord(HypertensionHealthRecord record) async {
+    if (!_canSubmitHealthInput()) return;
+    try {
+      await HypertensionHealthService.updateRecord(_uid, record);
+      await _loadHypertensionRecords();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Gagal memperbarui data hipertensi.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _deleteHtRecord(HypertensionHealthRecord record) async {
+    if (!_canSubmitHealthInput()) return;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Hapus data'),
+        content: const Text('Yakin ingin menghapus data ini?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Hapus', style: TextStyle(color: AppColors.error)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    try {
+      await HypertensionHealthService.deleteRecord(_uid, record.id);
+      await _loadHypertensionRecords();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Gagal menghapus data hipertensi.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _editHtRecord(HypertensionHealthRecord record) async {
+    HypertensionHealthRecord? updated;
+    switch (record.type) {
+      case HypertensionInputType.tekananDarah:
+        updated = await _showHtBpDialog(existing: record);
+        break;
+      case HypertensionInputType.gejala:
+        updated = await _showHtSymptomDialog(existing: record);
+        break;
+      case HypertensionInputType.obat:
+        updated = await _showHtMedicationDialog(existing: record);
+        break;
+      case HypertensionInputType.pemeriksaan:
+        updated = await _showHtCheckupDialog(existing: record);
+        break;
+      case HypertensionInputType.aktivitas:
+        updated = await _showHtActivityDialog(existing: record);
+        break;
+    }
+    if (updated != null) {
+      await _updateHtRecord(updated);
+    }
+  }
+
+  Future<void> _showHtInputTypeSheet() async {
+    final type = await showModalBottomSheet<HypertensionInputType>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).dividerColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Tambah Input Kesehatan',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              ...HypertensionInputType.values.map(
+                (t) => ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: const Color(0xFF9C27B0).withValues(alpha: 0.12),
+                    child: Icon(
+                      _htTypeIcon(t),
+                      color: const Color(0xFF9C27B0),
+                    ),
+                  ),
+                  title: Text(t.label),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.pop(ctx, t),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (!mounted || type == null) return;
+    HypertensionHealthRecord? record;
+    switch (type) {
+      case HypertensionInputType.tekananDarah:
+        record = await _showHtBpDialog();
+        break;
+      case HypertensionInputType.gejala:
+        record = await _showHtSymptomDialog();
+        break;
+      case HypertensionInputType.obat:
+        record = await _showHtMedicationDialog();
+        break;
+      case HypertensionInputType.pemeriksaan:
+        record = await _showHtCheckupDialog();
+        break;
+      case HypertensionInputType.aktivitas:
+        record = await _showHtActivityDialog();
+        break;
+    }
+    if (record != null) {
+      await _addHtRecord(record);
+    }
+  }
+
+  IconData _htTypeIcon(HypertensionInputType type) {
+    switch (type) {
+      case HypertensionInputType.tekananDarah:
+        return Icons.monitor_heart;
+      case HypertensionInputType.gejala:
+        return Icons.healing;
+      case HypertensionInputType.obat:
+        return Icons.medication;
+      case HypertensionInputType.pemeriksaan:
+        return Icons.biotech;
+      case HypertensionInputType.aktivitas:
+        return Icons.directions_run;
+    }
   }
 
   String get _uid {
@@ -3821,6 +4037,13 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
             );
           }
 
+          if (diseaseType == DiseaseType.hypertension) {
+            if (_htLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            return _buildHypertensionTracker(auth);
+          }
+
           if (diseaseType == DiseaseType.heartFailure) {
             if (_isHeartLoading) {
               return Center(child: CircularProgressIndicator());
@@ -4323,6 +4546,1388 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
             ],
           );
         },
+      ),
+    );
+  }
+
+  Future<HypertensionHealthRecord?> _showHtBpDialog({HypertensionHealthRecord? existing}) {
+    final payload = existing?.payload ?? {};
+    DateTime date = existing?.date ?? DateTime.now();
+    final sysController = TextEditingController(text: (payload['systolic'] ?? '').toString());
+    final diaController = TextEditingController(text: (payload['diastolic'] ?? '').toString());
+
+    return showDialog<HypertensionHealthRecord>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocalState) => AlertDialog(
+          title: Text(existing == null ? 'Input Tekanan Darah' : 'Edit Tekanan Darah'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _DatePickerField(
+                  label: 'Tanggal',
+                  value: _dateFmt.format(date),
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: date,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime.now().add(const Duration(days: 1)),
+                    );
+                    if (picked != null) setLocalState(() => date = picked);
+                  },
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: sysController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Sistolik (mmHg)'),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: diaController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Diastolik (mmHg)'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final sys = int.tryParse(sysController.text.trim()) ?? 0;
+                final dia = int.tryParse(diaController.text.trim()) ?? 0;
+                if (sys <= 0 || dia <= 0) return;
+                
+                String cat = 'Normal';
+                if (sys >= 160 || dia >= 100) cat = 'Hipertensi Derajat 2';
+                else if (sys >= 130 || dia >= 85) cat = 'Hipertensi Derajat 1';
+                else if (sys < 90 || dia < 60) cat = 'Hipotensi';
+                
+                Navigator.pop(
+                  ctx,
+                  HypertensionHealthRecord(
+                    id: existing?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
+                    type: HypertensionInputType.tekananDarah,
+                    date: DateTime(date.year, date.month, date.day),
+                    payload: {'systolic': sys, 'diastolic': dia, 'category': cat, 'result': '$sys/$dia'},
+                    createdAt: existing?.createdAt ?? DateTime.now(),
+                  ),
+                );
+              },
+              child: const Text('Simpan'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<HypertensionHealthRecord?> _showHtSymptomDialog({HypertensionHealthRecord? existing}) {
+    final payload = existing?.payload ?? {};
+    DateTime date = existing?.date ?? DateTime.now();
+    String sakitKepala = (payload['sakitKepala'] ?? 'Tidak').toString();
+    String dadaBerdebar = (payload['dadaBerdebar'] ?? 'Tidak').toString();
+    String pandanganKabur = (payload['pandanganKabur'] ?? 'Tidak').toString();
+
+    return showDialog<HypertensionHealthRecord>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocalState) => AlertDialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          title: Text(existing == null ? 'Input Gejala' : 'Edit Gejala'),
+          content: SizedBox(
+            width: 420,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _DatePickerField(
+                    label: 'Tanggal',
+                    value: _dateFmt.format(date),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: date,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now().add(const Duration(days: 1)),
+                      );
+                      if (picked != null) setLocalState(() => date = picked);
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  _HeartOptionField(
+                    label: 'Sakit Kepala / Tengkuk Berat',
+                    value: sakitKepala,
+                    options: const ['Tidak', 'Ringan', 'Berat'],
+                    onChanged: (v) => setLocalState(() => sakitKepala = v),
+                  ),
+                  const SizedBox(height: 8),
+                  _HeartOptionField(
+                    label: 'Dada Berdebar',
+                    value: dadaBerdebar,
+                    options: const ['Tidak', 'Ya'],
+                    onChanged: (v) => setLocalState(() => dadaBerdebar = v),
+                  ),
+                  const SizedBox(height: 8),
+                  _HeartOptionField(
+                    label: 'Pandangan Kabur',
+                    value: pandanganKabur,
+                    options: const ['Tidak', 'Ya'],
+                    onChanged: (v) => setLocalState(() => pandanganKabur = v),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                String cat = 'Aman';
+                if (sakitKepala == 'Berat' || dadaBerdebar == 'Ya' || pandanganKabur == 'Ya') {
+                  cat = 'Waspada';
+                } else if (sakitKepala == 'Ringan') {
+                  cat = 'Ringan';
+                }
+                
+                Navigator.pop(
+                  ctx,
+                  HypertensionHealthRecord(
+                    id: existing?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
+                    type: HypertensionInputType.gejala,
+                    date: DateTime(date.year, date.month, date.day),
+                    payload: {
+                      'sakitKepala': sakitKepala,
+                      'dadaBerdebar': dadaBerdebar,
+                      'pandanganKabur': pandanganKabur,
+                      'category': cat,
+                    },
+                    createdAt: existing?.createdAt ?? DateTime.now(),
+                  ),
+                );
+              },
+              child: const Text('Simpan'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<HypertensionHealthRecord?> _showHtMedicationDialog({HypertensionHealthRecord? existing}) {
+    final payload = existing?.payload ?? {};
+    DateTime date = existing?.date ?? DateTime.now();
+    final nameController = TextEditingController(text: (payload['name'] ?? '').toString());
+    final doseFreqController = TextEditingController(text: (payload['doseFreq'] ?? '1').toString());
+    final doseQtyController = TextEditingController(text: (payload['doseQty'] ?? '1').toString());
+    final doseStrengthController = TextEditingController(text: (payload['doseStrength'] ?? '').toString());
+    final noteController = TextEditingController(text: (payload['note'] ?? '').toString());
+    
+    String formType = (payload['form'] ?? 'Tablet').toString();
+    String doseUnit = (payload['doseUnit'] ?? 'mg').toString();
+    String period = (payload['period'] ?? 'Pagi').toString();
+    String consumed = (payload['consumed'] ?? 'Ya').toString();
+
+    if (!const ['Tablet', 'Kapsul', 'Sirup'].contains(formType)) formType = 'Tablet';
+    if (!const ['mg', 'ml', 'g'].contains(doseUnit)) doseUnit = 'mg';
+
+    return showDialog<HypertensionHealthRecord>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocalState) => AlertDialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          title: Text(existing == null ? 'Input Obat' : 'Edit Obat'),
+          content: SizedBox(
+            width: 420,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _DatePickerField(
+                    label: 'Tanggal',
+                    value: _dateFmt.format(date),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: date,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now().add(const Duration(days: 1)),
+                      );
+                      if (picked != null) setLocalState(() => date = picked);
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(labelText: 'Nama obat'),
+                  ),
+                  const SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    initialValue: formType,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: 'Bentuk'),
+                    items: const [
+                      DropdownMenuItem(value: 'Tablet', child: Text('Tablet')),
+                      DropdownMenuItem(value: 'Kapsul', child: Text('Kapsul')),
+                      DropdownMenuItem(value: 'Sirup', child: Text('Sirup')),
+                    ],
+                    onChanged: (v) {
+                      if (v != null) setLocalState(() => formType = v);
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Format dosis: ... x ... (... mg/ml/g)',
+                    style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodyMedium?.color),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: doseFreqController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(labelText: 'Frekuensi'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('x'),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: doseQtyController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(labelText: 'Jumlah'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: doseStrengthController,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          decoration: const InputDecoration(labelText: 'Kadar'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        width: 110,
+                        child: DropdownButtonFormField<String>(
+                          initialValue: doseUnit,
+                          decoration: const InputDecoration(labelText: 'Satuan'),
+                          items: const [
+                            DropdownMenuItem(value: 'mg', child: Text('mg')),
+                            DropdownMenuItem(value: 'ml', child: Text('ml')),
+                            DropdownMenuItem(value: 'g', child: Text('g')),
+                          ],
+                          onChanged: (v) {
+                            if (v != null) setLocalState(() => doseUnit = v);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  _HeartOptionField(
+                    label: 'Waktu minum',
+                    value: period,
+                    options: const ['Pagi', 'Siang', 'Malam'],
+                    onChanged: (v) => setLocalState(() => period = v),
+                  ),
+                  const SizedBox(height: 8),
+                  _HeartOptionField(
+                    label: 'Sudah diminum',
+                    value: consumed,
+                    options: const ['Ya', 'Tidak'],
+                    onChanged: (v) => setLocalState(() => consumed = v),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: noteController,
+                    decoration: const InputDecoration(labelText: 'Catatan'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (nameController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Nama obat wajib diisi'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                  return;
+                }
+                Navigator.pop(
+                  ctx,
+                  HypertensionHealthRecord(
+                    id: existing?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
+                    type: HypertensionInputType.obat,
+                    date: DateTime(date.year, date.month, date.day),
+                    payload: {
+                      'name': nameController.text.trim(),
+                      'form': formType,
+                      'dose': '${doseFreqController.text.trim()} x ${doseQtyController.text.trim()} (${doseStrengthController.text.trim()} $doseUnit)',
+                      'doseFreq': doseFreqController.text.trim(),
+                      'doseQty': doseQtyController.text.trim(),
+                      'doseStrength': doseStrengthController.text.trim(),
+                      'doseUnit': doseUnit,
+                      'period': period,
+                      'consumed': consumed,
+                      'note': noteController.text.trim(),
+                    },
+                    createdAt: existing?.createdAt ?? DateTime.now(),
+                  ),
+                );
+              },
+              child: const Text('Simpan'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<HypertensionHealthRecord?> _showHtCheckupDialog({HypertensionHealthRecord? existing}) {
+    final payload = existing?.payload ?? {};
+    DateTime date = existing?.date ?? DateTime.now();
+    final nameController = TextEditingController(text: (payload['exam'] ?? '').toString());
+    final resultController = TextEditingController(text: (payload['result'] ?? '').toString());
+
+    return showDialog<HypertensionHealthRecord>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocalState) => AlertDialog(
+          title: Text(existing == null ? 'Input Pemeriksaan' : 'Edit Pemeriksaan'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _DatePickerField(
+                  label: 'Tanggal',
+                  value: _dateFmt.format(date),
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: date,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime.now().add(const Duration(days: 1)),
+                    );
+                    if (picked != null) setLocalState(() => date = picked);
+                  },
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'Nama Pemeriksaan (Lab/Lainnya)'),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: resultController,
+                  decoration: const InputDecoration(labelText: 'Hasil'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (resultController.text.trim().isEmpty) return;
+                
+                Navigator.pop(
+                  ctx,
+                  HypertensionHealthRecord(
+                    id: existing?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
+                    type: HypertensionInputType.pemeriksaan,
+                    date: DateTime(date.year, date.month, date.day),
+                    payload: {
+                      'exam': nameController.text.trim(),
+                      'result': resultController.text.trim(),
+                    },
+                    createdAt: existing?.createdAt ?? DateTime.now(),
+                  ),
+                );
+              },
+              child: const Text('Simpan'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<HypertensionHealthRecord?> _showHtActivityDialog({HypertensionHealthRecord? existing}) async {
+    final result = await _showActivityDialog(
+      title: existing == null ? 'Input Aktivitas Hipertensi' : 'Edit Aktivitas Hipertensi',
+      existingPayload: existing?.payload,
+      existingDate: existing?.date,
+    );
+    if (result == null) return null;
+
+    return HypertensionHealthRecord(
+      id: existing?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
+      type: HypertensionInputType.aktivitas,
+      date: result.date,
+      payload: result.payload,
+      createdAt: existing?.createdAt ?? DateTime.now(),
+    );
+  }
+
+  Widget _buildHypertensionTracker(AuthProvider auth) {
+    const htColor = Color(0xFF9C27B0);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final sevenDaysAgo = today.subtract(const Duration(days: 6));
+    
+    final weeklyRecords = _htActivityRecords.where(
+      (r) =>
+          r.date.isAfter(sevenDaysAgo.subtract(const Duration(seconds: 1))) &&
+          r.date.isBefore(today.add(const Duration(days: 1))),
+    );
+
+    final totalDuration = weeklyRecords.fold<double>(
+      0,
+      (sum, r) => sum + (double.tryParse(r.payload['duration']?.toString() ?? '0') ?? 0),
+    );
+
+    return Stack(
+      children: [
+        RefreshIndicator(
+          onRefresh: _loadHypertensionRecords,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 150, 16, 140),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (_uid.isEmpty) ...[
+                  _GuestReadOnlyBanner(
+                    message: 'Mode Guest (Read-only). Kamu bisa buka form, tapi tidak bisa menyimpan input tanpa login.',
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                _HypertensionBpTrendCard(records: _htBpRecords),
+                const SizedBox(height: 16),
+                _ActivityGauge(
+                  totalDuration: totalDuration,
+                  target: 150.0,
+                  themeColor: htColor,
+                ),
+                const SizedBox(height: 16),
+                _htSymptomRecords.isEmpty
+                    ? const _EmptyTableState(message: 'Belum ada input gejala hipertensi.')
+                    : _HtSymptomTable(
+                        records: _htSymptomRecords,
+                        dateFmt: _dateFmt,
+                        onEdit: _editHtRecord,
+                        onDelete: _deleteHtRecord,
+                      ),
+                const SizedBox(height: 16),
+                _htActivityRecords.isEmpty
+                    ? const _EmptyTableState(message: 'Belum ada input aktivitas hipertensi.')
+                    : _HtActivityTable(
+                        records: _htActivityRecords,
+                        dateFmt: _dateFmt,
+                        onEdit: _editHtRecord,
+                        onDelete: _deleteHtRecord,
+                      ),
+                const SizedBox(height: 16),
+                _htMedicationRecords.isEmpty
+                    ? const _EmptyTableState(message: 'Belum ada input obat hipertensi.')
+                    : _HtMedicationTable(
+                        records: _htMedicationRecords,
+                        dateFmt: _dateFmt,
+                        onEdit: _editHtRecord,
+                        onDelete: _deleteHtRecord,
+                      ),
+                const SizedBox(height: 16),
+                _htCheckupRecords.isEmpty
+                    ? const _EmptyTableState(message: 'Belum ada input pemeriksaan hipertensi.')
+                    : _HtCheckupTable(
+                        records: _htCheckupRecords,
+                        dateFmt: _dateFmt,
+                        onEdit: _editHtRecord,
+                        onDelete: _deleteHtRecord,
+                      ),
+              ],
+            ),
+          ),
+        ),
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                )
+              ],
+            ),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: _HypertensionHeader(onInput: _showHtInputTypeSheet),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HypertensionHeader extends StatelessWidget {
+  final VoidCallback onInput;
+
+  const _HypertensionHeader({
+    required this.onInput,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF9C27B0).withValues(alpha: 0.12),
+            AppColors.primary.withValues(alpha: 0.08),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFF9C27B0).withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Tracker Hipertensi',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF9C27B0),
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Pantau tekanan darah, aktivitas, gejala, dan pengobatan harian.',
+                  style: TextStyle(
+                    color: Theme.of(context).hintColor,
+                    fontSize: 13,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          SizedBox(
+            height: 40,
+            child: ElevatedButton.icon(
+              onPressed: onInput,
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Input', style: TextStyle(fontWeight: FontWeight.w600)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF9C27B0),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                minimumSize: const Size(80, 40),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HypertensionBpTrendCard extends StatelessWidget {
+  final List<HypertensionHealthRecord> records;
+  const _HypertensionBpTrendCard({required this.records});
+
+  @override
+  Widget build(BuildContext context) {
+    final dateFmt = DateFormat('d/M');
+    final displayRecords = records.length > 10 ? records.sublist(records.length - 10) : records;
+
+    if (displayRecords.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardTheme.color,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Theme.of(context).dividerColor),
+        ),
+        child: Column(
+          children: [
+            Icon(Icons.show_chart, size: 48, color: Theme.of(context).hintColor),
+            const SizedBox(height: 16),
+            Text(
+              'Belum ada data tekanan darah',
+              style: TextStyle(
+                color: Theme.of(context).hintColor,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Mulai catat tekanan darahmu dari tombol Input di atas.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Theme.of(context).hintColor,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final sistolSpots = <FlSpot>[];
+    final diastolSpots = <FlSpot>[];
+    for (var i = 0; i < displayRecords.length; i++) {
+      final sVal = displayRecords[i].sistol;
+      final dVal = displayRecords[i].diastol;
+      if (sVal != null && dVal != null) {
+        sistolSpots.add(FlSpot(i.toDouble(), sVal));
+        diastolSpots.add(FlSpot(i.toDouble(), dVal));
+      }
+    }
+
+    final allVals = [...sistolSpots.map((e) => e.y), ...diastolSpots.map((e) => e.y), 120.0, 80.0];
+    final maxY = (allVals.reduce((a, b) => a > b ? a : b) * 1.1).clamp(100.0, 240.0);
+
+    return _TableCard(
+      title: 'Tren Tekanan Darah Bulanan',
+      icon: Icons.show_chart,
+      color: const Color(0xFF9C27B0),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10, 8, 14, 8),
+            child: SizedBox(
+              height: 240,
+              child: LineChart(
+                LineChartData(
+                  clipData: const FlClipData.all(),
+                  gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: true,
+                  getDrawingHorizontalLine: (value) => FlLine(
+                    color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+                    strokeWidth: 1,
+                  ),
+                  getDrawingVerticalLine: (value) => FlLine(
+                    color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+                    strokeWidth: 1,
+                  ),
+                ),
+                titlesData: FlTitlesData(
+                  show: true,
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 30,
+                      interval: 1,
+                      getTitlesWidget: (double value, TitleMeta meta) {
+                        final idx = value.toInt();
+                        if (idx < 0 || idx >= displayRecords.length) return const SizedBox.shrink();
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            dateFmt.format(displayRecords[idx].date),
+                            style: TextStyle(
+                              color: Theme.of(context).hintColor,
+                              fontSize: 10,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      interval: 20,
+                      getTitlesWidget: (double value, TitleMeta meta) {
+                        return Text(
+                          value.toInt().toString(),
+                          style: TextStyle(
+                            color: Theme.of(context).hintColor,
+                            fontSize: 10,
+                          ),
+                        );
+                      },
+                      reservedSize: 28,
+                    ),
+                  ),
+                ),
+                borderData: FlBorderData(
+                  show: true,
+                  border: Border.all(color: Theme.of(context).dividerColor, width: 1),
+                ),
+                minX: 0,
+                maxX: (displayRecords.length - 1).toDouble(),
+                minY: 40,
+                maxY: maxY,
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: sistolSpots,
+                    isCurved: true,
+                    color: Colors.red,
+                    barWidth: 3,
+                    isStrokeCapRound: true,
+                    dotData: const FlDotData(show: true),
+                    belowBarData: BarAreaData(show: false),
+                  ),
+                  LineChartBarData(
+                    spots: diastolSpots,
+                    isCurved: true,
+                    color: Colors.blue,
+                    barWidth: 3,
+                    isStrokeCapRound: true,
+                    dotData: const FlDotData(show: true),
+                    belowBarData: BarAreaData(show: false),
+                  ),
+                ],
+                extraLinesData: ExtraLinesData(
+                  horizontalLines: [
+                    HorizontalLine(
+                      y: 120,
+                      color: Colors.green.withValues(alpha: 0.5),
+                      strokeWidth: 1.5,
+                      dashArray: [5, 5],
+                      label: HorizontalLineLabel(
+                        show: true,
+                        alignment: Alignment.topRight,
+                        style: const TextStyle(fontSize: 9, color: Colors.green),
+                        labelResolver: (line) => 'Sistol Normal (120)',
+                      ),
+                    ),
+                    HorizontalLine(
+                      y: 80,
+                      color: Colors.green.withValues(alpha: 0.5),
+                      strokeWidth: 1.5,
+                      dashArray: [5, 5],
+                      label: HorizontalLineLabel(
+                        show: true,
+                        alignment: Alignment.topRight,
+                        style: const TextStyle(fontSize: 9, color: Colors.green),
+                        labelResolver: (line) => 'Diastol Normal (80)',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _LegendItem(color: Colors.red, label: 'Sistolik'),
+              const SizedBox(width: 24),
+              _LegendItem(color: Colors.blue, label: 'Diastolik'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LegendItem extends StatelessWidget {
+  final Color color;
+  final String label;
+  const _LegendItem({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).textTheme.bodyMedium?.color,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HtSymptomTable extends StatefulWidget {
+  final List<HypertensionHealthRecord> records;
+  final DateFormat dateFmt;
+  final void Function(HypertensionHealthRecord) onEdit;
+  final void Function(HypertensionHealthRecord) onDelete;
+
+  const _HtSymptomTable({
+    required this.records,
+    required this.dateFmt,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  State<_HtSymptomTable> createState() => _HtSymptomTableState();
+}
+
+class _HtSymptomTableState extends State<_HtSymptomTable> {
+  bool _isExpanded = false;
+  String _searchQuery = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final filteredRecords = widget.records.where((r) {
+      final q = _searchQuery.toLowerCase();
+      final p = r.payload;
+      return (p['symptom']?.toString() ?? '').toLowerCase().contains(q) ||
+             (p['intensity']?.toString() ?? '').toLowerCase().contains(q) ||
+             widget.dateFmt.format(r.date).toLowerCase().contains(q);
+    }).toList();
+
+    final displayRecords = _isExpanded ? filteredRecords : filteredRecords.take(5).toList();
+
+    return _TableCard(
+      title: 'Gejala',
+      icon: Icons.healing,
+      color: const Color(0xFF9C27B0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (_isExpanded)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Cari tanggal atau gejala...',
+                  prefixIcon: const Icon(Icons.search, size: 18),
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onChanged: (v) => setState(() => _searchQuery = v),
+              ),
+            ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              columnSpacing: 16,
+              horizontalMargin: 12,
+              columns: const [
+                DataColumn(label: Text('Tanggal')),
+                DataColumn(label: Text('Gejala')),
+                DataColumn(label: Text('Intensitas')),
+                DataColumn(label: Text('Catatan')),
+                DataColumn(label: Text('Aksi')),
+              ],
+              rows: displayRecords.map((record) {
+                final p = record.payload;
+                final intensity = p['intensity']?.toString() ?? 'Ringan';
+                Color badgeColor;
+                if (intensity == 'Berat') {
+                  badgeColor = AppColors.error;
+                } else if (intensity == 'Sedang') {
+                  badgeColor = AppColors.warning;
+                } else {
+                  badgeColor = AppColors.success;
+                }
+
+                return DataRow(
+                  cells: [
+                    DataCell(Text(widget.dateFmt.format(record.date), style: const TextStyle(fontSize: 13))),
+                    DataCell(Text(p['symptom']?.toString() ?? '-', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold))),
+                    DataCell(
+                      _StatusBadge(
+                        text: intensity,
+                        color: badgeColor,
+                      ),
+                    ),
+                    DataCell(Text(p['note']?.toString() ?? '-', style: const TextStyle(fontSize: 13))),
+                    DataCell(
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit, size: 18),
+                            onPressed: () => widget.onEdit(record),
+                            constraints: const BoxConstraints(),
+                            padding: EdgeInsets.zero,
+                          ),
+                          const SizedBox(width: 12),
+                          IconButton(
+                            icon: const Icon(Icons.delete, size: 18, color: AppColors.error),
+                            onPressed: () => widget.onDelete(record),
+                            constraints: const BoxConstraints(),
+                            padding: EdgeInsets.zero,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
+          if (widget.records.length > 5) ...[
+            const Divider(height: 1),
+            InkWell(
+              onTap: () => setState(() {
+                _isExpanded = !_isExpanded;
+                if (!_isExpanded) _searchQuery = '';
+              }),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                alignment: Alignment.center,
+                child: Text(
+                  _isExpanded ? 'Sembunyikan' : 'Lihat Semua (${filteredRecords.length})',
+                  style: const TextStyle(
+                    color: Color(0xFF9C27B0),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _HtActivityTable extends StatefulWidget {
+  final List<HypertensionHealthRecord> records;
+  final DateFormat dateFmt;
+  final void Function(HypertensionHealthRecord) onEdit;
+  final void Function(HypertensionHealthRecord) onDelete;
+
+  const _HtActivityTable({
+    required this.records,
+    required this.dateFmt,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  State<_HtActivityTable> createState() => _HtActivityTableState();
+}
+
+class _HtActivityTableState extends State<_HtActivityTable> {
+  bool _isExpanded = false;
+  String _searchQuery = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final filteredRecords = widget.records.where((r) {
+      final q = _searchQuery.toLowerCase();
+      final p = r.payload;
+      return (p['activityName']?.toString() ?? '').toLowerCase().contains(q) ||
+             widget.dateFmt.format(r.date).toLowerCase().contains(q);
+    }).toList();
+
+    final displayRecords = _isExpanded ? filteredRecords : filteredRecords.take(5).toList();
+
+    return _TableCard(
+      title: 'Aktivitas',
+      icon: Icons.directions_run,
+      color: const Color(0xFF9C27B0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (_isExpanded)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Cari tanggal atau aktivitas...',
+                  prefixIcon: const Icon(Icons.search, size: 18),
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onChanged: (v) => setState(() => _searchQuery = v),
+              ),
+            ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              columnSpacing: 16,
+              horizontalMargin: 12,
+              columns: const [
+                DataColumn(label: Text('Tanggal')),
+                DataColumn(label: Text('Aktivitas')),
+                DataColumn(label: Text('Durasi')),
+                DataColumn(label: Text('Aksi')),
+              ],
+              rows: displayRecords.map((record) {
+                final p = record.payload;
+                return DataRow(
+                  cells: [
+                    DataCell(Text(widget.dateFmt.format(record.date), style: const TextStyle(fontSize: 13))),
+                    DataCell(Text(p['activityName']?.toString() ?? '-', style: const TextStyle(fontSize: 13))),
+                    DataCell(Text('${p['duration'] ?? 0} mnt', style: const TextStyle(fontSize: 13))),
+                    DataCell(
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit, size: 18),
+                            onPressed: () => widget.onEdit(record),
+                            constraints: const BoxConstraints(),
+                            padding: EdgeInsets.zero,
+                          ),
+                          const SizedBox(width: 12),
+                          IconButton(
+                            icon: const Icon(Icons.delete, size: 18, color: AppColors.error),
+                            onPressed: () => widget.onDelete(record),
+                            constraints: const BoxConstraints(),
+                            padding: EdgeInsets.zero,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
+          if (widget.records.length > 5) ...[
+            const Divider(height: 1),
+            InkWell(
+              onTap: () => setState(() {
+                _isExpanded = !_isExpanded;
+                if (!_isExpanded) _searchQuery = '';
+              }),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                alignment: Alignment.center,
+                child: Text(
+                  _isExpanded ? 'Sembunyikan' : 'Lihat Semua (${filteredRecords.length})',
+                  style: const TextStyle(
+                    color: Color(0xFF9C27B0),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _HtMedicationTable extends StatefulWidget {
+  final List<HypertensionHealthRecord> records;
+  final DateFormat dateFmt;
+  final void Function(HypertensionHealthRecord) onEdit;
+  final void Function(HypertensionHealthRecord) onDelete;
+
+  const _HtMedicationTable({
+    required this.records,
+    required this.dateFmt,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  State<_HtMedicationTable> createState() => _HtMedicationTableState();
+}
+
+class _HtMedicationTableState extends State<_HtMedicationTable> {
+  bool _isExpanded = false;
+  String _searchQuery = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final filteredRecords = widget.records.where((r) {
+      final q = _searchQuery.toLowerCase();
+      final p = r.payload;
+      return (p['name']?.toString() ?? '').toLowerCase().contains(q) ||
+             widget.dateFmt.format(r.date).toLowerCase().contains(q);
+    }).toList();
+
+    final displayRecords = _isExpanded ? filteredRecords : filteredRecords.take(5).toList();
+
+    return _TableCard(
+      title: 'Obat',
+      icon: Icons.medication,
+      color: const Color(0xFF9C27B0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (_isExpanded)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Cari tanggal atau nama obat...',
+                  prefixIcon: const Icon(Icons.search, size: 18),
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onChanged: (v) => setState(() => _searchQuery = v),
+              ),
+            ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              columnSpacing: 16,
+              horizontalMargin: 12,
+              columns: const [
+                DataColumn(label: Text('Tanggal')),
+                DataColumn(label: Text('Nama Obat')),
+                DataColumn(label: Text('Dosis')),
+                DataColumn(label: Text('Aksi')),
+              ],
+              rows: displayRecords.map((record) {
+                final p = record.payload;
+                return DataRow(
+                  cells: [
+                    DataCell(Text(widget.dateFmt.format(record.date), style: const TextStyle(fontSize: 13))),
+                    DataCell(
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(p['name']?.toString() ?? '-', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                          if (p['consumed'] == 'Tidak')
+                            const Text('Tidak diminum', style: TextStyle(fontSize: 10, color: AppColors.error)),
+                        ],
+                      ),
+                    ),
+                    DataCell(Text(p['dose']?.toString() ?? '-', style: const TextStyle(fontSize: 13))),
+                    DataCell(
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit, size: 18),
+                            onPressed: () => widget.onEdit(record),
+                            constraints: const BoxConstraints(),
+                            padding: EdgeInsets.zero,
+                          ),
+                          const SizedBox(width: 12),
+                          IconButton(
+                            icon: const Icon(Icons.delete, size: 18, color: AppColors.error),
+                            onPressed: () => widget.onDelete(record),
+                            constraints: const BoxConstraints(),
+                            padding: EdgeInsets.zero,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
+          if (widget.records.length > 5) ...[
+            const Divider(height: 1),
+            InkWell(
+              onTap: () => setState(() {
+                _isExpanded = !_isExpanded;
+                if (!_isExpanded) _searchQuery = '';
+              }),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                alignment: Alignment.center,
+                child: Text(
+                  _isExpanded ? 'Sembunyikan' : 'Lihat Semua (${filteredRecords.length})',
+                  style: const TextStyle(
+                    color: Color(0xFF9C27B0),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _HtCheckupTable extends StatefulWidget {
+  final List<HypertensionHealthRecord> records;
+  final DateFormat dateFmt;
+  final void Function(HypertensionHealthRecord) onEdit;
+  final void Function(HypertensionHealthRecord) onDelete;
+
+  const _HtCheckupTable({
+    required this.records,
+    required this.dateFmt,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  State<_HtCheckupTable> createState() => _HtCheckupTableState();
+}
+
+class _HtCheckupTableState extends State<_HtCheckupTable> {
+  bool _isExpanded = false;
+  String _searchQuery = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final filteredRecords = widget.records.where((r) {
+      final q = _searchQuery.toLowerCase();
+      final p = r.payload;
+      return (p['exam']?.toString() ?? '').toLowerCase().contains(q) ||
+             widget.dateFmt.format(r.date).toLowerCase().contains(q);
+    }).toList();
+
+    final displayRecords = _isExpanded ? filteredRecords : filteredRecords.take(5).toList();
+
+    return _TableCard(
+      title: 'Pemeriksaan',
+      icon: Icons.biotech,
+      color: const Color(0xFF9C27B0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (_isExpanded)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Cari tanggal atau pemeriksaan...',
+                  prefixIcon: const Icon(Icons.search, size: 18),
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onChanged: (v) => setState(() => _searchQuery = v),
+              ),
+            ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              columnSpacing: 16,
+              horizontalMargin: 12,
+              columns: const [
+                DataColumn(label: Text('Tanggal')),
+                DataColumn(label: Text('Pemeriksaan')),
+                DataColumn(label: Text('Hasil')),
+                DataColumn(label: Text('Aksi')),
+              ],
+              rows: displayRecords.map((record) {
+                final p = record.payload;
+                return DataRow(
+                  cells: [
+                    DataCell(Text(widget.dateFmt.format(record.date), style: const TextStyle(fontSize: 13))),
+                    DataCell(Text(p['exam']?.toString() ?? '-', style: const TextStyle(fontSize: 13))),
+                    DataCell(Text(p['result']?.toString() ?? '-', style: const TextStyle(fontSize: 13))),
+                    DataCell(
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit, size: 18),
+                            onPressed: () => widget.onEdit(record),
+                            constraints: const BoxConstraints(),
+                            padding: EdgeInsets.zero,
+                          ),
+                          const SizedBox(width: 12),
+                          IconButton(
+                            icon: const Icon(Icons.delete, size: 18, color: AppColors.error),
+                            onPressed: () => widget.onDelete(record),
+                            constraints: const BoxConstraints(),
+                            padding: EdgeInsets.zero,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
+          if (widget.records.length > 5) ...[
+            const Divider(height: 1),
+            InkWell(
+              onTap: () => setState(() {
+                _isExpanded = !_isExpanded;
+                if (!_isExpanded) _searchQuery = '';
+              }),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                alignment: Alignment.center,
+                child: Text(
+                  _isExpanded ? 'Sembunyikan' : 'Lihat Semua (${filteredRecords.length})',
+                  style: const TextStyle(
+                    color: Color(0xFF9C27B0),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -7526,8 +9131,15 @@ class _NormalValuesTableContent extends StatelessWidget {
 class _TableCard extends StatelessWidget {
   final String title;
   final Widget child;
+  final IconData? icon;
+  final Color? color;
 
-  const _TableCard({required this.title, required this.child});
+  const _TableCard({
+    required this.title,
+    required this.child,
+    this.icon,
+    this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -7543,7 +9155,7 @@ class _TableCard extends StatelessWidget {
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
             blurRadius: 8,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -7551,25 +9163,33 @@ class _TableCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(14, 12, 14, 0),
-            child: Text(
-              title,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                color: theme.textTheme.titleSmall?.color,
-              ),
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
+            child: Row(
+              children: [
+                if (icon != null) ...[
+                  Icon(icon, color: color, size: 18),
+                  const SizedBox(width: 8),
+                ],
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: theme.textTheme.titleSmall?.color,
+                  ),
+                ),
+              ],
             ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: 300),
+            constraints: const BoxConstraints(maxHeight: 300),
             child: SingleChildScrollView(
               scrollDirection: Axis.vertical,
               child: child,
             ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
         ],
       ),
     );

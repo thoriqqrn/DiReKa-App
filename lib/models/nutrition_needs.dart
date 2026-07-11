@@ -10,6 +10,8 @@ class NutritionNeeds {
   final double fosfor; // mg/hari (0 = tidak dipantau)
   final double cairan; // ml/hari (0 = tidak dipantau)
   final double serat; // g/hari  (0 = tidak dipantau)
+  final double kalsium; // mg/hari (0 = tidak dipantau)
+  final double magnesium; // mg/hari (0 = tidak dipantau)
 
   const NutritionNeeds({
     required this.energi,
@@ -21,6 +23,8 @@ class NutritionNeeds {
     this.fosfor = 0,
     this.cairan = 0,
     this.serat = 0,
+    this.kalsium = 0,
+    this.magnesium = 0,
   });
 
   /// Rumus kebutuhan gizi untuk pasien Gagal Ginjal Kronik.
@@ -161,6 +165,58 @@ class NutritionNeeds {
       serat: 0,
     );
   }
+
+  /// Rumus kebutuhan gizi untuk pasien Hipertensi (Mifflin-St Jeor).
+  ///
+  /// BBI          = (TB - 100) - 10%
+  /// BMR laki-laki   = (10 × BBI) + (6.25 × TB) - (5 × U) + 5
+  /// BMR perempuan   = (10 × BBI) + (6.25 × TB) - (5 × U) - 161
+  /// Total energi    = BMR × faktor aktivitas
+  ///
+  /// Karbohidrat  = 55% × energi / 4   (g/hari)
+  /// Protein      = 20% × energi / 4   (g/hari)
+  /// Lemak        = 25% × energi / 9   (g/hari)
+  ///
+  /// Natrium:
+  ///   TD 140–159/90–99 → 2.300 mg/hari
+  ///   TD ≥ 160/100     → 1.500 mg/hari
+  /// Kalsium      = 1.200 mg/hari (tetap)
+  /// Magnesium    = 350 mg/hari   (tetap)
+  /// Kalium       = 4.700 mg/hari (tetap)
+  /// Serat        = 25 g/hari     (tetap)
+  factory NutritionNeeds.hypertension({
+    required double bbi,
+    required double height, // cm
+    required String gender, // 'laki-laki' | 'perempuan'
+    required int age,
+    required double activityFactor, // dari ActivityLevel.hypertensionFactor
+    required bool isSevere, // true = TD ≥ 160/100 → natrium 1.500
+  }) {
+    // Mifflin-St Jeor menggunakan BBI
+    final bmr = gender == 'perempuan'
+        ? (10 * bbi) + (6.25 * height) - (5 * age) - 161
+        : (10 * bbi) + (6.25 * height) - (5 * age) + 5;
+
+    final energiTotal = bmr * activityFactor;
+
+    final karbohidrat = (0.55 * energiTotal) / 4;
+    final protein = (0.20 * energiTotal) / 4;
+    final lemak = (0.25 * energiTotal) / 9;
+
+    return NutritionNeeds(
+      energi: energiTotal,
+      protein: protein,
+      lemak: lemak,
+      karbohidrat: karbohidrat,
+      natrium: isSevere ? 1500 : 2300,
+      kalium: 4700,
+      fosfor: 0,
+      cairan: 0,
+      serat: 25,
+      kalsium: 1200,
+      magnesium: 350,
+    );
+  }
 }
 
 /// Total asupan nutrisi aktual dari makanan yang dikonsumsi hari ini.
@@ -174,6 +230,8 @@ class NutritionIntake {
   final double fosfor;
   final double cairan; // dari kolom 'air' di TKPI
   final double serat;
+  final double kalsium;
+  final double magnesium;
 
   const NutritionIntake({
     this.energi = 0,
@@ -185,5 +243,7 @@ class NutritionIntake {
     this.fosfor = 0,
     this.cairan = 0,
     this.serat = 0,
+    this.kalsium = 0,
+    this.magnesium = 0,
   });
 }

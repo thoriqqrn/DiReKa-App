@@ -223,6 +223,11 @@ class AuthProvider extends ChangeNotifier {
     double insulinDurationYears = 0.0,
     HemodialysisData? hemodialysisData,
     bool hasEdema = false,
+    double hypertensionDurationYears = 0.0,
+    bool hypertensionFamilyHistory = false,
+    bool hypertensionRoutineMeds = false,
+    bool isPregnant = false,
+    int pregnancyTrimester = 0,
   }) async {
     _setLoading(true);
     _clearError();
@@ -250,6 +255,11 @@ class AuthProvider extends ChangeNotifier {
         insulinDurationYears: insulinDurationYears,
         hemodialysisData: hemodialysisData,
         hasEdema: hasEdema,
+        hypertensionDurationYears: hypertensionDurationYears,
+        hypertensionFamilyHistory: hypertensionFamilyHistory,
+        hypertensionRoutineMeds: hypertensionRoutineMeds,
+        isPregnant: isPregnant,
+        pregnancyTrimester: pregnancyTrimester,
       );
       // Fix race condition: authStateChanges listener fires BEFORE saveUser()
       // completes inside registerWithEmail(), sehingga _userModel = null.
@@ -310,6 +320,11 @@ class AuthProvider extends ChangeNotifier {
     double insulinDurationYears = 0.0,
     HemodialysisData? hemodialysisData,
     bool hasEdema = false,
+    double hypertensionDurationYears = 0.0,
+    bool hypertensionFamilyHistory = false,
+    bool hypertensionRoutineMeds = false,
+    bool isPregnant = false,
+    int pregnancyTrimester = 0,
   }) async {
     _setLoading(true);
     _clearError();
@@ -337,6 +352,11 @@ class AuthProvider extends ChangeNotifier {
         insulinDurationYears: insulinDurationYears,
         hemodialysisData: hemodialysisData,
         hasEdema: hasEdema,
+        hypertensionDurationYears: hypertensionDurationYears,
+        hypertensionFamilyHistory: hypertensionFamilyHistory,
+        hypertensionRoutineMeds: hypertensionRoutineMeds,
+        isPregnant: isPregnant,
+        pregnancyTrimester: pregnancyTrimester,
         createdAt: DateTime.now(),
       );
       await _userService.saveUser(userModel);

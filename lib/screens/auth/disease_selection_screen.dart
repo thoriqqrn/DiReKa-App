@@ -125,6 +125,8 @@ class _DiseaseCard extends StatelessWidget {
         return AppColors.diabetesColor;
       case DiseaseType.heartFailure:
         return AppColors.heartColor;
+      case DiseaseType.hypertension:
+        return const Color(0xFF9C27B0); // Using purple for hypertension as requested
     }
   }
 

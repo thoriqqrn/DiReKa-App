@@ -23,6 +23,8 @@ class FoodLogEntry {
   final double air; // cairan dari makanan ini
   final double serat; // g
   final double indeksGlikemik; // Samakan dengan FoodItem
+  final double kalsium; // mg
+  final double magnesium; // mg
 
   const FoodLogEntry({
     required this.id,
@@ -41,6 +43,8 @@ class FoodLogEntry {
     required this.air,
     this.serat = 0.0,
     this.indeksGlikemik = 0.0,
+    this.kalsium = 0.0,
+    this.magnesium = 0.0,
   });
 
   /// Hitung Glycemic Load (GL) untuk entri ini: (GI * Karbohidrat) / 100
@@ -75,6 +79,8 @@ class FoodLogEntry {
       air: (n['air'] ?? 0.0).toDouble(),
       serat: (n['serat'] ?? 0.0).toDouble(),
       indeksGlikemik: food.indeksGlikemik.toDouble(),
+      kalsium: (n['kalsium'] ?? 0.0).toDouble(),
+      magnesium: (n['magnesium'] ?? 0.0).toDouble(),
     );
   }
 
@@ -96,6 +102,8 @@ class FoodLogEntry {
       'air': air,
       'serat': serat,
       'indeksGlikemik': indeksGlikemik,
+      'kalsium': kalsium,
+      'magnesium': magnesium,
     };
   }
 
@@ -128,6 +136,8 @@ class FoodLogEntry {
       air: toDouble(map['air']),
       serat: toDouble(map['serat']),
       indeksGlikemik: toDouble(map['indeksGlikemik'] ?? map['glycemicIndex']),
+      kalsium: toDouble(map['kalsium']),
+      magnesium: toDouble(map['magnesium']),
     );
   }
 }

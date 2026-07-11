@@ -194,6 +194,13 @@ class AdminService {
           .orderBy('date', descending: true)
           .limit(perUserLimit)
       );
+      final htSnap = await _getWithFallback(_db
+          .collection(AppConstants.colUsers)
+          .doc(uid)
+          .collection('hypertension_health_records')
+          .orderBy('date', descending: true)
+          .limit(perUserLimit)
+      );
 
       return <AdminHealthRecordSummary>[
         ...diabetesSnap.docs
@@ -202,6 +209,8 @@ class AdminService {
             .map((d) => _mapHealthDoc(d.data(), uid, userName, userEmail, 'Ginjal')),
         ...heartSnap.docs
             .map((d) => _mapHealthDoc(d.data(), uid, userName, userEmail, 'Jantung')),
+        ...htSnap.docs
+            .map((d) => _mapHealthDoc(d.data(), uid, userName, userEmail, 'Hipertensi')),
       ];
     });
 

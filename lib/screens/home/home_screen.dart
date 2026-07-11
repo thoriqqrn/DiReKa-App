@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/app_colors.dart';
 import '../../core/app_constants.dart';
+import '../../models/disease_type.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/disease_provider.dart';
 import '../../services/app_notification_service.dart';
 import 'widgets/day_streak_card.dart';
 
@@ -167,6 +169,21 @@ class _GuestInteractiveGuideState extends State<_GuestInteractiveGuide> {
       ],
     ),
     _GuideStep(
+      title: 'Pantau Hipertensi',
+      description:
+          'Aplikasi membantu mencatat dan memantau tekanan darah serta pengingat obat rutin.',
+      badge: 'Fokus',
+      buttonLabel: 'Lihat Kesehatan',
+      tabIndex: 2,
+      icon: Icons.monitor_heart_rounded,
+      gradient: [Color(0xFF9C27B0), Color(0xFFD81B60)],
+      bullets: [
+        'Pantau tekanan darah',
+        'Cek asupan natrium harian',
+        'Set pengingat obat rutin',
+      ],
+    ),
+    _GuideStep(
       title: 'Lihat Tracker Makanan',
       description:
           'Di sini user bisa mencari makanan, melihat porsi, dan memahami simulasi nutrisi walau belum login penuh.',
@@ -221,9 +238,30 @@ class _GuestInteractiveGuideState extends State<_GuestInteractiveGuide> {
 
   @override
   Widget build(BuildContext context) {
+    final diseaseType = context.select<DiseaseProvider, DiseaseType?>(
+        (provider) => provider.selectedDisease);
+
+    final List<_GuideStep> currentSteps;
+    if (diseaseType == DiseaseType.hypertension) {
+      currentSteps = [
+        _steps[0],
+        _steps[1],
+        _steps[2],
+        _steps[3],
+        _steps[4],
+      ];
+    } else {
+      currentSteps = [
+        _steps[0],
+        _steps[2],
+        _steps[3],
+        _steps[4],
+      ];
+    }
+
     final theme = Theme.of(context);
-    final step = _steps[_currentPage];
-    final isLastPage = _currentPage == _steps.length - 1;
+    final step = currentSteps[_currentPage];
+    final isLastPage = _currentPage == currentSteps.length - 1;
     final guestActionTextStyle = TextStyle(
       inherit: true,
       fontSize: 13,
@@ -264,7 +302,7 @@ class _GuestInteractiveGuideState extends State<_GuestInteractiveGuide> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Langkah ${_currentPage + 1} dari ${_steps.length}',
+                'Langkah ${_currentPage + 1} dari ${currentSteps.length}',
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
@@ -322,10 +360,10 @@ class _GuestInteractiveGuideState extends State<_GuestInteractiveGuide> {
           height: 410,
           child: PageView.builder(
             controller: _pageController,
-            itemCount: _steps.length,
+            itemCount: currentSteps.length,
             onPageChanged: (index) => setState(() => _currentPage = index),
             itemBuilder: (context, index) {
-              final item = _steps[index];
+              final item = currentSteps[index];
               return Padding(
                 padding: const EdgeInsets.only(right: 12),
                 child: _GuideFeatureCard(
@@ -344,7 +382,7 @@ class _GuestInteractiveGuideState extends State<_GuestInteractiveGuide> {
             Wrap(
               spacing: 6,
               runSpacing: 6,
-              children: List.generate(_steps.length, (index) {
+              children: List.generate(currentSteps.length, (index) {
                 final active = index == _currentPage;
                 return AnimatedContainer(
                   duration: const Duration(milliseconds: 220),

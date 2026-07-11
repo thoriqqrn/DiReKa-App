@@ -32,6 +32,7 @@ class _GoogleCompleteProfileScreenState
   final _dmDurationCtrl = TextEditingController();
   final _heartDurationCtrl = TextEditingController();
   final _insulinDurationCtrl = TextEditingController();
+  final _htDurationCtrl = TextEditingController();
 
   DateTime? _dateOfBirth;
   DiseaseType? _diseaseType;
@@ -39,6 +40,11 @@ class _GoogleCompleteProfileScreenState
   ActivityLevel? _activityLevel;
   bool _usesInsulinTherapy = false;
   bool _hasEdema = false; // riwayat pembengkakan — untuk pasien Jantung Koroner
+  // Hipertensi
+  bool _hypertensionFamilyHistory = false;
+  bool _hypertensionRoutineMeds = false;
+  bool _isPregnant = false;
+  int _pregnancyTrimester = 1;
 
   double? get _bmi {
     final w = double.tryParse(_weightCtrl.text);
@@ -80,6 +86,7 @@ class _GoogleCompleteProfileScreenState
     _dmDurationCtrl.dispose();
     _heartDurationCtrl.dispose();
     _insulinDurationCtrl.dispose();
+    _htDurationCtrl.dispose();
     super.dispose();
   }
 
@@ -458,6 +465,225 @@ class _GoogleCompleteProfileScreenState
                     ),
                   ],
 
+                  // Hipertensi section
+                  if (_diseaseType == DiseaseType.hypertension) ...[
+                    const SizedBox(height: 20),
+                    const _SectionLabel(label: 'Data Klinis Hipertensi'),
+                    const SizedBox(height: 10),
+                    CustomTextField(
+                      label: 'Lama menderita hipertensi (tahun)',
+                      controller: _htDurationCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      prefixIcon: const Icon(Icons.timelapse_outlined),
+                      validator: (v) {
+                        final value = double.tryParse(v ?? '');
+                        if (value == null || value < 0) {
+                          return 'Lama hipertensi wajib diisi';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Riwayat hipertensi keluarga?',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _hypertensionFamilyHistory ? 'Ya' : 'Tidak',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: _hypertensionFamilyHistory
+                                        ? Colors.orange
+                                        : AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: _hypertensionFamilyHistory,
+                            onChanged: (val) =>
+                                setState(() => _hypertensionFamilyHistory = val),
+                            activeThumbColor: Colors.orange,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Rutin konsumsi obat hipertensi?',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _hypertensionRoutineMeds ? 'Ya' : 'Tidak',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: _hypertensionRoutineMeds
+                                        ? AppColors.primary
+                                        : AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: _hypertensionRoutineMeds,
+                            onChanged: (val) =>
+                                setState(() => _hypertensionRoutineMeds = val),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (_gender == 'perempuan') ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Sedang hamil?',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    _isPregnant ? 'Ya' : 'Tidak',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: _isPregnant
+                                          ? Colors.pink
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Switch(
+                              value: _isPregnant,
+                              onChanged: (val) => setState(() {
+                                _isPregnant = val;
+                                if (!val) _pregnancyTrimester = 1;
+                              }),
+                              activeThumbColor: Colors.pink,
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (_isPregnant) ...[
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Trimester kehamilan',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [1, 2, 3].map((t) {
+                            final sel = _pregnancyTrimester == t;
+                            return Expanded(
+                              child: GestureDetector(
+                                onTap: () =>
+                                    setState(() => _pregnancyTrimester = t),
+                                child: Container(
+                                  margin: EdgeInsets.only(right: t < 3 ? 8 : 0),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: sel
+                                        ? Colors.pink.withValues(alpha: 0.1)
+                                        : AppColors.surface,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: sel
+                                          ? Colors.pink
+                                          : AppColors.border,
+                                      width: sel ? 1.5 : 1,
+                                    ),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      'Trimester $t',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: sel
+                                            ? FontWeight.w600
+                                            : FontWeight.normal,
+                                        color: sel
+                                            ? Colors.pink
+                                            : AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ],
+                    const SizedBox(height: 10),
+                    const _SectionLabel(label: 'Tingkat Aktivitas Fisik'),
+                    const SizedBox(height: 10),
+                    _ActivityLevelSelector(
+                      value: _activityLevel,
+                      onChanged: (v) => setState(() => _activityLevel = v),
+                    ),
+                  ],
+
                   const SizedBox(height: 36),
 
                   CustomButton(
@@ -511,8 +737,9 @@ class _GoogleCompleteProfileScreenState
       occupation: _occupationCtrl.text.trim(),
       gender: _gender,
       activityLevel: (_diseaseType == DiseaseType.type2DiabetesMellitus ||
-              _diseaseType == DiseaseType.heartFailure)
-          ? (_activityLevel ?? ActivityLevel.ringan)
+              _diseaseType == DiseaseType.heartFailure ||
+              _diseaseType == DiseaseType.hypertension)
+          ? (_activityLevel ?? ActivityLevel.lansiaPekerjaKantor)
           : null,
       diabetesDurationYears:
           double.tryParse(_dmDurationCtrl.text.trim()) ?? 0.0,
@@ -523,6 +750,15 @@ class _GoogleCompleteProfileScreenState
           ? (double.tryParse(_insulinDurationCtrl.text.trim()) ?? 0.0)
           : 0.0,
       hasEdema: _hasEdema,
+      hypertensionDurationYears:
+          _diseaseType == DiseaseType.hypertension
+              ? (double.tryParse(_htDurationCtrl.text.trim()) ?? 0.0)
+              : 0.0,
+      hypertensionFamilyHistory: _hypertensionFamilyHistory,
+      hypertensionRoutineMeds: _hypertensionRoutineMeds,
+      isPregnant: _isPregnant && _gender == 'perempuan',
+      pregnancyTrimester:
+          (_isPregnant && _gender == 'perempuan') ? _pregnancyTrimester : 0,
     );
 
     if (success && mounted) {

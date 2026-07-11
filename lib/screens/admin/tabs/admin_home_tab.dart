@@ -27,6 +27,8 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
         return _diseaseBlue;
       case DiseaseType.heartFailure:
         return _diseaseYellow;
+      case DiseaseType.hypertension:
+        return const Color(0xFF9C27B0);
     }
   }
 

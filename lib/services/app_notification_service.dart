@@ -17,6 +17,8 @@ import 'family_link_service.dart';
 import 'food_log_service.dart';
 import 'heart_health_service.dart';
 import 'kidney_health_service.dart';
+import '../models/hypertension_health_record.dart';
+import 'hypertension_health_service.dart';
 
 class AppNotificationService {
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -552,6 +554,115 @@ class AppNotificationService {
       }
     }
 
+    if (user.diseaseType == DiseaseType.hypertension) {
+      final htRecords = await HypertensionHealthService.getRecords(
+        user.uid,
+        fromDate: today,
+        limit: 50,
+      );
+      final todayRecords = htRecords.where((e) => _isSameDay(e.date, today)).toList();
+
+      intakeMismatchCount += _addNutrientThresholdAlerts(
+        notifications: notifications,
+        now: now,
+        dateKey: dateKey,
+        disease: user.diseaseType,
+        totals: foodTotals,
+        thresholds: {
+          'natrium': needs?.natrium ?? 0,
+          'kalium': needs?.kalium ?? 0,
+          'kalsium': needs?.kalsium ?? 0,
+          'magnesium': needs?.magnesium ?? 0,
+        },
+      );
+
+      final abnormalExams = todayRecords
+          .where((record) => record.type == HypertensionInputType.pemeriksaan)
+          .where((record) => !_isNormalCategory(record.payload['category']))
+          .toList();
+
+      if (abnormalExams.isNotEmpty) {
+        badExamCount += abnormalExams.length;
+        notifications.add(
+          AppNotification(
+            id: 'ht-exam-warning-$dateKey',
+            title: 'Hasil pemeriksaan tidak normal',
+            message: 'Ada hasil pemeriksaan hari ini yang berada di luar batas normal. Jaga pola makan dan istirahat.',
+            typeKey: 'ht_exam_warning',
+            source: 'system',
+            createdAt: now,
+            diseaseType: user.diseaseType.value,
+          ),
+        );
+      }
+
+      if (user.hypertensionRoutineMeds == true) {
+        final medsToday = todayRecords.where((e) => e.type == HypertensionInputType.obat).toList();
+        if (medsToday.isEmpty) {
+          notifications.add(
+            AppNotification(
+              id: 'ht-med-reminder-$dateKey',
+              title: 'Pengingat obat rutin',
+              message: 'Anda belum mencatat konsumsi obat hipertensi hari ini.',
+              typeKey: 'ht_med_reminder',
+              source: 'system',
+              createdAt: now,
+              diseaseType: user.diseaseType.value,
+            ),
+          );
+        }
+      }
+
+      final activitiesToday = todayRecords.where((e) => e.type == HypertensionInputType.aktivitas).toList();
+      final totalActivityDuration = activitiesToday.fold<int>(
+        0,
+        (acc, item) => acc + (int.tryParse(item.payload['duration']?.toString() ?? '0') ?? 0),
+      );
+
+      if (totalActivityDuration < 30) {
+        notifications.add(
+          AppNotification(
+            id: 'ht-activity-reminder-$dateKey',
+            title: 'Kurang aktivitas fisik',
+            message: 'Ayo bergerak! Sisihkan minimal 30 menit hari ini untuk aktivitas fisik ringan.',
+            typeKey: 'ht_activity_reminder',
+            source: 'system',
+            createdAt: now,
+            diseaseType: user.diseaseType.value,
+          ),
+        );
+      }
+
+      if (_hasNoInputToday(entriesToday, todayRecords)) {
+        notifications.add(
+          AppNotification(
+            id: 'ht-no-input-$dateKey',
+            title: 'Belum ada input hari ini',
+            message: 'Catat makanan atau data kesehatan hipertensi hari ini.',
+            typeKey: 'ht_daily_reminder',
+            source: 'system',
+            createdAt: now,
+            diseaseType: user.diseaseType.value,
+          ),
+        );
+      }
+
+      if (badExamCount >= 2 && intakeMismatchCount >= 1) {
+        notifications.add(
+          AppNotification(
+            id: 'ht-family-alert-$dateKey',
+            title: 'Kondisi hipertensi perlu perhatian',
+            message: 'Pemeriksaan abnormal dan asupan nutrisi belum sesuai target. Butuh perhatian keluarga.',
+            typeKey: 'ht_family_alert',
+            source: 'system',
+            createdAt: now,
+            diseaseType: user.diseaseType.value,
+            isFamilyAlert: true,
+          ),
+        );
+      }
+    }
+
     return notifications;
   }
 
@@ -564,12 +675,14 @@ class AppNotificationService {
     required Map<String, double> thresholds,
   }) {
     var count = 0;
-    final labels = {
-      'protein': 'protein',
-      'natrium': 'natrium',
-      'kalium': 'kalium',
-      'fosfor': 'fosfor',
-    };
+      final labels = {
+        'protein': 'protein',
+        'natrium': 'natrium',
+        'kalium': 'kalium',
+        'fosfor': 'fosfor',
+        'kalsium': 'kalsium',
+        'magnesium': 'magnesium',
+      };
 
     for (final entry in thresholds.entries) {
       if (entry.value <= 0) continue;

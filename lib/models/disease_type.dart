@@ -1,4 +1,4 @@
-enum DiseaseType { chronicKidneyDisease, type2DiabetesMellitus, heartFailure }
+enum DiseaseType { chronicKidneyDisease, type2DiabetesMellitus, heartFailure, hypertension }
 
 extension DiseaseTypeExtension on DiseaseType {
   String get label {
@@ -9,6 +9,8 @@ extension DiseaseTypeExtension on DiseaseType {
         return 'Diabetes Mellitus Tipe 2';
       case DiseaseType.heartFailure:
         return 'Jantung Koroner';
+      case DiseaseType.hypertension:
+        return 'Hipertensi';
     }
   }
 
@@ -20,6 +22,8 @@ extension DiseaseTypeExtension on DiseaseType {
         return 'Diabetes Mellitus';
       case DiseaseType.heartFailure:
         return 'Jantung Koroner';
+      case DiseaseType.hypertension:
+        return 'Hipertensi';
     }
   }
 
@@ -31,6 +35,8 @@ extension DiseaseTypeExtension on DiseaseType {
         return 'Kondisi di mana tubuh tidak dapat menggunakan insulin secara efektif, menyebabkan kadar gula darah meningkat.';
       case DiseaseType.heartFailure:
         return 'Kondisi di mana jantung tidak mampu memompa darah secara optimal untuk memenuhi kebutuhan tubuh.';
+      case DiseaseType.hypertension:
+        return 'Kondisi di mana tekanan darah berada di atas batas normal secara persisten, meningkatkan risiko komplikasi jantung, ginjal, dan otak.';
     }
   }
 
@@ -42,6 +48,8 @@ extension DiseaseTypeExtension on DiseaseType {
         return 'type2_diabetes_mellitus';
       case DiseaseType.heartFailure:
         return 'heart_failure';
+      case DiseaseType.hypertension:
+        return 'hypertension';
     }
   }
 
@@ -53,6 +61,8 @@ extension DiseaseTypeExtension on DiseaseType {
         return DiseaseType.type2DiabetesMellitus;
       case 'heart_failure':
         return DiseaseType.heartFailure;
+      case 'hypertension':
+        return DiseaseType.hypertension;
       default:
         return DiseaseType.chronicKidneyDisease;
     }
@@ -66,6 +76,8 @@ extension DiseaseTypeExtension on DiseaseType {
         return '🩸';
       case DiseaseType.heartFailure:
         return '🫀';
+      case DiseaseType.hypertension:
+        return '💊';
     }
   }
 
@@ -77,6 +89,8 @@ extension DiseaseTypeExtension on DiseaseType {
         return 'Diabetes Mellitus Tipe 2';
       case DiseaseType.heartFailure:
         return 'Jantung Koroner';
+      case DiseaseType.hypertension:
+        return 'Hipertensi';
     }
   }
 }

@@ -27,6 +27,12 @@ class UserModel {
   final double insulinDurationYears; // hanya untuk DM
   final HemodialysisData? hemodialysisData; // hanya untuk penyakit ginjal
   final bool hasEdema; // riwayat pembengkakan — untuk pasien Jantung Koroner
+  // ── Field khusus Hipertensi ───────────────────────────────────────────────
+  final double hypertensionDurationYears; // lama menderita hipertensi
+  final bool hypertensionFamilyHistory; // riwayat hipertensi keluarga
+  final bool hypertensionRoutineMeds; // rutin konsumsi obat harian
+  final bool isPregnant; // hanya untuk perempuan
+  final int pregnancyTrimester; // 1/2/3, 0 = tidak hamil
   final DateTime createdAt;
   final int currentStreak;
   final int longestStreak;
@@ -57,6 +63,11 @@ class UserModel {
     this.insulinDurationYears = 0.0,
     this.hemodialysisData,
     this.hasEdema = false,
+    this.hypertensionDurationYears = 0.0,
+    this.hypertensionFamilyHistory = false,
+    this.hypertensionRoutineMeds = false,
+    this.isPregnant = false,
+    this.pregnancyTrimester = 0,
     required this.createdAt,
     this.currentStreak = 0,
     this.longestStreak = 0,
@@ -109,7 +120,7 @@ class UserModel {
         gender: gender,
         age: age['years']!,
         koreksiFraksiAktivitas:
-            (activityLevel ?? ActivityLevel.ringan).koreksiFraction,
+            (activityLevel ?? ActivityLevel.lansiaPekerjaKantor).koreksiFraction,
         bmiCategory: bmiCategory,
       );
     }
@@ -120,8 +131,19 @@ class UserModel {
         gender: gender,
         age: age['years']!,
         activityFactor:
-            (activityLevel ?? ActivityLevel.ringan).activityFactor,
+            (activityLevel ?? ActivityLevel.lansiaPekerjaKantor).activityFactor,
         hasEdema: hasEdema,
+      );
+    }
+    if (diseaseType == DiseaseType.hypertension) {
+      return NutritionNeeds.hypertension(
+        bbi: bbi,
+        height: height,
+        gender: gender,
+        age: age['years']!,
+        activityFactor:
+            (activityLevel ?? ActivityLevel.lansiaPekerjaKantor).hypertensionFactor,
+        isSevere: false, // default; diperbarui berdasarkan data TD terbaru
       );
     }
     return null;
@@ -167,6 +189,11 @@ class UserModel {
       'insulinDurationYears': insulinDurationYears,
       'hemodialysisData': hemodialysisData?.toMap(),
       'hasEdema': hasEdema,
+      'hypertensionDurationYears': hypertensionDurationYears,
+      'hypertensionFamilyHistory': hypertensionFamilyHistory,
+      'hypertensionRoutineMeds': hypertensionRoutineMeds,
+      'isPregnant': isPregnant,
+      'pregnancyTrimester': pregnancyTrimester,
       'bmi': double.parse(bmi.toStringAsFixed(2)),
       'bbi': double.parse(bbi.toStringAsFixed(2)),
       'createdAt': Timestamp.fromDate(createdAt),
@@ -215,6 +242,11 @@ class UserModel {
             )
           : null,
       hasEdema: (map['hasEdema'] as bool?) ?? false,
+      hypertensionDurationYears: toDouble(map['hypertensionDurationYears']),
+      hypertensionFamilyHistory: (map['hypertensionFamilyHistory'] as bool?) ?? false,
+      hypertensionRoutineMeds: (map['hypertensionRoutineMeds'] as bool?) ?? false,
+      isPregnant: (map['isPregnant'] as bool?) ?? false,
+      pregnancyTrimester: (map['pregnancyTrimester'] as num?)?.toInt() ?? 0,
       createdAt: (map['createdAt'] as Timestamp).toDate(),
       currentStreak: (map['currentStreak'] as num?)?.toInt() ?? 0,
       longestStreak: (map['longestStreak'] as num?)?.toInt() ?? 0,
@@ -255,6 +287,11 @@ class UserModel {
     HemodialysisData? hemodialysisData,
     bool clearHemodialysisData = false,
     bool? hasEdema,
+    double? hypertensionDurationYears,
+    bool? hypertensionFamilyHistory,
+    bool? hypertensionRoutineMeds,
+    bool? isPregnant,
+    int? pregnancyTrimester,
     DateTime? createdAt,
     int? currentStreak,
     int? longestStreak,
@@ -290,6 +327,11 @@ class UserModel {
           ? null
           : (hemodialysisData ?? this.hemodialysisData),
       hasEdema: hasEdema ?? this.hasEdema,
+      hypertensionDurationYears: hypertensionDurationYears ?? this.hypertensionDurationYears,
+      hypertensionFamilyHistory: hypertensionFamilyHistory ?? this.hypertensionFamilyHistory,
+      hypertensionRoutineMeds: hypertensionRoutineMeds ?? this.hypertensionRoutineMeds,
+      isPregnant: isPregnant ?? this.isPregnant,
+      pregnancyTrimester: pregnancyTrimester ?? this.pregnancyTrimester,
       createdAt: createdAt ?? this.createdAt,
       currentStreak: currentStreak ?? this.currentStreak,
       longestStreak: longestStreak ?? this.longestStreak,

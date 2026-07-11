@@ -37,6 +37,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _dmDurationCtrl = TextEditingController();
   final _heartDurationCtrl = TextEditingController();
   final _insulinDurationCtrl = TextEditingController();
+  final _htDurationCtrl = TextEditingController(); // Hipertensi
 
   DateTime? _dateOfBirth;
   DiseaseType? _diseaseType;
@@ -44,6 +45,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   ActivityLevel? _activityLevel;
   bool _usesInsulinTherapy = false;
   bool _hasEdema = false; // riwayat pembengkakan — untuk pasien Jantung Koroner
+  // Hipertensi
+  bool _hypertensionFamilyHistory = false;
+  bool _hypertensionRoutineMeds = false;
+  bool _isPregnant = false;
+  int _pregnancyTrimester = 1;
 
   // Hemodialisis — untuk pasien penyakit ginjal
   DateTime? _hdStartDate;
@@ -105,6 +111,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _dmDurationCtrl.dispose();
     _heartDurationCtrl.dispose();
     _insulinDurationCtrl.dispose();
+    _htDurationCtrl.dispose();
     _hdLocationCtrl.dispose();
     super.dispose();
   }
@@ -568,26 +575,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ],
 
-                  // Field aktivitas — untuk pasien DM & Jantung Koroner
+                  // Field aktivitas — untuk pasien DM & Jantung Koroner & Hipertensi
                   if (_diseaseType == DiseaseType.type2DiabetesMellitus ||
-                      _diseaseType == DiseaseType.heartFailure) ...[
+                      _diseaseType == DiseaseType.heartFailure ||
+                      _diseaseType == DiseaseType.hypertension) ...[
                     const SizedBox(height: 20),
                     _SectionLabel(
                       label:
                           _diseaseType == DiseaseType.type2DiabetesMellitus
                               ? 'Data Klinis Diabetes'
-                              : 'Data Klinis Jantung Koroner (tahun)',
+                              : _diseaseType == DiseaseType.hypertension
+                                  ? 'Data Klinis Hipertensi'
+                                  : 'Data Klinis Jantung Koroner (tahun)',
                     ),
                     const SizedBox(height: 10),
                     CustomTextField(
                       label:
                           _diseaseType == DiseaseType.type2DiabetesMellitus
                               ? 'Lama menderita DM (tahun)'
-                              : 'Lama menderita Jantung Koroner (tahun)',
+                              : _diseaseType == DiseaseType.hypertension
+                                  ? 'Lama menderita hipertensi (tahun)'
+                                  : 'Lama menderita Jantung Koroner (tahun)',
                       controller:
                           _diseaseType == DiseaseType.type2DiabetesMellitus
                               ? _dmDurationCtrl
-                              : _heartDurationCtrl,
+                              : _diseaseType == DiseaseType.hypertension
+                                  ? _htDurationCtrl
+                                  : _heartDurationCtrl,
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
@@ -638,6 +652,56 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       value: _activityLevel,
                       onChanged: (v) => setState(() => _activityLevel = v),
                     ),
+                    // Blok khusus Hipertensi
+                    if (_diseaseType == DiseaseType.hypertension) ...[
+                      const SizedBox(height: 16),
+                      const _SectionLabel(label: 'Riwayat Hipertensi'),
+                      const SizedBox(height: 10),
+                      _HypertensionToggleCard(
+                        title: 'Riwayat hipertensi dari keluarga?',
+                        value: _hypertensionFamilyHistory,
+                        onChanged: (v) => setState(() => _hypertensionFamilyHistory = v),
+                      ),
+                      const SizedBox(height: 10),
+                      _HypertensionToggleCard(
+                        title: 'Rutin konsumsi obat hipertensi harian?',
+                        value: _hypertensionRoutineMeds,
+                        onChanged: (v) => setState(() => _hypertensionRoutineMeds = v),
+                      ),
+                      if (_gender == 'perempuan') ...[
+                        const SizedBox(height: 10),
+                        _HypertensionToggleCard(
+                          title: 'Sedang hamil?',
+                          value: _isPregnant,
+                          onChanged: (v) => setState(() { _isPregnant = v; if (!v) _pregnancyTrimester = 1; }),
+                        ),
+                        if (_isPregnant) ...[
+                          const SizedBox(height: 10),
+                          const Text('Trimester kehamilan:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [1, 2, 3].map((t) {
+                              final sel = _pregnancyTrimester == t;
+                              return Expanded(
+                                child: GestureDetector(
+                                  onTap: () => setState(() => _pregnancyTrimester = t),
+                                  child: Container(
+                                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                    decoration: BoxDecoration(
+                                      color: sel ? AppColors.primary.withValues(alpha: 0.12) : null,
+                                      border: Border.all(color: sel ? AppColors.primary : AppColors.border, width: sel ? 1.5 : 1),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Center(child: Text('Trimester $t', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: sel ? AppColors.primary : null))),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ],
+                    ],
                   ],
 
                   const SizedBox(height: 20),
@@ -803,8 +867,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       gender: _gender,
       urinOutput: double.tryParse(_urinOutputCtrl.text) ?? 300.0,
       activityLevel: (_diseaseType == DiseaseType.type2DiabetesMellitus ||
-              _diseaseType == DiseaseType.heartFailure)
-          ? (_activityLevel ?? ActivityLevel.ringan)
+              _diseaseType == DiseaseType.heartFailure ||
+              _diseaseType == DiseaseType.hypertension)
+          ? (_activityLevel ?? ActivityLevel.lansiaPekerjaKantor)
           : null,
       diabetesDurationYears:
           double.tryParse(_dmDurationCtrl.text.trim()) ?? 0.0,
@@ -816,6 +881,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
           : 0.0,
       hemodialysisData: hemodialysisData,
       hasEdema: _hasEdema,
+      hypertensionDurationYears: double.tryParse(_htDurationCtrl.text.trim()) ?? 0.0,
+      hypertensionFamilyHistory: _hypertensionFamilyHistory,
+      hypertensionRoutineMeds: _hypertensionRoutineMeds,
+      isPregnant: _gender == 'perempuan' ? _isPregnant : false,
+      pregnancyTrimester: (_gender == 'perempuan' && _isPregnant) ? _pregnancyTrimester : 0,
     );
 
     if (success && mounted) {
@@ -1277,6 +1347,65 @@ class _AuthBackdropBlob extends StatelessWidget {
         gradient: RadialGradient(
           colors: [color, color.withValues(alpha: 0)],
         ),
+      ),
+    );
+  }
+}
+
+class _HypertensionToggleCard extends StatelessWidget {
+  final String title;
+  final bool value;
+  final void Function(bool) onChanged;
+  const _HypertensionToggleCard({required this.title, required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: value
+            ? AppColors.primary.withValues(alpha: 0.07)
+            : theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: value
+              ? AppColors.primary.withValues(alpha: 0.35)
+              : theme.dividerColor,
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: theme.textTheme.bodyLarge?.color,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value ? 'Ya' : 'Tidak',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: value ? AppColors.primary : theme.hintColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: AppColors.primary,
+          ),
+        ],
       ),
     );
   }

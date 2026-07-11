@@ -125,6 +125,7 @@ class AdminStatsHeader extends StatelessWidget {
                 case DiseaseType.chronicKidneyDisease: badgeColor = AppColors.kidneyColor; break;
                 case DiseaseType.type2DiabetesMellitus: badgeColor = AppColors.diabetesColor; break;
                 case DiseaseType.heartFailure: badgeColor = AppColors.heartColor; break;
+                case DiseaseType.hypertension: badgeColor = AppColors.primary; break;
               }
               return Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

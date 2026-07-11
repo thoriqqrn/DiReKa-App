@@ -85,6 +85,11 @@ class AuthService {
     double insulinDurationYears = 0.0,
     HemodialysisData? hemodialysisData,
     bool hasEdema = false,
+    double hypertensionDurationYears = 0.0,
+    bool hypertensionFamilyHistory = false,
+    bool hypertensionRoutineMeds = false,
+    bool isPregnant = false,
+    int pregnancyTrimester = 0,
   }) async {
     final credential = await _auth.createUserWithEmailAndPassword(
       email: email.trim(),
@@ -116,6 +121,11 @@ class AuthService {
       insulinDurationYears: insulinDurationYears,
       hemodialysisData: hemodialysisData,
       hasEdema: hasEdema,
+      hypertensionDurationYears: hypertensionDurationYears,
+      hypertensionFamilyHistory: hypertensionFamilyHistory,
+      hypertensionRoutineMeds: hypertensionRoutineMeds,
+      isPregnant: isPregnant,
+      pregnancyTrimester: pregnancyTrimester,
       createdAt: DateTime.now(),
     );
     await _userService.saveUser(userModel);
@@ -251,6 +261,11 @@ class AuthService {
         usesInsulinTherapy: primaryUser.usesInsulinTherapy,
         hemodialysisData: primaryUser.hemodialysisData,
         hasEdema: primaryUser.hasEdema,
+        hypertensionDurationYears: primaryUser.hypertensionDurationYears,
+        hypertensionFamilyHistory: primaryUser.hypertensionFamilyHistory,
+        hypertensionRoutineMeds: primaryUser.hypertensionRoutineMeds,
+        isPregnant: primaryUser.isPregnant,
+        pregnancyTrimester: primaryUser.pregnancyTrimester,
         createdAt: DateTime.now(),
         primaryUserUid: primaryUser.uid, // Simpan referensi ke akun utama
       );
@@ -358,6 +373,11 @@ class AuthService {
       'usesInsulinTherapy': primaryUser.usesInsulinTherapy,
       'hemodialysisData': primaryUser.hemodialysisData?.toMap(),
       'hasEdema': primaryUser.hasEdema,
+      'hypertensionDurationYears': primaryUser.hypertensionDurationYears,
+      'hypertensionFamilyHistory': primaryUser.hypertensionFamilyHistory,
+      'hypertensionRoutineMeds': primaryUser.hypertensionRoutineMeds,
+      'isPregnant': primaryUser.isPregnant,
+      'pregnancyTrimester': primaryUser.pregnancyTrimester,
       'bmi': double.parse(primaryUser.bmi.toStringAsFixed(2)),
       'bbi': double.parse(primaryUser.bbi.toStringAsFixed(2)),
       'linkedPrimaryUid': primaryUser.uid,
