@@ -21,6 +21,7 @@ import '../../services/heart_health_service.dart';
 import '../../services/kidney_health_service.dart';
 import '../../models/hypertension_health_record.dart';
 import '../../services/hypertension_health_service.dart';
+import './physical_activity_assessment_screen.dart';
 
 class HealthTrackerScreen extends StatefulWidget {
   const HealthTrackerScreen({super.key});
@@ -54,6 +55,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   List<HeartHealthRecord> _heartRecords = [];
   List<DiabetesHealthRecord> _dmRecords = [];
   List<HypertensionHealthRecord> _htRecords = [];
+  DateTime _dmActivityWeekAnchor = DateTime.now();
   bool _isLoading = true;
   bool _isHeartLoading = true;
   bool _isDmLoading = true;
@@ -296,6 +298,48 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   String get _uid {
     final auth = context.read<AuthProvider>();
     return auth.currentUser?.uid ?? auth.firebaseUser?.uid ?? '';
+  }
+
+  DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
+
+  DateTime _weekStartFromAnchor(DateTime anchor) {
+    final date = _dateOnly(anchor);
+    // Siklus mingguan mengikuti coretan: Sabtu-Jumat.
+    final daysFromSaturday = date.weekday == DateTime.saturday
+        ? 0
+        : date.weekday == DateTime.sunday
+            ? 1
+            : date.weekday + 1;
+    return date.subtract(Duration(days: daysFromSaturday));
+  }
+
+  DateTime get _dmActivityWeekStart => _weekStartFromAnchor(_dmActivityWeekAnchor);
+  DateTime get _dmActivityWeekEnd => _dmActivityWeekStart.add(const Duration(days: 6));
+
+  List<DiabetesHealthRecord> get _dmActivityWeekRecords {
+    final start = _dmActivityWeekStart;
+    final endExclusive = _dmActivityWeekEnd.add(const Duration(days: 1));
+    return _dmActivityRecords
+        .where((r) => !r.date.isBefore(start) && r.date.isBefore(endExclusive))
+        .toList();
+  }
+
+  void _shiftDmActivityWeek(int deltaWeeks) {
+    setState(() {
+      _dmActivityWeekAnchor = _dmActivityWeekAnchor.add(Duration(days: deltaWeeks * 7));
+    });
+  }
+
+  Future<void> _pickDmActivityWeek() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _dmActivityWeekAnchor,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      helpText: 'Pilih tanggal dalam minggu yang ingin dilihat',
+    );
+    if (picked == null) return;
+    setState(() => _dmActivityWeekAnchor = picked);
   }
 
   Future<void> _loadRecords() async {
@@ -689,23 +733,23 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   }
 
   Future<void> _editDmRecord(DiabetesHealthRecord record) async {
-    DiabetesHealthRecord? updated;
     switch (record.type) {
       case DiabetesInputType.pemeriksaan:
-        updated = await _showDiabetesCheckupDialog(existing: record);
+        final updated = await _showDiabetesCheckupDialog(existing: record);
+        if (updated != null) await _updateDmRecord(updated);
         break;
       case DiabetesInputType.insulin:
-        updated = await _showInsulinAnalysisDialog(existing: record);
+        final updated = await _showInsulinAnalysisDialog(existing: record);
+        if (updated != null) await _updateDmRecord(updated);
         break;
       case DiabetesInputType.aktivitas:
-        updated = await _showDiabetesActivityDialog(existing: record);
+        // Buka PhysicalActivityAssessmentScreen — simpan & reload otomatis via onSaved
+        await _showDiabetesActivityDialog(existing: record);
         break;
       case DiabetesInputType.obat:
-        updated = await _showDiabetesMedicationDialog(existing: record);
+        final updated = await _showDiabetesMedicationDialog(existing: record);
+        if (updated != null) await _updateDmRecord(updated);
         break;
-    }
-    if (updated != null) {
-      await _updateDmRecord(updated);
     }
   }
 
@@ -765,25 +809,24 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
 
     if (!mounted || type == null) return;
 
-    DiabetesHealthRecord? record;
     switch (type) {
       case DiabetesInputType.pemeriksaan:
-        record = await _showDiabetesCheckupDialog();
+        final record = await _showDiabetesCheckupDialog();
+        if (record != null) await _addDmRecord(record);
         break;
       case DiabetesInputType.insulin:
         if (!usesInsulinTherapy) break;
-        record = await _showInsulinAnalysisDialog();
+        final record = await _showInsulinAnalysisDialog();
+        if (record != null) await _addDmRecord(record);
         break;
       case DiabetesInputType.aktivitas:
-        record = await _showDiabetesActivityDialog();
+        // PhysicalActivityAssessmentScreen handles save & reload internally
+        await _showDiabetesActivityDialog();
         break;
       case DiabetesInputType.obat:
-        record = await _showDiabetesMedicationDialog();
+        final record = await _showDiabetesMedicationDialog();
+        if (record != null) await _addDmRecord(record);
         break;
-    }
-
-    if (record != null) {
-      await _addDmRecord(record);
     }
   }
 
@@ -2673,25 +2716,21 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
     );
   }
 
-  Future<DiabetesHealthRecord?> _showDiabetesActivityDialog({
+  Future<void> _showDiabetesActivityDialog({
     DiabetesHealthRecord? existing,
   }) async {
-    final result = await _showActivityDialog(
-      title: existing == null
-          ? 'Input Aktivitas Diabetes'
-          : 'Edit Aktivitas Diabetes',
-      existingPayload: existing?.payload,
-      existingDate: existing?.date,
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PhysicalActivityAssessmentScreen(
+          uid: _uid,
+          existing: existing,
+          onSaved: () => _loadDmRecords(),
+        ),
+      ),
     );
-    if (result == null) return null;
-
-    return DiabetesHealthRecord(
-      id: existing?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
-      type: DiabetesInputType.aktivitas,
-      date: result.date,
-      payload: result.payload,
-      createdAt: existing?.createdAt ?? DateTime.now(),
-    );
+    // reload setelah kembali (onSaved sudah dipanggil dari screen)
+    await _loadDmRecords();
   }
 
   Future<DiabetesHealthRecord?> _showDiabetesMedicationDialog({
@@ -4244,46 +4283,31 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                           ),
                         ],
                         SizedBox(height: 16),
-                        // Activity Gauge for Diabetes
-                        () {
-                          final now = DateTime.now();
-                          final today = DateTime(now.year, now.month, now.day);
-                          final sevenDaysAgo = today.subtract(
-                            Duration(days: 6),
-                          );
-
-                          final weeklyRecords = _dmActivityRecords.where(
-                            (r) =>
-                                r.date.isAfter(
-                                  sevenDaysAgo.subtract(Duration(seconds: 1)),
-                                ) &&
-                                r.date.isBefore(today.add(Duration(days: 1))),
-                          );
-
-                          final totalDuration = weeklyRecords.fold<double>(
-                            0,
-                            (sum, r) =>
-                                sum +
-                                (double.tryParse(
-                                      r.payload['duration']?.toString() ?? '0',
-                                    ) ??
-                                    0),
-                          );
-                          return _ActivityGauge(
-                            totalDuration: totalDuration,
-                            target: 150.0,
-                            themeColor: Colors.orange.shade700,
-                            isWeekly: true,
-                          );
-                        }(),
-                        SizedBox(height: 16),
+                        _DmActivityWeekPicker(
+                          startDate: _dmActivityWeekStart,
+                          endDate: _dmActivityWeekEnd,
+                          dateFmt: _dateFmt,
+                          onPrevious: () => _shiftDmActivityWeek(-1),
+                          onNext: () => _shiftDmActivityWeek(1),
+                          onPick: _pickDmActivityWeek,
+                        ),
+                        SizedBox(height: 12),
+                        // ── Weekly Summary (Timeline + Performa) ──
+                        DmActivityWeeklySummary(
+                          weeklyRecords: _dmActivityWeekRecords,
+                          startDate: _dmActivityWeekStart,
+                        ),
+                        SizedBox(height: 8),
+                        // ── Tabel Riwayat (rentang minggu terpilih saja) ──
                         _dmActivityRecords.isEmpty
                             ? _EmptyTableState(
                                 message: 'Belum ada input aktivitas diabetes.',
                               )
                             : _DiabetesActivityTable(
-                                records: _dmActivityRecords,
+                                records: _dmActivityWeekRecords,
                                 dateFmt: _dateFmt,
+                                rangeLabel:
+                                    '${_dateFmt.format(_dmActivityWeekStart)} - ${_dateFmt.format(_dmActivityWeekEnd)}',
                                 onEdit: _editDmRecord,
                                 onDelete: _deleteDmRecord,
                               ),
@@ -8930,79 +8954,230 @@ class _LegendDot extends StatelessWidget {
   }
 }
 
+class _DmActivityWeekPicker extends StatelessWidget {
+  final DateTime startDate;
+  final DateTime endDate;
+  final DateFormat dateFmt;
+  final VoidCallback onPrevious;
+  final VoidCallback onNext;
+  final VoidCallback onPick;
+
+  const _DmActivityWeekPicker({
+    required this.startDate,
+    required this.endDate,
+    required this.dateFmt,
+    required this.onPrevious,
+    required this.onNext,
+    required this.onPick,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            tooltip: 'Minggu sebelumnya',
+            visualDensity: VisualDensity.compact,
+            onPressed: onPrevious,
+            icon: const Icon(Icons.chevron_left),
+          ),
+          Expanded(
+            child: InkWell(
+              onTap: onPick,
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Rentang Minggu Aktivitas',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${dateFmt.format(startDate)} - ${dateFmt.format(endDate)}',
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.diabetesColor,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    const Text(
+                      'Wajib 7 hari (Sabtu-Jumat). Tap untuk pilih tanggal.',
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 10, color: AppColors.textHint),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Minggu berikutnya',
+            visualDensity: VisualDensity.compact,
+            onPressed: onNext,
+            icon: const Icon(Icons.chevron_right),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _DiabetesActivityTable extends StatelessWidget {
   final List<DiabetesHealthRecord> records;
   final DateFormat dateFmt;
+  final String rangeLabel;
   final void Function(DiabetesHealthRecord) onEdit;
   final void Function(DiabetesHealthRecord) onDelete;
 
   const _DiabetesActivityTable({
     required this.records,
     required this.dateFmt,
+    required this.rangeLabel,
     required this.onEdit,
     required this.onDelete,
   });
 
   @override
   Widget build(BuildContext context) {
-    final todayActivities = records
-        .where((record) => record.type == DiabetesInputType.aktivitas)
-        .toList();
+    final displayRecords = records
+        .where((r) => r.type == DiabetesInputType.aktivitas)
+        .toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
 
     return _TableCard(
-      title: 'Riwayat Aktivitas Fisik',
-      child: todayActivities.isEmpty
-          ? _EmptyTableState(message: 'Belum ada data aktivitas hari ini.')
+      title: 'Riwayat Aktivitas Mingguan ($rangeLabel)',
+      child: displayRecords.isEmpty
+          ? _EmptyTableState(message: 'Belum ada aktivitas minggu ini.')
           : SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
-                columnSpacing: 24,
-                columns: [
+                columnSpacing: 16,
+                dataRowMinHeight: 48,
+                dataRowMaxHeight: 64,
+                columns: const [
                   DataColumn(label: Text('Tgl')),
                   DataColumn(label: Text('Aktivitas')),
                   DataColumn(label: Text('Durasi')),
-                  DataColumn(label: Text('Keluhan')),
-                  DataColumn(label: Text('Status')),
+                  DataColumn(label: Text('Intensitas')),
+                  DataColumn(label: Text('Kalori')),
+                  DataColumn(label: Text('METs-min')),
                   DataColumn(label: Text('Aksi')),
                 ],
-                rows: todayActivities.map((r) {
+                rows: displayRecords.map((r) {
                   final p = r.payload;
-                  final category = (p['category'] ?? '-').toString();
+                  final activityName = (p['activityName'] ?? '-').toString();
+                  final durMenit = int.tryParse(p['duration']?.toString() ?? '0') ?? 0;
+                  final jam = durMenit ~/ 60;
+                  final mnt = durMenit % 60;
+                  final durasiStr = jam > 0 ? '${jam}j ${mnt}m' : '${mnt}m';
+
+                  final intensStr = (p['intensitas'] ?? '').toString();
+                  Color intColor;
+                  Color intBg;
+                  switch (intensStr) {
+                    case 'Berat':
+                      intColor = AppColors.error;
+                      intBg = const Color(0xFFFFEBEA);
+                      break;
+                    case 'Sedang':
+                      intColor = const Color(0xFFF9A825);
+                      intBg = const Color(0xFFFFF9E0);
+                      break;
+                    default:
+                      intColor = AppColors.success;
+                      intBg = const Color(0xFFE6F9EE);
+                  }
+
+                  final kalori = double.tryParse(p['kalori']?.toString() ?? '');
+                  final kaloriStr = kalori != null
+                      ? '${kalori.toStringAsFixed(0)} kkal'
+                      : '-';
+                  final metsMin = double.tryParse(p['totalMetsMin']?.toString() ?? '');
+                  final metsStr = metsMin != null
+                      ? metsMin.toStringAsFixed(1)
+                      : '-';
+
                   return DataRow(
                     cells: [
-                      DataCell(Text(dateFmt.format(r.date))),
-                      DataCell(Text((p['activityName'] ?? '-').toString())),
-                      DataCell(Text('${p['duration'] ?? '-'} mnt')),
-                      DataCell(Text((p['complaint'] ?? '-').toString())),
+                      DataCell(Text(dateFmt.format(r.date),
+                          style: const TextStyle(fontSize: 12))),
+                      DataCell(SizedBox(
+                        width: 140,
+                        child: Text(activityName,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.w600)),
+                      )),
+                      DataCell(Text(durasiStr,
+                          style: const TextStyle(fontSize: 12))),
                       DataCell(
-                        _StatusBadge(
-                          text: category,
-                          color: _checkupCategoryColor(context, category),
-                        ),
-                      ),
-                      DataCell(
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              visualDensity: VisualDensity.compact,
-                              tooltip: 'Edit',
-                              icon: Icon(Icons.edit_outlined, size: 18),
-                              onPressed: () => onEdit(r),
-                            ),
-                            IconButton(
-                              visualDensity: VisualDensity.compact,
-                              tooltip: 'Hapus',
-                              icon: Icon(
-                                Icons.delete_outline,
-                                size: 18,
-                                color: AppColors.error,
+                        intensStr.isEmpty
+                            ? const Text('-')
+                            : Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: intBg,
+                                  borderRadius: BorderRadius.circular(99),
+                                  border: Border.all(
+                                      color: intColor.withValues(alpha: 0.3)),
+                                ),
+                                child: Text(intensStr,
+                                    style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: intColor)),
                               ),
-                              onPressed: () => onDelete(r),
-                            ),
-                          ],
-                        ),
                       ),
+                      DataCell(Text(kaloriStr,
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.deepOrange.shade700,
+                              fontWeight: FontWeight.w600))),
+                      DataCell(Text(metsStr,
+                          style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.diabetesColor,
+                              fontWeight: FontWeight.w600))),
+                      DataCell(Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            visualDensity: VisualDensity.compact,
+                            tooltip: 'Edit',
+                            icon: const Icon(Icons.edit_outlined, size: 18),
+                            onPressed: () => onEdit(r),
+                          ),
+                          IconButton(
+                            visualDensity: VisualDensity.compact,
+                            tooltip: 'Hapus',
+                            icon: const Icon(Icons.delete_outline,
+                                size: 18, color: AppColors.error),
+                            onPressed: () => onDelete(r),
+                          ),
+                        ],
+                      )),
                     ],
                   );
                 }).toList(),
@@ -9170,12 +9345,16 @@ class _TableCard extends StatelessWidget {
                   Icon(icon, color: color, size: 18),
                   const SizedBox(width: 8),
                 ],
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: theme.textTheme.titleSmall?.color,
+                Expanded(
+                  child: Text(
+                    title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: theme.textTheme.titleSmall?.color,
+                    ),
                   ),
                 ),
               ],

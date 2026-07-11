@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DiReKa Admin Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+
+<!-- ── Layout ───────────────────────────────────────────────────── -->
+<div class="layout" id="layout">
+
+  <!-- ── Sidebar ──────────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-icon">🏥</div>
+      <div class="sidebar-brand-text">
+        <h2>DiReKa</h2>
+        <span>Admin Dashboard</span>
+      </div>
+    </div>
+
+    <span class="sidebar-section-label">Utama</span>
+    <button class="nav-item active" data-page="home">
+      <span class="nav-icon"><i class="fa fa-chart-pie"></i></span>
+      Beranda
+    </button>
+    <button class="nav-item" data-page="users">
+      <span class="nav-icon"><i class="fa fa-users"></i></span>
+      Manajemen User
+    </button>
+
+    <span class="sidebar-section-label">Konten</span>
+    <button class="nav-item" data-page="food-catalog">
+      <span class="nav-icon"><i class="fa fa-utensils"></i></span>
+      Katalog Makanan
+    </button>
+    <button class="nav-item" data-page="education">
+      <span class="nav-icon"><i class="fa fa-book-open"></i></span>
+      Edukasi
+    </button>
+
+    <span class="sidebar-section-label">Data Klinis</span>
+    <button class="nav-item" data-page="patient-detail">
+      <span class="nav-icon"><i class="fa fa-user-doctor"></i></span>
+      Detail Pasien
+    </button>
+    <button class="nav-item" data-page="health">
+      <span class="nav-icon"><i class="fa fa-notes-medical"></i></span>
+      Semua Rekam Medis
+    </button>
+    <button class="nav-item" data-page="food-logs">
+      <span class="nav-icon"><i class="fa fa-utensils"></i></span>
+      Semua Log Makanan
+    </button>
+
+    <span class="sidebar-section-label">Sistem</span>
+    <button class="nav-item" data-page="broadcast">
+      <span class="nav-icon"><i class="fa fa-bullhorn"></i></span>
+      Broadcast
+    </button>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-user-avatar" id="userAvatar">A</div>
+        <div class="sidebar-user-info">
+          <strong id="userEmail">admin@direka.app</strong>
+          <span>Super Admin</span>
+        </div>
+        <button class="btn-logout" id="btnLogout" title="Keluar">
+          <i class="fa fa-right-from-bracket"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Header ───────────────────────────────────────────────── -->
+  <header class="header">
+    <div class="flex items-center gap-2">
+      <button class="btn-menu-toggle" id="menuToggle" aria-label="Buka menu">
+        <i class="fa fa-bars"></i>
+      </button>
+      <span class="header-title" id="pageTitle">Beranda</span>
+    </div>
+    <div class="header-actions">
+      <span class="header-time" id="headerTime"></span>
+      <button class="btn btn-outline btn-sm" id="btnRefresh" title="Refresh data">
+        <i class="fa fa-rotate-right"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- ── Main Content ──────────────────────────────────────────── -->
+  <main class="main-content" id="mainContent">
+    <div class="table-loading">
+      <div class="spinner spinner-lg"></div>
+      <span>Memuat...</span>
+    </div>
+  </main>
+
+</div><!-- /layout -->
+
+<!-- ── Toast container ──────────────────────────────────────────── -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ── Modal overlay ─────────────────────────────────────────────── -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">Modal</h3>
+      <button class="modal-close" id="modalClose">&times;</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<!-- ── Confirm dialog ────────────────────────────────────────────── -->
+<div class="modal-overlay" id="confirmOverlay">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <h3 id="confirmTitle">Konfirmasi</h3>
+      <button class="modal-close" id="confirmClose">&times;</button>
+    </div>
+    <div class="modal-body" id="confirmBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" id="confirmCancel">Batal</button>
+      <button class="btn btn-danger"  id="confirmOk">Hapus</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Sidebar overlay (mobile) ──────────────────────────────────── -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<script type="module" src="dashboard.js"></script>
+
+</body>
+</html>

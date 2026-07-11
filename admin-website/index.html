@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DiReKa Admin — Login</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+
+<div class="login-page">
+  <div class="login-card">
+
+    <div class="login-logo">
+      <div class="login-logo-icon">🏥</div>
+      <div class="login-logo-text">
+        <h1>DiReKa</h1>
+        <p>Admin Dashboard</p>
+      </div>
+    </div>
+
+    <h2>Selamat Datang</h2>
+    <p class="subtitle">Masuk dengan akun admin untuk mengelola sistem.</p>
+
+    <div class="login-error" id="loginError"></div>
+
+    <form id="loginForm" novalidate>
+      <div class="form-group">
+        <label for="email">Email Admin</label>
+        <div class="input-wrap">
+          <i class="icon-left fa fa-envelope"></i>
+          <input
+            type="email"
+            id="email"
+            placeholder="admin@direka.app"
+            autocomplete="username"
+            required
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="input-wrap">
+          <i class="icon-left fa fa-lock"></i>
+          <input
+            type="password"
+            id="password"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            class="has-eye"
+            required
+          />
+          <button type="button" class="btn-eye" id="togglePassword" title="Tampilkan password">
+            <i class="fa fa-eye" id="eyeIcon"></i>
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-login" id="loginBtn">
+        <span id="loginBtnText">Masuk</span>
+      </button>
+    </form>
+
+    <p style="font-size:.72rem;color:var(--text-hint);text-align:center;margin-top:1.25rem;">
+      DiReKa Admin v1.0 · Hanya untuk akun super admin
+    </p>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script type="module">
+  import { redirectIfLoggedIn, loginAdmin } from './auth.js';
+
+  // Redirect kalau sudah login
+  redirectIfLoggedIn();
+
+  // ── Toast helper (inline, tanpa import dashboard.js) ──
+  function showToast(message, type = 'info') {
+    const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+    const c = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerHTML = `<span class="toast-icon">${icons[type]}</span><span class="toast-msg">${message}</span>`;
+    c.appendChild(t);
+    t.addEventListener('click', () => t.remove());
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  const form      = document.getElementById('loginForm');
+  const errBox    = document.getElementById('loginError');
+  const loginBtn  = document.getElementById('loginBtn');
+  const btnText   = document.getElementById('loginBtnText');
+  const pwdInput  = document.getElementById('password');
+  const toggleBtn = document.getElementById('togglePassword');
+  const eyeIcon   = document.getElementById('eyeIcon');
+
+  // Toggle show/hide password
+  toggleBtn.addEventListener('click', () => {
+    const isHidden = pwdInput.type === 'password';
+    pwdInput.type = isHidden ? 'text' : 'password';
+    eyeIcon.className = isHidden ? 'fa fa-eye-slash' : 'fa fa-eye';
+    toggleBtn.title = isHidden ? 'Sembunyikan password' : 'Tampilkan password';
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errBox.classList.remove('show');
+
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    if (!email || !password) {
+      showErr('Email dan password wajib diisi.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await loginAdmin(email, password);
+      window.location.replace('dashboard.html');
+    } catch (err) {
+      let msg = 'Login gagal. Periksa email dan password.';
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
+        msg = 'Email atau password salah.';
+      } else if (err.code === 'auth/user-not-found') {
+        msg = 'Akun tidak ditemukan.';
+      } else if (err.code === 'auth/too-many-requests') {
+        msg = 'Terlalu banyak percobaan. Coba lagi nanti.';
+      } else if (err.message) {
+        msg = err.message;
+      }
+      showErr(msg);
+    } finally {
+      setLoading(false);
+    }
+  });
+
+  function showErr(msg) {
+    errBox.textContent = msg;
+    errBox.classList.add('show');
+  }
+  function setLoading(on) {
+    loginBtn.disabled = on;
+    btnText.textContent = on ? 'Memuat...' : 'Masuk';
+  }
+</script>
+
+</body>
+</html>
