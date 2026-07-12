@@ -5,13 +5,15 @@ import {
   collection, getDocs, query, orderBy, limit,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-import { initUsers }       from './modules/users.js';
-import { initFoodCatalog } from './modules/food-catalog.js';
-import { initEducation }   from './modules/education.js';
+import { initUsers }         from './modules/users.js';
+import { initFoodCatalog }   from './modules/food-catalog.js';
+import { initCookingMethods } from './modules/cooking-methods.js';
+import { initFoodAdditives } from './modules/food-additives.js';
+import { initEducation }     from './modules/education.js';
 import { initPatientDetail } from './modules/patient-detail.js';
-import { initHealth }      from './modules/health.js';
-import { initFoodLogs }    from './modules/food-logs.js';
-import { initBroadcast }   from './modules/broadcast.js';
+import { initHealth }        from './modules/health.js';
+import { initFoodLogs }      from './modules/food-logs.js';
+import { initBroadcast }     from './modules/broadcast.js';
 
 // ── State ──────────────────────────────────────────────────────────
 let currentPage = 'home';
@@ -48,14 +50,16 @@ export function navigateTo(page) {
   });
   // Page title
   const titles = {
-    home:             'Beranda',
-    users:            'Manajemen User',
-    'food-catalog':   'Katalog Makanan',
-    education:        'Edukasi Kesehatan',
-    'patient-detail': 'Detail Pasien',
-    health:           'Semua Rekam Medis',
-    'food-logs':      'Semua Log Makanan',
-    broadcast:        'Broadcast Notifikasi',
+    home:              'Beranda',
+    users:             'Manajemen User',
+    'food-catalog':    'Katalog Makanan',
+    'cooking-methods': 'Metode Pengolahan',
+    'food-additives':  'Bahan Tambahan Makanan',
+    education:         'Edukasi Kesehatan',
+    'patient-detail':  'Detail Pasien',
+    health:            'Semua Rekam Medis',
+    'food-logs':       'Semua Log Makanan',
+    broadcast:         'Broadcast Notifikasi',
   };
   document.getElementById('pageTitle').textContent = titles[page] ?? page;
 
@@ -64,14 +68,16 @@ export function navigateTo(page) {
   main.innerHTML = `<div class="table-loading"><div class="spinner spinner-lg"></div><span>Memuat...</span></div>`;
 
   const loaders = {
-    home:             loadHome,
-    users:            initUsers,
-    'food-catalog':   initFoodCatalog,
-    education:        initEducation,
-    'patient-detail': initPatientDetail,
-    health:           initHealth,
-    'food-logs':      initFoodLogs,
-    broadcast:        initBroadcast,
+    home:              loadHome,
+    users:             initUsers,
+    'food-catalog':    initFoodCatalog,
+    'cooking-methods': initCookingMethods,
+    'food-additives':  initFoodAdditives,
+    education:         initEducation,
+    'patient-detail':  initPatientDetail,
+    health:            initHealth,
+    'food-logs':       initFoodLogs,
+    broadcast:         initBroadcast,
   };
   (loaders[page] ?? (() => main.innerHTML = '<div class="table-empty">Halaman tidak ditemukan.</div>'))();
 }

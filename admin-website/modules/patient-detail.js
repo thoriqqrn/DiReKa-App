@@ -304,12 +304,22 @@ function renderFoodLogs(entries) {
   
   tbody.innerHTML = entries.map(e => {
     const loggedAt = e.loggedAt?.toDate ? e.loggedAt.toDate().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-';
+    
+    let displayName = e.foodName ?? '-';
+    if (e.cookingMethodName && e.cookingMethodName !== 'Mentah (Tidak Diolah)') {
+      displayName += ` (${e.cookingMethodName})`;
+    }
+    if (e.additives && e.additives.length > 0) {
+      const addNames = e.additives.map(a => a.additiveName).join(', ');
+      displayName += ` + ${addNames}`;
+    }
+
     return `
     <tr>
       <td class="text-sm">${e.date}</td>
       <td class="muted text-sm">${loggedAt}</td>
       <td><span class="badge badge-neutral">${mealMap[e.mealType] ?? e.mealType ?? '-'}</span></td>
-      <td class="fw-600">${e.foodName ?? '-'}</td>
+      <td class="fw-600">${displayName}</td>
       <td class="muted">${e.grams ?? '-'} g</td>
       <td class="muted">${e.energi ? Math.round(e.energi) : '-'} kkal</td>
     </tr>

@@ -102,6 +102,16 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /cooking_methods/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /food_additives/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /education_posts/{docId} {
       allow read: if true;
       allow write: if isAdmin();

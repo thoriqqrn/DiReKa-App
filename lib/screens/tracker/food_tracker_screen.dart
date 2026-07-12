@@ -18,6 +18,94 @@ import '../../services/food_log_service.dart';
 import '../../services/app_notification_service.dart';
 import '../../services/nutrition_history_service.dart';
 import '../../widgets/nutrition_line_chart.dart';
+import '../../models/food_modifier.dart';
+import '../../services/food_modifier_service.dart';
+
+class _NumberStepper extends StatelessWidget {
+  final TextEditingController controller;
+  final String labelText;
+  final String suffixText;
+  final VoidCallback onChanged;
+
+  const _NumberStepper({
+    required this.controller,
+    required this.labelText,
+    required this.suffixText,
+    required this.onChanged,
+  });
+
+  void _step(double delta) {
+    final current = double.tryParse(controller.text) ?? 0.0;
+    var next = current + delta;
+    if (next < 0) next = 0;
+    // Format to remove trailing .0
+    controller.text = next.toStringAsFixed(1).replaceAll(RegExp(r'\.0$'), '');
+    onChanged();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      height: 38,
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          InkWell(
+            onTap: () => _step(-0.5),
+            borderRadius: const BorderRadius.horizontal(left: Radius.circular(7)),
+            child: Container(
+              width: 32,
+              alignment: Alignment.center,
+              child: const Icon(Icons.remove, size: 16, color: AppColors.textSecondary),
+            ),
+          ),
+          Container(width: 1, color: AppColors.border),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                hintText: '0',
+              ),
+              onChanged: (_) => onChanged(),
+            ),
+          ),
+          if (suffixText.isNotEmpty) ...[
+            Container(
+              alignment: Alignment.center,
+              padding: const EdgeInsets.only(right: 6),
+              child: Text(
+                suffixText,
+                style: TextStyle(fontSize: 11, color: theme.hintColor),
+              ),
+            ),
+          ],
+          Container(width: 1, color: AppColors.border),
+          InkWell(
+            onTap: () => _step(0.5),
+            borderRadius: const BorderRadius.horizontal(right: Radius.circular(7)),
+            child: Container(
+              width: 32,
+              alignment: Alignment.center,
+              child: const Icon(Icons.add, size: 16, color: AppColors.textSecondary),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SCREEN UTAMA
@@ -484,6 +572,8 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
                   grams: item.grams,
                   mealType: mealType,
                   loggedAt: loggedAt,
+                  cookingMethod: item.cookingMethod,
+                  selectedAdditives: item.additives,
                 ),
               )
               .toList();
@@ -2718,7 +2808,14 @@ class _FoodEntryCard extends StatelessWidget {
 class _CartItem {
   final FoodItem food;
   final double grams;
-  _CartItem({required this.food, required this.grams});
+  final CookingMethod? cookingMethod;
+  final List<SelectedAdditive> additives;
+  _CartItem({
+    required this.food,
+    required this.grams,
+    this.cookingMethod,
+    this.additives = const [],
+  });
 }
 
 class _AddFoodSheet extends StatefulWidget {
@@ -2747,8 +2844,13 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
   // ── Cart state ──────────────────────────────────────────────────────────────
   final List<_CartItem> _cart = [];
 
-  void _addToCart(FoodItem food, double grams) {
-    setState(() => _cart.add(_CartItem(food: food, grams: grams)));
+  void _addToCart(FoodItem food, double grams, {CookingMethod? cookingMethod, List<SelectedAdditive> additives = const []}) {
+    setState(() => _cart.add(_CartItem(
+      food: food,
+      grams: grams,
+      cookingMethod: cookingMethod,
+      additives: additives,
+    )));
     _showCartSuccessOverlay(food.nama, food.emoji);
   }
 
@@ -2831,11 +2933,21 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
   }
 
   void _selectFood(FoodItem food) {
-    if (food.takaranSaji.isNotEmpty) {
-      _showTakaranDialog(food);
-    } else {
-      _showGramDialog(food);
-    }
+    showDialog(
+      context: context,
+      builder: (ctx) => _FoodModifierDialog(
+        food: food,
+        isGuest: widget.isGuest,
+        onSave: (grams, cookingMethod, additives) {
+          Navigator.pop(ctx); // tutup dialog
+          if (widget.isGuest) {
+            _showGuestLoginDialog();
+            return;
+          }
+          _addToCart(food, grams, cookingMethod: cookingMethod, additives: additives);
+        },
+      ),
+    );
   }
 
   /// Shows a dialog prompting the guest to login before they can save.
@@ -2874,167 +2986,6 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
     );
   }
 
-  void _showTakaranDialog(FoodItem food) {
-    showDialog(
-      context: context,
-      builder: (ctx) => Dialog(
-        insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: _TakaranSajiContent(
-          food: food,
-          onSave: (grams) async {
-            Navigator.pop(ctx); // tutup dialog takaran saja
-            if (widget.isGuest) {
-              _showGuestLoginDialog();
-              return;
-            }
-            _addToCart(food, grams); // masuk ke keranjang, sheet tetap terbuka
-          },
-          onCancel: () => Navigator.pop(ctx),
-        ),
-      ),
-    );
-  }
-
-  void _showGramDialog(FoodItem food) {
-    final gramCtrl = TextEditingController(text: '100');
-    final theme = Theme.of(context);
-
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setS) {
-          final grams = double.tryParse(gramCtrl.text) ?? 0;
-          final n = food.calcFor(grams);
-
-          return AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  food.nama,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  food.kategori,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: theme.hintColor,
-                    fontWeight: FontWeight.normal,
-                  ),
-                ),
-              ],
-            ),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Input gram
-                  TextField(
-                    controller: gramCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: InputDecoration(
-                      labelText: 'Berat (gram)',
-                      suffixText: 'g',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 12,
-                      ),
-                    ),
-                    onChanged: (_) => setS(() {}),
-                  ),
-                  const SizedBox(height: 14),
-                  // Preview nutrisi
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: theme.dividerColor.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Column(
-                      children: [
-                        _previewRow('Energi', n['energi']!, 'kkal'),
-                        _previewRow('Protein', n['protein']!, 'g'),
-                        _previewRow('Lemak', n['lemak']!, 'g'),
-                        _previewRow('Karbohidrat', n['karbohidrat']!, 'g'),
-                        _previewRow('Natrium', n['natrium']!, 'mg'),
-                        _previewRow('Kalium', n['kalium']!, 'mg'),
-                        _previewRow('Fosfor', n['fosfor']!, 'mg'),
-                        _previewRow(
-                          'Cairan (Air)',
-                          n['air']!,
-                          'ml',
-                          isLast: true,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Batal'),
-              ),
-              FilledButton(
-                onPressed: grams > 0
-                    ? () {
-                        Navigator.pop(ctx); // tutup dialog gram saja
-                        if (widget.isGuest) {
-                          _showGuestLoginDialog();
-                          return;
-                        }
-                        _addToCart(food, grams); // masuk ke keranjang
-                      }
-                    : null,
-                child: const Text('Tambah ke Keranjang'),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _previewRow(
-    String label,
-    double value,
-    String unit, {
-    bool isLast = false,
-  }) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: EdgeInsets.only(bottom: isLast ? 0 : 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: TextStyle(fontSize: 12, color: theme.hintColor)),
-          Text(
-            '${value.toStringAsFixed(1)} $unit',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: theme.textTheme.bodyLarge?.color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   bool _isCartExpanded = false;
   bool _isSubmitting = false;
 
@@ -3053,11 +3004,10 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
       maxChildSize: 0.95,
       expand: false,
       builder: (ctx, scrollCtrl) {
-        return Container(
-          decoration: BoxDecoration(
-            color: theme.cardTheme.color,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          ),
+        return Material(
+          color: theme.cardTheme.color ?? theme.scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          clipBehavior: Clip.antiAlias,
           child: Column(
             children: [
               // ── Handle ──
@@ -6150,6 +6100,676 @@ class _LegendItem extends StatelessWidget {
               color: color,
               fontWeight: FontWeight.bold,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DIALOG MODIFIKATOR MAKANAN (PENGOLAHAN & BAHAN TAMBAHAN)
+// ─────────────────────────────────────────────────────────────────────────────
+class _FoodModifierDialog extends StatefulWidget {
+  final FoodItem food;
+  final bool isGuest;
+  final void Function(double grams, CookingMethod? cookingMethod, List<SelectedAdditive> additives) onSave;
+
+  const _FoodModifierDialog({
+    required this.food,
+    required this.isGuest,
+    required this.onSave,
+  });
+
+  @override
+  State<_FoodModifierDialog> createState() => _FoodModifierDialogState();
+}
+
+class _FoodModifierDialogState extends State<_FoodModifierDialog> {
+  // Porsi state
+  bool _useCustomGram = false;
+  late int _takaranIdx;
+  
+  // Gunakan controller untuk input jumlah URT & Gram agar bebas mengetik angka desimal
+  final _urtCountCtrl = TextEditingController(text: '1');
+  final _gramCtrl = TextEditingController(text: '100');
+
+  // Modifiers state
+  List<CookingMethod> _cookingMethods = [];
+  List<FoodAdditive> _additivesPool = [];
+  bool _loadingModifiers = true;
+
+  CookingMethod? _selectedCookingMethod;
+  final List<SelectedAdditive> _selectedAdditives = [];
+
+  @override
+  void initState() {
+    super.initState();
+    // Jika tidak ada takaran saji terstruktur, gunakan input custom gram
+    _useCustomGram = widget.food.takaranSaji.isEmpty;
+    final takaranLength = widget.food.takaranSaji.length;
+    _takaranIdx = takaranLength <= 1 ? 0 : 1;
+    
+    // Set inisial gram berdasarkan takaran saji jika ada
+    if (widget.food.takaranSaji.isNotEmpty) {
+      final t = widget.food.takaranSaji[_takaranIdx];
+      _gramCtrl.text = t.gram.toStringAsFixed(0);
+    } else {
+      _gramCtrl.text = '100'; // Default fallback
+    }
+    
+    _loadModifiers();
+  }
+
+  @override
+  void dispose() {
+    _urtCountCtrl.dispose();
+    _gramCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadModifiers() async {
+    try {
+      // Force refresh agar data yang baru di-seed langsung muncul
+      final methods = await FoodModifierService.getCookingMethods(forceRefresh: true);
+      final additives = await FoodModifierService.getFoodAdditives(forceRefresh: true);
+      if (mounted) {
+        setState(() {
+          _cookingMethods = [CookingMethod.mentah, ...methods];
+          _additivesPool = additives;
+          _selectedCookingMethod = CookingMethod.mentah;
+          _loadingModifiers = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingModifiers = false);
+    }
+  }
+
+  double get _baseGrams {
+    if (_useCustomGram) {
+      return double.tryParse(_gramCtrl.text.trim()) ?? 0.0;
+    } else {
+      final count = double.tryParse(_urtCountCtrl.text.trim()) ?? 0.0;
+      final t = widget.food.takaranSaji[_takaranIdx];
+      return t.gram * count;
+    }
+  }
+
+  // ── Hitung kalkulasi real-time gizi ────────────────────────────────────────
+  Map<String, double> get _currentNutrition {
+    final grams = _baseGrams;
+    final baseNutrition = widget.food.calcFor(grams);
+
+    double energi  = (baseNutrition['energi']      ?? 0.0).toDouble();
+    double protein = (baseNutrition['protein']     ?? 0.0).toDouble();
+    double lemak   = (baseNutrition['lemak']       ?? 0.0).toDouble();
+    double karbo   = (baseNutrition['karbohidrat'] ?? 0.0).toDouble();
+    double natrium = (baseNutrition['natrium']     ?? 0.0).toDouble();
+
+    // Terapkan metode pengolahan
+    if (_selectedCookingMethod != null) {
+      final delta = _selectedCookingMethod!.deltaFor(grams);
+      if (_selectedCookingMethod!.mode == CookingNutritionMode.addition) {
+        energi  += delta['energi']      ?? 0;
+        lemak   += delta['lemak']       ?? 0;
+        karbo   += delta['karbohidrat'] ?? 0;
+        protein += delta['protein']     ?? 0;
+        natrium += delta['natrium']     ?? 0;
+      } else {
+        // Factor mode
+        final fk = delta['fk'] ?? 1.0;
+        final rawNutrition = widget.food.calcFor(grams * fk);
+        energi  = (rawNutrition['energi']      ?? 0.0).toDouble();
+        protein = (rawNutrition['protein']     ?? 0.0).toDouble();
+        lemak   = (rawNutrition['lemak']       ?? 0.0).toDouble();
+        karbo   = (rawNutrition['karbohidrat'] ?? 0.0).toDouble();
+        natrium = (rawNutrition['natrium']     ?? 0.0).toDouble();
+      }
+    }
+
+    // Tambahkan bahan tambahan
+    for (final sa in _selectedAdditives) {
+      final n = sa.totalNutrisi;
+      energi  += n['energi']      ?? 0;
+      lemak   += n['lemak']       ?? 0;
+      karbo   += n['karbohidrat'] ?? 0;
+      protein += n['protein']     ?? 0;
+      natrium += n['natrium']     ?? 0;
+    }
+
+    return {
+      'energi': energi,
+      'karbohidrat': karbo,
+      'lemak': lemak,
+      'protein': protein,
+      'natrium': natrium,
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final nutrition = _currentNutrition;
+
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 440),
+        child: _loadingModifiers
+            ? const SizedBox(
+                height: 220,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                      ),
+                      SizedBox(height: 12),
+                      Text('Memuat metode & bahan...', style: TextStyle(fontSize: 12)),
+                    ],
+                  ),
+                ),
+              )
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(widget.food.emoji, style: const TextStyle(fontSize: 22)),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      widget.food.nama,
+                                      style: const TextStyle(
+                                          fontSize: 16, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${widget.food.kategori} ${widget.food.urt.isNotEmpty ? "• URT: " + widget.food.urt : ""}',
+                                style: TextStyle(
+                                    fontSize: 11, color: theme.hintColor),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 24),
+
+                    // ── 1. Pilihan Porsi ─────────────────────────────────────
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Porsi Makanan',
+                          style: TextStyle(
+                              fontSize: 13, fontWeight: FontWeight.bold),
+                        ),
+                        if (widget.food.takaranSaji.isNotEmpty)
+                          Container(
+                            decoration: BoxDecoration(
+                              color: theme.dividerColor.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                InkWell(
+                                  onTap: () {
+                                    setState(() => _useCustomGram = false);
+                                  },
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: !_useCustomGram ? AppColors.primary : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      'URT',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: !_useCustomGram ? FontWeight.bold : FontWeight.w500,
+                                        color: !_useCustomGram ? Colors.white : AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      _useCustomGram = true;
+                                      final t = widget.food.takaranSaji[_takaranIdx];
+                                      _gramCtrl.text = t.gram.toStringAsFixed(0);
+                                    });
+                                  },
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: _useCustomGram ? AppColors.primary : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      'Gram',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: _useCustomGram ? FontWeight.bold : FontWeight.w500,
+                                        color: _useCustomGram ? Colors.white : AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    if (_useCustomGram) ...[
+                      TextField(
+                        controller: _gramCtrl,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        decoration: const InputDecoration(
+                          labelText: 'Berat porsi (gram)',
+                          suffixText: 'g',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                        onChanged: (v) => setState(() {}),
+                      ),
+                    ] else ...[
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: DropdownButtonFormField<int>(
+                              value: _takaranIdx,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Takaran saji',
+                                border: OutlineInputBorder(),
+                                isDense: true,
+                              ),
+                              items: List.generate(
+                                widget.food.takaranSaji.length,
+                                (i) {
+                                  final t = widget.food.takaranSaji[i];
+                                  return DropdownMenuItem(
+                                    value: i,
+                                    child: Text('${t.ukuran} (${t.gram.toStringAsFixed(0)}g)'),
+                                  );
+                                },
+                              ),
+                              onChanged: (v) {
+                                if (v != null) {
+                                  setState(() {
+                                    _takaranIdx = v;
+                                    final t = widget.food.takaranSaji[v];
+                                    _gramCtrl.text = t.gram.toStringAsFixed(0);
+                                  });
+                                }
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            flex: 2,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                const Text('Jumlah', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                                const SizedBox(height: 4),
+                                _NumberStepper(
+                                  controller: _urtCountCtrl,
+                                  labelText: '',
+                                  suffixText: '', // Kosongkan agar lega
+                                  onChanged: () => setState(() {}),
+                                ),
+                                const SizedBox(height: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: theme.primaryColor.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    widget.food.satuanNama,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.primaryColor,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+
+                    // ── 2. Pilihan Pengolahan ──────────────────────────────
+                    const Text(
+                      'Metode Masak / Pengolahan',
+                      style: TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 6),
+                    DropdownButtonFormField<CookingMethod>(
+                      value: _selectedCookingMethod,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      items: _cookingMethods.map((m) {
+                        final String tag = m.mode == CookingNutritionMode.addition && m.id != 'mentah'
+                            ? ' (+ lemak)'
+                            : m.id != 'mentah' ? ' (FK: ${m.defaultFk})' : '';
+                        return DropdownMenuItem(
+                          value: m,
+                          child: Text(
+                            m.name + tag,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (v) {
+                        if (v != null) setState(() => _selectedCookingMethod = v);
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── 3. Bahan Tambahan ──────────────────────────────────
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Bahan Tambahan (Bumbu/Tepung/Garam)',
+                            style: TextStyle(
+                                fontSize: 13, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: _showAddAdditiveDialog,
+                          icon: const Icon(Icons.add_circle_outline, size: 16),
+                          label: const Text('Tambah'),
+                        ),
+                      ],
+                    ),
+                    if (_selectedAdditives.isEmpty) ...[
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Text(
+                          '— Tanpa bahan tambahan —',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontStyle: FontStyle.italic,
+                            color: AppColors.textHint,
+                          ),
+                        ),
+                      ),
+                    ] else ...[
+                      ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: _selectedAdditives.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        itemBuilder: (ctx, idx) {
+                          final sa = _selectedAdditives[idx];
+                          final countController = TextEditingController(
+                            text: sa.jumlahUnit.toString().replaceAll('.0', ''),
+                          );
+                          return Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: theme.hoverColor,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        sa.additive.name,
+                                        style: const TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                      Text(
+                                        '1 ${sa.additive.unitLabel} = ±${sa.additive.gramPerUnit.toStringAsFixed(0)}g',
+                                        style: TextStyle(
+                                            fontSize: 11,
+                                            color: theme.hintColor),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                // Input jumlah URT dinamis dengan stepper
+                                SizedBox(
+                                  width: 110,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      _NumberStepper(
+                                        controller: countController,
+                                        labelText: '',
+                                        suffixText: '',
+                                        onChanged: () {
+                                          final parsed = double.tryParse(countController.text) ?? 0.0;
+                                          setState(() {
+                                            _selectedAdditives[idx] = SelectedAdditive(
+                                              additive: sa.additive,
+                                              jumlahUnit: parsed,
+                                            );
+                                          });
+                                        },
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: theme.primaryColor.withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: Text(
+                                          sa.additive.unitLabel,
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.bold,
+                                            color: theme.primaryColor,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                IconButton(
+                                  onPressed: () => setState(() => _selectedAdditives.removeAt(idx)),
+                                  icon: const Icon(Icons.delete_outline,
+                                      color: AppColors.error, size: 20),
+                                  constraints: const BoxConstraints(),
+                                  padding: EdgeInsets.zero,
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                    const Divider(height: 32),
+
+                    // ── 4. Pratinjau Gizi Real-time ─────────────────────────
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                            color: AppColors.primary.withValues(alpha: 0.2)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Estimasi Nutrisi Porsi Ini',
+                            style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary),
+                          ),
+                          const SizedBox(height: 8),
+                          _nutritionRow('Energi', nutrition['energi']!, 'kkal', isPrimary: true),
+                          _nutritionRow('Karbohidrat', nutrition['karbohidrat']!, 'g'),
+                          _nutritionRow('Protein', nutrition['protein']!, 'g'),
+                          _nutritionRow('Lemak', nutrition['lemak']!, 'g'),
+                          _nutritionRow('Natrium', nutrition['natrium']!, 'mg',
+                              color: nutrition['natrium']! > 400 ? AppColors.error : null),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Actions
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Batal'),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: _baseGrams <= 0
+                                ? null
+                                : () {
+                                    widget.onSave(_baseGrams, _selectedCookingMethod, _selectedAdditives);
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('Tambahkan'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+      ),
+    );
+  }
+
+  void _showAddAdditiveDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: Text(
+                'Pilih Bahan Tambahan',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const Divider(),
+            Expanded(
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: _additivesPool.length,
+                separatorBuilder: (_, __) => const Divider(height: 1),
+                itemBuilder: (context, i) {
+                  final a = _additivesPool[i];
+                  return ListTile(
+                    dense: true,
+                    title: Text(a.name),
+                    subtitle: Text('${a.unitLabel} • ${a.category}'),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      setState(() {
+                        // Jangan duplikat
+                        if (!_selectedAdditives.any((x) => x.additive.id == a.id)) {
+                          _selectedAdditives.add(
+                            SelectedAdditive(additive: a, jumlahUnit: 1.0),
+                          );
+                        }
+                      });
+                    },
+                  );
+                },
+              ),
+            ),
+            const Divider(),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Align(
+                alignment: Alignment.centerRight,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Text('Tutup'),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _nutritionRow(String label, double value, String unit, {bool isPrimary = false, Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.5),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label,
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: isPrimary ? FontWeight.w600 : FontWeight.normal)),
+          Text(
+            '${value.toStringAsFixed(1)} $unit',
+            style: TextStyle(
+                fontSize: isPrimary ? 13 : 12,
+                fontWeight: FontWeight.bold,
+                color: color ?? (isPrimary ? AppColors.primary : AppColors.textPrimary)),
           ),
         ],
       ),

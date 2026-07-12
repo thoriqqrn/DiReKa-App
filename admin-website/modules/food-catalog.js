@@ -178,10 +178,24 @@ function openFoodForm(food = null) {
         </select>
       </div>
       <div class="form-group">
-        <label>Satuan / URT</label>
-        <input id="fUrt" value="${food?.urt ?? ''}" placeholder="1 centong (100g)" />
+        <label>Nama Satuan Dasar</label>
+        <input id="fSatuan" value="${food?.satuanNama ?? 'Porsi'}" placeholder="cth: Porsi, Centong, Buah" />
       </div>
     </div>
+    
+    <div class="form-group">
+      <label>Keterangan URT (Opsional)</label>
+      <input id="fUrt" value="${food?.urt ?? ''}" placeholder="cth: 1 porsi sedang = 100g" />
+    </div>
+
+    <div class="detail-section-title flex justify-between items-center" style="margin-top:1.5rem">
+      <span>Takaran Saji</span>
+      <button class="btn btn-outline btn-sm" id="btnAddTakaran"><i class="fa fa-plus"></i> Tambah</button>
+    </div>
+    <div id="takaranContainer" style="display:flex;flex-direction:column;gap:8px;margin-bottom:1rem">
+      <!-- Injected via JS -->
+    </div>
+
     <div class="detail-section-title">Nilai Gizi (per 100g)</div>
     <div class="form-row">
       <div class="form-group"><label>Energi (kkal)</label><input id="fEnergi" type="number" step="0.1" value="${food?.energi ?? ''}" /></div>
@@ -212,11 +226,48 @@ function openFoodForm(food = null) {
     true,
   );
 
+  let currentTakaran = food?.takaranSaji ? [...food.takaranSaji] : [];
+  
+  function renderTakaran() {
+    const cont = document.getElementById('takaranContainer');
+    if (currentTakaran.length === 0) {
+      cont.innerHTML = '<div style="font-size:.8rem;color:var(--text-secondary);text-align:center;padding:.5rem">Belum ada takaran saji terstruktur. User akan dipaksa input Gram manual.</div>';
+      return;
+    }
+    cont.innerHTML = currentTakaran.map((t, i) => `
+      <div style="display:flex;gap:8px;align-items:center;background:var(--color-bg);padding:8px;border-radius:6px;border:1px solid var(--color-border)">
+        <input type="text" class="tUkuran" data-idx="${i}" value="${t.ukuran ?? ''}" placeholder="Cth: Sedang" style="flex:1;padding:6px;border:1px solid var(--color-border);border-radius:4px;font-size:.8rem" />
+        <input type="number" class="tGram" data-idx="${i}" value="${t.gram ?? ''}" placeholder="Gram" style="width:70px;padding:6px;border:1px solid var(--color-border);border-radius:4px;font-size:.8rem" />
+        <button class="btn-ghost btn-del-takaran" data-idx="${i}" style="color:var(--color-error);padding:4px"><i class="fa fa-trash"></i></button>
+      </div>
+    `).join('');
+
+    cont.querySelectorAll('.tUkuran').forEach(el => 
+      el.addEventListener('input', e => currentTakaran[e.target.dataset.idx].ukuran = e.target.value)
+    );
+    cont.querySelectorAll('.tGram').forEach(el => 
+      el.addEventListener('input', e => currentTakaran[e.target.dataset.idx].gram = Number(e.target.value))
+    );
+    cont.querySelectorAll('.btn-del-takaran').forEach(el => 
+      el.addEventListener('click', e => {
+        currentTakaran.splice(Number(e.currentTarget.dataset.idx), 1);
+        renderTakaran();
+      })
+    );
+  }
+
+  renderTakaran();
+
+  document.getElementById('btnAddTakaran').addEventListener('click', () => {
+    currentTakaran.push({ ukuran: '', gram: 100, label: '' });
+    renderTakaran();
+  });
+
   document.getElementById('fCancel').addEventListener('click', closeModal);
-  document.getElementById('fSave').addEventListener('click', () => saveFood(food));
+  document.getElementById('fSave').addEventListener('click', () => saveFood(food, currentTakaran));
 }
 
-async function saveFood(existing) {
+async function saveFood(existing, takaranArr) {
   const nama = document.getElementById('fNama').value.trim();
   if (!nama) { showToast('Nama makanan wajib diisi.', 'warning'); return; }
 
@@ -225,10 +276,21 @@ async function saveFood(existing) {
     return v !== '' ? Number(v) : null;
   };
 
+  const cleanTakaran = takaranArr
+    .filter(t => t.ukuran.trim() !== '' && t.gram > 0)
+    .map(t => ({
+      ukuran: t.ukuran.trim(),
+      gram: t.gram,
+      label: '1 ' + document.getElementById('fSatuan').value.trim() + ' ' + t.ukuran.trim()
+    }));
+
   const data = {
     nama,
     emoji:         document.getElementById('fEmoji').value.trim() || '🍽️',
     kategori:      document.getElementById('fKat').value,
+    satuanNama:    document.getElementById('fSatuan').value.trim() || 'Porsi',
+    urt:           document.getElementById('fUrt').value.trim(),
+    takaranSaji:   cleanTakaran,
     urt:           document.getElementById('fUrt').value.trim(),
     energi:        num('fEnergi'),
     protein:       num('fProtein'),

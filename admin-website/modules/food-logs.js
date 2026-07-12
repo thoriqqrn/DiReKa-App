@@ -162,7 +162,16 @@ function renderTable() {
   }
 
   const start = (curPage - 1) * PER_PAGE;
-  tbody.innerHTML = items.map((e, i) => `
+  tbody.innerHTML = items.map((e, i) => {
+    let displayName = e.foodName ?? '-';
+    if (e.cookingMethodName && e.cookingMethodName !== 'Mentah (Tidak Diolah)') {
+      displayName += ` (${e.cookingMethodName})`;
+    }
+    if (e.additives && e.additives.length > 0) {
+      const addNames = e.additives.map(a => a.additiveName).join(', ');
+      displayName += ` + ${addNames}`;
+    }
+    return `
     <tr>
       <td class="muted">${start + i + 1}</td>
       <td>
@@ -171,7 +180,7 @@ function renderTable() {
       </td>
       <td class="muted text-sm">${e._date}</td>
       <td><span class="badge badge-neutral">${MEAL_LABELS[e.mealType] ?? e.mealType ?? '-'}</span></td>
-      <td><strong>${e.foodName ?? '-'}</strong></td>
+      <td><strong>${displayName}</strong></td>
       <td class="muted">${e.grams ?? '-'} g</td>
       <td class="muted">${e.energi ? Math.round(e.energi) : '-'} kkal</td>
       <td class="muted">${e.protein ?? '-'} g</td>
@@ -182,7 +191,7 @@ function renderTable() {
           <i class="fa fa-eye"></i>
         </button>
       </td>
-    </tr>`).join('');
+    </tr>`}).join('');
 
   tbody.querySelectorAll('.btn-view').forEach(b =>
     b.addEventListener('click', () => viewEntry(filtered[Number(b.dataset.idx)])));
@@ -194,6 +203,10 @@ function renderTable() {
 
 function viewEntry(e) {
   const loggedAt = e.loggedAt?.toDate ? e.loggedAt.toDate().toLocaleString('id-ID') : '-';
+  const additivesStr = e.additives && e.additives.length > 0
+    ? e.additives.map(a => `${a.additiveName} (${a.jumlahUnit} URT)`).join(', ')
+    : 'Tidak ada';
+
   openModal(
     `Detail Log — ${e.foodName ?? '-'}`,
     `<div class="detail-grid">
@@ -204,6 +217,8 @@ function viewEntry(e) {
        <div class="detail-item"><label>Meal</label><span>${MEAL_LABELS[e.mealType] ?? e.mealType ?? '-'}</span></div>
        <div class="detail-item"><label>Makanan</label><span>${e.foodName ?? '-'}</span></div>
        <div class="detail-item"><label>Porsi</label><span>${e.grams ?? '-'} gram</span></div>
+       <div class="detail-item"><label>Cara Masak</label><span>${e.cookingMethodName ?? 'Mentah (Tidak Diolah)'}</span></div>
+       <div class="detail-item"><label>Bahan Tambahan</label><span>${additivesStr}</span></div>
      </div>
      <div class="detail-section-title">Nilai Gizi</div>
      <div class="detail-grid">

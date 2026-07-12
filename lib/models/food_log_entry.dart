@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'food_item.dart';
+import 'food_modifier.dart';
 import 'meal_type.dart';
 
 /// Satu entri makanan yang dicatat user dalam satu hari.
@@ -10,9 +11,16 @@ class FoodLogEntry {
   final String foodName;
   final double grams;
   final DateTime loggedAt;
-  final MealType mealType; // ← NEW: Which meal category
+  final MealType mealType;
 
-  // Nilai nutrisi sudah dihitung untuk [grams] gram
+  // ── Pengolahan ─────────────────────────────────────────────────────────
+  final String? cookingMethodId;
+  final String? cookingMethodName;
+
+  // ── Bahan Tambahan ─────────────────────────────────────────────────────
+  final List<Map<String, dynamic>> additives; // list SelectedAdditive.toMap()
+
+  // Nilai nutrisi sudah dihitung untuk [grams] gram TERMASUK pengolahan & bahan tambahan
   final double energi;
   final double protein;
   final double lemak;
@@ -20,11 +28,11 @@ class FoodLogEntry {
   final double natrium;
   final double kalium;
   final double fosfor;
-  final double air; // cairan dari makanan ini
-  final double serat; // g
-  final double indeksGlikemik; // Samakan dengan FoodItem
-  final double kalsium; // mg
-  final double magnesium; // mg
+  final double air;
+  final double serat;
+  final double indeksGlikemik;
+  final double kalsium;
+  final double magnesium;
 
   const FoodLogEntry({
     required this.id,
@@ -45,23 +53,95 @@ class FoodLogEntry {
     this.indeksGlikemik = 0.0,
     this.kalsium = 0.0,
     this.magnesium = 0.0,
+    this.cookingMethodId,
+    this.cookingMethodName,
+    this.additives = const [],
   });
 
-  /// Hitung Glycemic Load (GL) untuk entri ini: (GI * Karbohidrat) / 100
-  double get glycemicLoad {
-    return (indeksGlikemik * karbohidrat) / 100.0;
+  double get glycemicLoad => (indeksGlikemik * karbohidrat) / 100.0;
+
+  // ── Nama tampilan lengkap di log ──────────────────────────────────────
+  String get displayName {
+    final parts = <String>[foodName];
+    if (cookingMethodName != null && cookingMethodName!.isNotEmpty &&
+        cookingMethodName != 'Mentah (Tidak Diolah)') {
+      parts.add('(${cookingMethodName!})');
+    }
+    if (additives.isNotEmpty) {
+      final addNames = additives
+          .map((a) => '${a['additiveName']}')
+          .join(', ');
+      parts.add('+ $addNames');
+    }
+    return parts.join(' ');
   }
 
-  /// Buat entri baru dari [food] dan jumlah [grams].
-  /// [loggedAt] opsional — jika tidak diisi pakai DateTime.now().
+  /// Buat entri baru dari [food], [grams], metode masak, dan bahan tambahan.
   factory FoodLogEntry.create({
     required FoodItem food,
     required double grams,
     required MealType mealType,
     DateTime? loggedAt,
+    CookingMethod? cookingMethod,
+    List<SelectedAdditive> selectedAdditives = const [],
   }) {
-    final n = food.calcFor(grams);
+    final baseNutrition = food.calcFor(grams);
     final now = loggedAt ?? DateTime.now();
+
+    // ── Hitung gizi dari bahan dasar ──────────────────────────────────
+    double energi  = (baseNutrition['energi']      ?? 0.0).toDouble();
+    double protein = (baseNutrition['protein']     ?? 0.0).toDouble();
+    double lemak   = (baseNutrition['lemak']       ?? 0.0).toDouble();
+    double karbo   = (baseNutrition['karbohidrat'] ?? 0.0).toDouble();
+    double natrium = (baseNutrition['natrium']     ?? 0.0).toDouble();
+    double kalium  = (baseNutrition['kalium']      ?? 0.0).toDouble();
+    double fosfor  = (baseNutrition['fosfor']      ?? 0.0).toDouble();
+    double air     = (baseNutrition['air']         ?? 0.0).toDouble();
+    double serat   = (baseNutrition['serat']       ?? 0.0).toDouble();
+    double kalsium = (baseNutrition['kalsium']     ?? 0.0).toDouble();
+    double magnesium = (baseNutrition['magnesium'] ?? 0.0).toDouble();
+
+    // ── Terapkan metode pengolahan ────────────────────────────────────
+    if (cookingMethod != null) {
+      final delta = cookingMethod.deltaFor(grams);
+      if (cookingMethod.mode == CookingNutritionMode.addition) {
+        energi  += delta['energi']      ?? 0;
+        lemak   += delta['lemak']       ?? 0;
+        karbo   += delta['karbohidrat'] ?? 0;
+        protein += delta['protein']     ?? 0;
+        natrium += delta['natrium']     ?? 0;
+      } else {
+        // Factor mode: gizi dihitung ulang menggunakan FK
+        final fk = delta['fk'] ?? 1.0;
+        final beratMentah = grams * fk;
+        final rawNutrition = food.calcFor(beratMentah);
+        energi  = (rawNutrition['energi']      ?? 0.0).toDouble();
+        protein = (rawNutrition['protein']     ?? 0.0).toDouble();
+        lemak   = (rawNutrition['lemak']       ?? 0.0).toDouble();
+        karbo   = (rawNutrition['karbohidrat'] ?? 0.0).toDouble();
+        natrium = (rawNutrition['natrium']     ?? 0.0).toDouble();
+        kalium  = (rawNutrition['kalium']      ?? 0.0).toDouble();
+        fosfor  = (rawNutrition['fosfor']      ?? 0.0).toDouble();
+        air     = (rawNutrition['air']         ?? 0.0).toDouble();
+        serat   = (rawNutrition['serat']       ?? 0.0).toDouble();
+        kalsium = (rawNutrition['kalsium']     ?? 0.0).toDouble();
+        magnesium = (rawNutrition['magnesium'] ?? 0.0).toDouble();
+      }
+    }
+
+    // ── Tambahkan gizi dari bahan tambahan ────────────────────────────
+    for (final sa in selectedAdditives) {
+      final n = sa.totalNutrisi;
+      energi  += n['energi']      ?? 0;
+      lemak   += n['lemak']       ?? 0;
+      karbo   += n['karbohidrat'] ?? 0;
+      protein += n['protein']     ?? 0;
+      natrium += n['natrium']     ?? 0;
+      kalium  += n['kalium']      ?? 0;
+      fosfor  += n['fosfor']      ?? 0;
+      serat   += n['serat']       ?? 0;
+    }
+
     return FoodLogEntry(
       id: now.microsecondsSinceEpoch.toString(),
       foodId: food.id,
@@ -69,18 +149,21 @@ class FoodLogEntry {
       grams: grams,
       loggedAt: now,
       mealType: mealType,
-      energi: (n['energi'] ?? 0.0).toDouble(),
-      protein: (n['protein'] ?? 0.0).toDouble(),
-      lemak: (n['lemak'] ?? 0.0).toDouble(),
-      karbohidrat: (n['karbohidrat'] ?? 0.0).toDouble(),
-      natrium: (n['natrium'] ?? 0.0).toDouble(),
-      kalium: (n['kalium'] ?? 0.0).toDouble(),
-      fosfor: (n['fosfor'] ?? 0.0).toDouble(),
-      air: (n['air'] ?? 0.0).toDouble(),
-      serat: (n['serat'] ?? 0.0).toDouble(),
+      cookingMethodId: cookingMethod?.id,
+      cookingMethodName: cookingMethod?.name,
+      additives: selectedAdditives.map((a) => a.toMap()).toList(),
+      energi: energi,
+      protein: protein,
+      lemak: lemak,
+      karbohidrat: karbo,
+      natrium: natrium,
+      kalium: kalium,
+      fosfor: fosfor,
+      air: air,
+      serat: serat,
       indeksGlikemik: food.indeksGlikemik.toDouble(),
-      kalsium: (n['kalsium'] ?? 0.0).toDouble(),
-      magnesium: (n['magnesium'] ?? 0.0).toDouble(),
+      kalsium: kalsium,
+      magnesium: magnesium,
     );
   }
 
@@ -92,6 +175,9 @@ class FoodLogEntry {
       'grams': grams,
       'loggedAt': Timestamp.fromDate(loggedAt),
       'mealType': mealType.value,
+      'cookingMethodId': cookingMethodId,
+      'cookingMethodName': cookingMethodName,
+      'additives': additives,
       'energi': energi,
       'protein': protein,
       'lemak': lemak,
@@ -115,6 +201,14 @@ class FoodLogEntry {
       return 0.0;
     }
 
+    List<Map<String, dynamic>> parseAdditives(dynamic raw) {
+      if (raw == null) return [];
+      if (raw is List) {
+        return raw.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      return [];
+    }
+
     return FoodLogEntry(
       id: (map['id'] ?? '').toString(),
       foodId: (map['foodId'] ?? '').toString(),
@@ -126,6 +220,9 @@ class FoodLogEntry {
       mealType: MealTypeExtension.fromValue(
         map['mealType'] as String? ?? 'makan_siang',
       ),
+      cookingMethodId: map['cookingMethodId']?.toString(),
+      cookingMethodName: map['cookingMethodName']?.toString(),
+      additives: parseAdditives(map['additives']),
       energi: toDouble(map['energi']),
       protein: toDouble(map['protein']),
       lemak: toDouble(map['lemak']),
