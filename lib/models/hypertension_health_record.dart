@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum HypertensionInputType { tekananDarah, pemeriksaan, obat, gejala, aktivitas }
+enum HypertensionInputType { tekananDarah, pemeriksaan, obat, gejala, aktivitas, stres }
 
 extension HypertensionInputTypeExtension on HypertensionInputType {
   String get value {
@@ -15,6 +15,8 @@ extension HypertensionInputTypeExtension on HypertensionInputType {
         return 'gejala';
       case HypertensionInputType.aktivitas:
         return 'aktivitas';
+      case HypertensionInputType.stres:
+        return 'stres';
     }
   }
 
@@ -30,6 +32,8 @@ extension HypertensionInputTypeExtension on HypertensionInputType {
         return 'Gejala';
       case HypertensionInputType.aktivitas:
         return 'Aktivitas';
+      case HypertensionInputType.stres:
+        return 'Stres & Mood';
     }
   }
 }
@@ -44,6 +48,8 @@ HypertensionInputType hypertensionInputTypeFromValue(String value) {
       return HypertensionInputType.gejala;
     case 'aktivitas':
       return HypertensionInputType.aktivitas;
+    case 'stres':
+      return HypertensionInputType.stres;
     default:
       return HypertensionInputType.pemeriksaan;
   }

@@ -152,7 +152,7 @@ class DayStreakCard extends StatelessWidget {
                     const Text('⭐', style: TextStyle(fontSize: 18)),
                     const SizedBox(height: 2),
                     Text(
-                      'Rekor\n${user.longestStreak}',
+                      'Total\n${user.currentStreak}',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 10,

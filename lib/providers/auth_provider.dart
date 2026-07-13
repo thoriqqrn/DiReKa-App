@@ -113,38 +113,30 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /// Update streak hanya saat ada aktivitas input (makanan/health).
-  /// Tidak otomatis bertambah saat login aplikasi.
-  /// Tidak melakukan reset otomatis saat ada hari yang terlewat.
+  /// PERMINTAAN KLIEN: Streak tidak boleh di-reset, berfungsi sebagai "Total Hari Aktif".
+  /// Selama belum pernah ada aktivitas di hari yang sama, count akan terus bertambah +1.
   Future<void> _updateDayStreak() async {
     if (_userModel == null) return;
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final lastActivityDate = _userModel!.lastLoginDate;
+    
+    // Periksa apakah 'today' sudah ada di dalam loginDates (riwayat hari aktif)
+    // loginDates menyimpan tanggal-tanggal unik saat pengguna melakukan input.
+    final hasActivityToday = _userModel!.loginDates.any((d) => 
+        d.year == today.year && d.month == today.month && d.day == today.day);
 
-    int newStreak = _userModel!.currentStreak;
-    int newLongest = _userModel!.longestStreak;
-    List<DateTime> updatedLogins = [..._userModel!.loginDates];
-
-    // Cegah duplikasi: aktivitas di hari yang sama tidak menambah streak lagi.
-    final hasActivityToday =
-        lastActivityDate != null &&
-        lastActivityDate.year == today.year &&
-        lastActivityDate.month == today.month &&
-        lastActivityDate.day == today.day;
-
-    if (hasActivityToday) return;
-
-    // Tambah streak satu kali saat ada input di hari ini.
-    newStreak = (newStreak <= 0) ? 1 : newStreak + 1;
-
-    // Update longest streak jika perlu.
-    if (newStreak > newLongest) {
-      newLongest = newStreak;
+    if (hasActivityToday) {
+      // Sudah ada aktivitas input hari ini, jangan tambah hitungan.
+      return;
     }
 
-    // Simpan tanggal aktivitas harian untuk kalender streak.
-    updatedLogins.add(today);
+    int newStreak = _userModel!.currentStreak + 1;
+    // longestStreak bisa kita samakan saja dengan currentStreak
+    // karena tidak ada reset, angka keduanya akan selalu sama dan terus naik.
+    int newLongest = newStreak;
+    
+    List<DateTime> updatedLogins = [..._userModel!.loginDates, today];
 
     final updated = _userModel!.copyWith(
       currentStreak: newStreak,

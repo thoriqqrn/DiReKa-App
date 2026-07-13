@@ -1958,16 +1958,23 @@ class _HypertensionSummaryCard extends StatelessWidget {
 
   static const Color _htColor = Color(0xFF00897B); // teal-700
 
-  /// Traffic light for hypertension nutrients.
-  /// wideRange (Kalium, Serat, Kalsium, Magnesium, Protein): 80-110% hijau
-  /// others (Energi, Lemak, Karbohidrat, Natrium): 80-110% hijau, 60-79% kuning
+  /// Traffic light for hypertension nutrients (dari requirement klien):
+  /// Kalium, Serat, Kalsium, Magnesium: <80% dan >120% (Merah), >110% (Kuning), 80%-110% (Hijau)
+  /// Protein: <90% dan >120% (Merah), >110% (Kuning), 90%-110% (Hijau)
+  /// Energi, Lemak, Karbohidrat, Natrium: <60% dan >110% (Merah), 60%-79% (Kuning), 80%-110% (Hijau)
   Color _getHtStatusColor(String nutrient, double percentage) {
-    const wideRange = {'kalium', 'serat', 'kalsium', 'magnesium', 'protein'};
+    if (nutrient == 'protein') {
+      if (percentage >= 0.90 && percentage <= 1.10) return AppColors.success; // Hijau
+      if (percentage > 1.10 && percentage <= 1.20) return AppColors.warning; // Kuning
+      return AppColors.error; // Merah
+    }
+    const wideRange = {'kalium', 'serat', 'kalsium', 'magnesium'};
     if (wideRange.contains(nutrient)) {
       if (percentage >= 0.80 && percentage <= 1.10) return AppColors.success;
       if (percentage > 1.10 && percentage <= 1.20) return AppColors.warning;
       return AppColors.error;
     } else {
+      // Energi, Lemak, Karbohidrat, Natrium
       if (percentage >= 0.80 && percentage <= 1.10) return AppColors.success;
       if (percentage >= 0.60 && percentage < 0.80) return AppColors.warning;
       return AppColors.error;
@@ -2207,13 +2214,7 @@ class _HypertensionSummaryCard extends StatelessWidget {
                     final unit = r.$5;
                     final pct = _pct(actual, target);
                     final color = _getHtStatusColor(key, pct);
-                    final exceeded = key == 'kalium' ||
-                            key == 'serat' ||
-                            key == 'kalsium' ||
-                            key == 'magnesium' ||
-                            key == 'protein'
-                        ? pct > 1.20
-                        : pct > 1.10;
+                    
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 14),
                       child: Column(
@@ -2231,46 +2232,45 @@ class _HypertensionSummaryCard extends StatelessWidget {
                                 ),
                               ),
                               const Spacer(),
-                              if (exceeded)
-                                Container(
-                                  margin:
-                                      const EdgeInsets.only(right: 6),
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 6, vertical: 1),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.error
-                                        .withValues(alpha: 0.12),
-                                    borderRadius:
-                                        BorderRadius.circular(6),
-                                  ),
-                                  child: const Text(
-                                    'Melebihi!',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: AppColors.error,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
                               Text(
                                 '${fmtVal(actual)} / ${fmtVal(target)} $unit',
                                 style: TextStyle(
                                     fontSize: 11,
+                                    fontWeight: FontWeight.w500,
                                     color: theme.hintColor),
                               ),
                             ],
                           ),
                           const SizedBox(height: 6),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
-                            child: LinearProgressIndicator(
-                              value: pct.clamp(0.0, 1.0),
-                              minHeight: 7,
-                              backgroundColor: theme.dividerColor
-                                  .withValues(alpha: 0.1),
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(color),
-                            ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(4),
+                                  child: LinearProgressIndicator(
+                                    value: pct.clamp(0.0, 1.0),
+                                    minHeight: 7,
+                                    backgroundColor: theme.dividerColor
+                                        .withValues(alpha: 0.1),
+                                    valueColor:
+                                        AlwaysStoppedAnimation<Color>(color),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              SizedBox(
+                                width: 36,
+                                child: Text(
+                                  '${(pct * 100).toStringAsFixed(0)}%',
+                                  textAlign: TextAlign.right,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: color,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
