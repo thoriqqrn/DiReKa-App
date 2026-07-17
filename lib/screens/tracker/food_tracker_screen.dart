@@ -772,7 +772,15 @@ class _FoodTrackerScreenState extends State<FoodTrackerScreen> {
                                 intake: intake,
                               ),
                             ]
-                            // 3. Other patients: Show nutrition summary
+                            // 5. Heart Failure: ringkasan nutrisi harian khusus
+                            else if (auth.currentUser?.diseaseType ==
+                                DiseaseType.heartFailure) ...[
+                              _HFNutritionSummaryCard(
+                                needs: needs,
+                                intake: intake,
+                              ),
+                            ]
+                            // 6. Other patients: Show nutrition summary
                             else ...[
                               _NutritionSummaryCard(
                                 needs: needs,
@@ -1664,6 +1672,275 @@ class _NutrientRow extends StatelessWidget {
     if (v >= 1000) return '${(v / 1000).toStringAsFixed(1)}k';
     if (v == v.roundToDouble()) return v.toInt().toString();
     return v.toStringAsFixed(1);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HEART FAILURE — RINGKASAN NUTRISI HARIAN
+// Layout per nutrisi:
+//   Baris 1 : nama nutrisi (kiri) + persentase (kanan)
+//   Baris 2 : progress bar
+//   Baris 3 : "522 kkal dari target 1950 kkal · kurang 1428 kkal" (abu kecil)
+// Nutrisi: Energi, Karbohidrat, Lemak, Natrium, Cairan
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _HFNutritionSummaryCard extends StatelessWidget {
+  final NutritionNeeds needs;
+  final NutritionIntake intake;
+
+  const _HFNutritionSummaryCard({
+    required this.needs,
+    required this.intake,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final heartColor = const Color(0xFFE53935); // merah jantung
+
+    final nutrients = [
+      _HFNutrientItem(
+        label: 'Energi',
+        icon: Icons.local_fire_department_outlined,
+        intake: intake.energi,
+        target: needs.energi,
+        unit: 'kkal',
+        kurangLabel: 'kurang',
+      ),
+      _HFNutrientItem(
+        label: 'Karbohidrat',
+        icon: Icons.grain,
+        intake: intake.karbohidrat,
+        target: needs.karbohidrat,
+        unit: 'g',
+        kurangLabel: 'kurang',
+      ),
+      _HFNutrientItem(
+        label: 'Lemak',
+        icon: Icons.water_drop_outlined,
+        intake: intake.lemak,
+        target: needs.lemak,
+        unit: 'g',
+        kurangLabel: 'kurang',
+      ),
+      _HFNutrientItem(
+        label: 'Natrium',
+        icon: Icons.science_outlined,
+        intake: intake.natrium,
+        target: needs.natrium,
+        unit: 'mg',
+        kurangLabel: 'sisa',
+        // Natrium: lebih = bahaya, jadi "melebihi" bukan "kurang"
+        isLimitNutrient: true,
+      ),
+      _HFNutrientItem(
+        label: 'Cairan',
+        icon: Icons.opacity_outlined,
+        intake: intake.cairan,
+        target: needs.cairan,
+        unit: 'ml',
+        kurangLabel: 'sisa',
+        isLimitNutrient: true,
+      ),
+    ];
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(16),
+        border: theme.brightness == Brightness.dark
+            ? Border.all(color: theme.dividerColor)
+            : null,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(
+              alpha: theme.brightness == Brightness.dark ? 0.2 : 0.05,
+            ),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Header ──
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: heartColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.bar_chart_rounded,
+                    color: heartColor,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Ringkasan Nutrisi Harian',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: theme.textTheme.titleMedium?.color,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Divider(height: 1, color: theme.dividerColor),
+
+          // ── Nutrient rows ──
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+            child: Column(
+              children: nutrients.map((n) => Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _HFNutrientRow(item: n, heartColor: heartColor),
+              )).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HFNutrientItem {
+  final String label;
+  final IconData icon;
+  final double intake;
+  final double target;
+  final String unit;
+  final String kurangLabel;
+  final bool isLimitNutrient;
+
+  const _HFNutrientItem({
+    required this.label,
+    required this.icon,
+    required this.intake,
+    required this.target,
+    required this.unit,
+    required this.kurangLabel,
+    this.isLimitNutrient = false,
+  });
+
+  double get ratio => target > 0 ? (intake / target).clamp(0.0, 1.0) : 0;
+  int get persen => (ratio * 100).round();
+  bool get exceeded => intake > target;
+  double get sisa => (target - intake).abs();
+}
+
+class _HFNutrientRow extends StatelessWidget {
+  final _HFNutrientItem item;
+  final Color heartColor;
+
+  const _HFNutrientRow({required this.item, required this.heartColor});
+
+  Color get _barColor {
+    if (item.isLimitNutrient) {
+      // Natrium/Cairan: makin penuh makin kuning/merah
+      if (item.exceeded) return AppColors.error;
+      if (item.ratio >= 0.8) return AppColors.warning;
+      return AppColors.success;
+    }
+    // Energi/Karbo/Lemak: kurang = warning, cukup = hijau
+    if (item.exceeded) return AppColors.error;
+    if (item.ratio >= 0.8) return AppColors.success;
+    return AppColors.warning;
+  }
+
+  String _fmt(double v) {
+    if (v >= 1000) return '${(v / 1000).toStringAsFixed(1)}k';
+    if (v == v.roundToDouble()) return v.toInt().toString();
+    return v.toStringAsFixed(1);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final hintColor = theme.hintColor;
+
+    // Baris 3: "522 kkal dari target 1950 kkal · kurang 1428 kkal"
+    final sisaLabel = item.exceeded
+        ? 'melebihi ${_fmt(item.sisa)} ${item.unit}'
+        : '${item.kurangLabel} ${_fmt(item.sisa)} ${item.unit}';
+    final detailText =
+        '${_fmt(item.intake)} ${item.unit} dari target ${_fmt(item.target)} ${item.unit}  ·  $sisaLabel';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Baris 1: nama + persen
+        Row(
+          children: [
+            Icon(item.icon, size: 13, color: hintColor),
+            const SizedBox(width: 6),
+            Text(
+              item.label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: theme.textTheme.bodyLarge?.color,
+              ),
+            ),
+            const Spacer(),
+            if (item.exceeded)
+              Container(
+                margin: const EdgeInsets.only(right: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  'Melebihi!',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: AppColors.error,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            Text(
+              '${item.persen}%',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: _barColor,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        // Baris 2: progress bar
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: item.ratio,
+            minHeight: 8,
+            backgroundColor: theme.dividerColor.withValues(alpha: 0.15),
+            valueColor: AlwaysStoppedAnimation<Color>(_barColor),
+          ),
+        ),
+        const SizedBox(height: 4),
+        // Baris 3: detail abu kecil
+        Text(
+          detailText,
+          style: TextStyle(
+            fontSize: 10,
+            color: hintColor,
+          ),
+        ),
+      ],
+    );
   }
 }
 
