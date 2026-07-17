@@ -2734,7 +2734,14 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
         builder: (_) => PhysicalActivityAssessmentScreen(
           uid: _uid,
           existing: existing,
-          onSaved: () => _loadDmRecords(),
+          onSaved: () {
+            _loadDmRecords();
+            // Streak harus dipanggil di sini karena aktivitas bypass _addDmRecord
+            if (mounted) {
+              final auth = context.read<AuthProvider>();
+              auth.updateActivityStreak();
+            }
+          },
         ),
       ),
     );

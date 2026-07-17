@@ -81,13 +81,7 @@ class _PhysicalActivityAssessmentScreenState
   int _jamCtrl = 0;
   int _menitCtrl = 0;
 
-  String _keluhan = 'Normal';
-  static const _keluhanOptions = [
-    'Normal',
-    'Sesak nafas/terengah-engah',
-    'Pusing', 'Mata berkunang', 'Kelelahan',
-    'Gemetar', 'Keringat dingin', 'Nyeri dada',
-  ];
+  // keluhan dihapus dari UI — nilai default 'Normal' tetap disimpan ke payload
 
   // ── Kalkulasi real-time ────────────────────────────────────────────────
   double get _totalMenitInput => _jamCtrl * 60.0 + _menitCtrl.toDouble();
@@ -134,7 +128,7 @@ class _PhysicalActivityAssessmentScreenState
     final durMenit = int.tryParse(p['duration']?.toString() ?? '0') ?? 0;
     _jamCtrl = durMenit ~/ 60;
     _menitCtrl = durMenit % 60;
-    _keluhan = p['keluhan']?.toString() ?? 'Normal';
+    // keluhan tidak lagi digunakan di UI
   }
 
   @override
@@ -200,8 +194,8 @@ class _PhysicalActivityAssessmentScreenState
         'intensitas':      _intensityLabel(intensitas),
         'weeklyMetsMin':   metsMingguan,
         'weeklyCategory':  weeklyCategory.name,
-        'keluhan':         _keluhan,
-        'status':          _keluhan == 'Normal' ? 'Normal / Aman' : 'Perlu Waspada',
+        'keluhan':         'Normal',
+        'status':          'Normal / Aman',
         'category':        weeklyCategory.label,
       };
 
@@ -351,7 +345,6 @@ class _PhysicalActivityAssessmentScreenState
                         itemBuilder: (ctx, i) {
                           final a = _filteredActivities[i];
                           final isSelected = _selectedActivity?.no == a.no;
-                          final intens = _intensitasFromMets(a.metsPerHour);
                           return ListTile(
                             dense: true,
                             selected: isSelected,
@@ -359,30 +352,11 @@ class _PhysicalActivityAssessmentScreenState
                                 .withValues(alpha: 0.07),
                             title: Text(a.name,
                                 style: const TextStyle(fontSize: 13)),
-                            subtitle: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 6, vertical: 1),
-                                  decoration: BoxDecoration(
-                                    color: _intensityBg(intens),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    _intensityLabel(intens),
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w600,
-                                      color: _intensityColor(intens),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  '${a.metsPerHour} METs/jam • ${a.category}',
-                                  style: const TextStyle(fontSize: 11),
-                                ),
-                              ],
+                            subtitle: Text(
+                              a.category,
+                              style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textSecondary),
                             ),
                             trailing: isSelected
                                 ? const Icon(Icons.check_circle,
@@ -399,12 +373,12 @@ class _PhysicalActivityAssessmentScreenState
                       ),
                     ),
 
-                  // Badge intensitas real-time
                   if (_selectedActivity != null) ...[
                     const SizedBox(height: 12),
                     _IntensityBadge(
                         intensitas: _intensitasFromMets(
-                            _selectedActivity!.metsPerHour)),
+                            _selectedActivity!.metsPerHour),
+                        metsValue: _selectedActivity!.metsPerHour),
                   ],
                 ],
               ),
@@ -452,6 +426,7 @@ class _PhysicalActivityAssessmentScreenState
                   if (_selectedActivity != null && _totalMenitInput > 0) ...[
                     const SizedBox(height: 14),
                     _CalcResultRow(
+                        metsPerHour: _selectedActivity!.metsPerHour,
                         metsMin: _metsMin,
                         kalori: _kaloriEstimasi),
                   ],
@@ -460,33 +435,6 @@ class _PhysicalActivityAssessmentScreenState
             ),
             const SizedBox(height: 12),
 
-            // ── Keluhan ─────────────────────────────────────────────
-            _buildCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const _FieldLabel('Keluhan Saat Aktivitas'),
-                  const SizedBox(height: 6),
-                  DropdownButtonFormField<String>(
-                    initialValue: _keluhan,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 12),
-                    ),
-                    items: _keluhanOptions
-                        .map((v) =>
-                            DropdownMenuItem(value: v, child: Text(v)))
-                        .toList(),
-                    onChanged: (v) {
-                      if (v != null) setState(() => _keluhan = v);
-                    },
-                  ),
-                ],
-              ),
-            ),
             const SizedBox(height: 24),
 
             // ── Simpan ──────────────────────────────────────────────
@@ -569,7 +517,9 @@ class _FieldLabel extends StatelessWidget {
 // ── Badge Intensitas Real-time ──────────────────────────────────────────────
 class _IntensityBadge extends StatelessWidget {
   final IpaqIntensity intensitas;
-  const _IntensityBadge({required this.intensitas});
+  final double metsValue; // nilai METs ketetapan (tidak berubah)
+
+  const _IntensityBadge({required this.intensitas, required this.metsValue});
 
   @override
   Widget build(BuildContext context) {
@@ -612,34 +562,44 @@ class _IntensityBadge extends StatelessWidget {
             child: Icon(icon, color: color, size: 18),
           ),
           const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text('Intensitas ',
-                      style: TextStyle(
-                          fontSize: 12, color: AppColors.textSecondary)),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: color,
-                      borderRadius: BorderRadius.circular(99),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text('Intensitas ',
+                        style: TextStyle(
+                            fontSize: 12, color: AppColors.textSecondary)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: color,
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                      child: Text(label,
+                          style: const TextStyle(
+                              fontSize: 11, fontWeight: FontWeight.w700,
+                              color: Colors.white)),
                     ),
-                    child: Text(label,
-                        style: const TextStyle(
-                            fontSize: 11, fontWeight: FontWeight.w700,
-                            color: Colors.white)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 2),
-              Text(desc,
-                  style: TextStyle(
-                      fontSize: 11, color: color,
-                      fontWeight: FontWeight.w500)),
-            ],
+                    const Spacer(),
+                    // Nilai METs ketetapan — tidak berubah berapapun durasi
+                    Text(
+                      'METs: ${metsValue % 1 == 0 ? metsValue.toInt() : metsValue}',
+                      style: TextStyle(
+                          fontSize: 12, fontWeight: FontWeight.w700,
+                          color: color),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(desc,
+                    style: TextStyle(
+                        fontSize: 11, color: color,
+                        fontWeight: FontWeight.w500)),
+              ],
+            ),
           ),
         ],
       ),
@@ -761,10 +721,15 @@ class _DurationPicker extends StatelessWidget {
 
 // ── Real-time Calc Row ──────────────────────────────────────────────────────
 class _CalcResultRow extends StatelessWidget {
-  final double metsMin;
+  final double metsPerHour; // nilai METs ketetapan aktivitas (tidak berubah)
+  final double metsMin;     // METs × durasi (berubah sesuai durasi)
   final double kalori;
 
-  const _CalcResultRow({required this.metsMin, required this.kalori});
+  const _CalcResultRow({
+    required this.metsPerHour,
+    required this.metsMin,
+    required this.kalori,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -776,24 +741,31 @@ class _CalcResultRow extends StatelessWidget {
         border: Border.all(
             color: AppColors.diabetesColor.withValues(alpha: 0.2)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: _CalcChip(
-              icon: Icons.bolt,
-              label: 'METs-min',
-              value: metsMin.toStringAsFixed(1),
-              color: AppColors.diabetesColor,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _CalcChip(
-              icon: Icons.local_fire_department,
-              label: 'Est. Kalori',
-              value: '${kalori.toStringAsFixed(0)} kkal',
-              color: Colors.deepOrange,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: _CalcChip(
+                  icon: Icons.bolt,
+                  label: 'Total METs-menit',
+                  sublabel: '(METs × durasi)',
+                  value: metsMin.toStringAsFixed(1),
+                  color: AppColors.diabetesColor,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _CalcChip(
+                  icon: Icons.local_fire_department,
+                  label: 'Est. Kalori Terbakar',
+                  sublabel: '(METs × BB × durasi jam)',
+                  value: '${kalori.toStringAsFixed(0)} kkal',
+                  color: Colors.deepOrange,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -804,11 +776,13 @@ class _CalcResultRow extends StatelessWidget {
 class _CalcChip extends StatelessWidget {
   final IconData icon;
   final String label;
+  final String? sublabel;
   final String value;
   final Color color;
 
   const _CalcChip({
     required this.icon, required this.label,
+    this.sublabel,
     required this.value, required this.color,
   });
 
@@ -822,8 +796,14 @@ class _CalcChip extends StatelessWidget {
             style: TextStyle(
                 fontSize: 15, fontWeight: FontWeight.bold, color: color)),
         Text(label,
+            textAlign: TextAlign.center,
             style: const TextStyle(
                 fontSize: 10, color: AppColors.textSecondary)),
+        if (sublabel != null)
+          Text(sublabel!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                  fontSize: 9, color: AppColors.textHint)),
       ],
     );
   }
