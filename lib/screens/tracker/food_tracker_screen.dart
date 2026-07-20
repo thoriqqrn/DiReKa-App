@@ -2355,47 +2355,79 @@ class _HypertensionSummaryCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    fmtVal(naActual),
-                    style: TextStyle(
-                      fontSize: 38,
-                      fontWeight: FontWeight.bold,
-                      color: naColor,
-                    ),
+              const SizedBox(height: 20),
+              // ── Circular progress ──
+              Center(
+                child: SizedBox(
+                  width: 160,
+                  height: 160,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SizedBox(
+                        width: 160,
+                        height: 160,
+                        child: CircularProgressIndicator(
+                          value: 1.0,
+                          strokeWidth: 14,
+                          backgroundColor: Colors.transparent,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            theme.dividerColor.withValues(alpha: 0.15),
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 160,
+                        height: 160,
+                        child: CircularProgressIndicator(
+                          value: naPct.clamp(0.0, 1.0),
+                          strokeWidth: 14,
+                          strokeCap: StrokeCap.round,
+                          backgroundColor: Colors.transparent,
+                          valueColor: AlwaysStoppedAnimation<Color>(naColor),
+                        ),
+                      ),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            fmtVal(naActual),
+                            style: TextStyle(
+                              fontSize: 34,
+                              fontWeight: FontWeight.bold,
+                              color: naColor,
+                            ),
+                          ),
+                          Text(
+                            'mg',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.hintColor,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${(naPct * 100).toStringAsFixed(0)}%',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: naColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 4, top: 16),
-                    child: Text(
-                      'mg',
-                      style: TextStyle(
-                          fontSize: 14, color: theme.hintColor),
-                    ),
-                  ),
-                ],
+                ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 10),
               Center(
                 child: Text(
-                  'dari ${fmtVal(naTarget)} mg target',
+                  'dari ${fmtVal(naTarget)} mg target harian',
                   style: TextStyle(fontSize: 12, color: theme.hintColor),
                 ),
               ),
-              const SizedBox(height: 12),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: LinearProgressIndicator(
-                  value: naPct.clamp(0.0, 1.0),
-                  minHeight: 10,
-                  backgroundColor:
-                      theme.dividerColor.withValues(alpha: 0.12),
-                  valueColor: AlwaysStoppedAnimation<Color>(naColor),
-                ),
-              ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -6452,9 +6484,9 @@ class _FoodModifierDialogState extends State<_FoodModifierDialog> {
       final additives = await FoodModifierService.getFoodAdditives(forceRefresh: true);
       if (mounted) {
         setState(() {
-          _cookingMethods = [CookingMethod.mentah, ...methods];
+          _cookingMethods = methods;
           _additivesPool = additives;
-          _selectedCookingMethod = CookingMethod.mentah;
+          _selectedCookingMethod = methods.isNotEmpty ? methods.first : null;
           _loadingModifiers = false;
         });
       }

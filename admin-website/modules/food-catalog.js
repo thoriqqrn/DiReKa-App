@@ -216,6 +216,10 @@ function openFoodForm(food = null) {
     <div class="form-row">
       <div class="form-group"><label>Fosfor (mg)</label><input id="fFosfor" type="number" step="0.1" value="${food?.fosfor ?? ''}" /></div>
       <div class="form-group"><label>Air (g)</label><input id="fAir" type="number" step="0.1" value="${food?.air ?? ''}" /></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Kalsium (mg)</label><input id="fKalsium" type="number" step="0.1" value="${food?.kalsium ?? ''}" /></div>
+      <div class="form-group"><label>Magnesium (mg)</label><input id="fMagnesium" type="number" step="0.1" value="${food?.magnesium ?? ''}" /></div>
     </div>`;
 
   openModal(
@@ -302,6 +306,8 @@ async function saveFood(existing, takaranArr) {
     kalium:        num('fKalium'),
     fosfor:        num('fFosfor'),
     air:           num('fAir'),
+    kalsium:       num('fKalsium'),
+    magnesium:     num('fMagnesium'),
     updatedAt:     serverTimestamp(),
   };
 

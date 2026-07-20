@@ -89,14 +89,16 @@ class _AdminHealthTabState extends State<AdminHealthTab> {
     // ── Label mapping ────────────────────────────────────────────────────────
     String resolveTypeLabel(String source, String type) {
       switch (type) {
-        case 'pemeriksaan': return 'Pemeriksaan';
-        case 'insulin':     return 'Analisis Insulin';
-        case 'aktivitas':   return 'Aktivitas';
-        case 'obat':        return 'Obat';
-        case 'hemodialisa': return 'Hemodialisa';
-        case 'gejala':      return 'Gejala';
-        case 'berat_badan': return 'Berat Badan';
-        default:            return type;
+        case 'pemeriksaan':   return 'Pemeriksaan';
+        case 'insulin':       return 'Analisis Insulin';
+        case 'aktivitas':     return 'Aktivitas';
+        case 'obat':          return 'Obat';
+        case 'hemodialisa':   return 'Hemodialisa';
+        case 'gejala':        return 'Gejala';
+        case 'berat_badan':   return 'Berat Badan';
+        case 'tekanan_darah': return 'Tekanan Darah';
+        case 'stres':         return 'Stres / Mood';
+        default:              return type;
       }
     }
 
@@ -191,6 +193,34 @@ class _AdminHealthTabState extends State<AdminHealthTab> {
             detailTambahan = 'Sesak napas: ${s(p['sesakNafas'])} | '
                              'Bengkak: ${s(p['bengkak'])} | '
                              'Cepat lelah: ${s(p['cepatLelah'])}';
+          }
+          // Hipertensi gejala punya field berbeda
+          if (p.containsKey('sakitKepala') || p.containsKey('dadaBerdebar')) {
+            namaItem       = 'Gejala Hipertensi';
+            kategoriStatus = s(p['category']); // Aman/Waspada
+            detailTambahan = 'Sakit Kepala: ${s(p['sakitKepala'])} | '
+                             'Dada Berdebar: ${s(p['dadaBerdebar'])} | '
+                             'Pandangan Kabur: ${s(p['pandanganKabur'])}';
+          }
+          break;
+
+        case 'tekanan_darah':
+          namaItem       = 'Tekanan Darah (Sistol/Diastol)';
+          hasilNilai     = s(p['result']);
+          if (hasilNilai.isEmpty) hasilNilai = '${s(p['systolic'])}/${s(p['diastolic'])}';
+          satuan         = 'mmHg';
+          kategoriStatus = s(p['category']); // Terkontrol / Tidak Terkontrol
+          break;
+
+        case 'stres':
+          namaItem       = s(p['mood']);
+          hasilNilai     = s(p['stressScore']);
+          satuan         = '/ 10';
+          kategoriStatus = 'Skor: ${s(p['stressScore'])}';
+          catatan        = s(p['catatan']);
+          final pemicuRaw = p['pemicu'];
+          if (pemicuRaw is List) {
+            detailTambahan = 'Pemicu: ${pemicuRaw.join(', ')}';
           }
           break;
 

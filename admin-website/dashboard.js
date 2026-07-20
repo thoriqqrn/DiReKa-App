@@ -167,6 +167,13 @@ async function loadHome() {
             <span>Gagal Jantung</span>
           </div>
         </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(156,39,176,0.12);color:#9C27B0;">💊</div>
+          <div class="stat-info">
+            <strong>${byDisease.ht}</strong>
+            <span>Hipertensi</span>
+          </div>
+        </div>
       </div>
 
       <!-- Disease distribution -->

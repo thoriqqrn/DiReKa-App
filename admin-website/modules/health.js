@@ -235,15 +235,53 @@ async function exportHealth() {
   }
   const rows = filtered.map((r, i) => {
     const p = r.payload ?? {};
+    
+    // Rangkum atribut spesifik
+    let namaItem = '';
+    let hasilNilai = '';
+    let statusKategori = p.category ?? p.status ?? '';
+    let catatanLain = p.note ?? p.complaint ?? p.catatan ?? '';
+
+    if (r.type === 'tekanan_darah') {
+      namaItem = 'Tekanan Darah (Sistol/Diastol)';
+      hasilNilai = p.result ?? `${p.systolic}/${p.diastolic} mmHg`;
+      statusKategori = p.category ?? (p.systolic >= 140 || p.diastolic >= 90 ? 'Tidak Terkontrol' : 'Terkontrol');
+    } else if (r.type === 'pemeriksaan') {
+      namaItem = p.exam || p.examType || '';
+      hasilNilai = p.result ? `${p.result} ${p.unit || ''}` : '';
+    } else if (r.type === 'aktivitas') {
+      namaItem = p.activityName || '';
+      hasilNilai = p.duration ? `${p.duration} mnt` : '';
+      if (p.intensity) statusKategori = `Intensitas: ${p.intensity}`;
+    } else if (r.type === 'obat') {
+      namaItem = p.medicationName || p.name || '';
+      hasilNilai = p.dose || '';
+    } else if (r.type === 'gejala' || r.type === 'stres') {
+      namaItem = p.symptom || p.mood || '';
+      hasilNilai = p.intensity || p.stressScore || '';
+    } else if (r.type === 'berat_badan') {
+      namaItem = 'Berat Badan';
+      hasilNilai = p.weight ? `${p.weight} kg` : '';
+    }
+
+    // Jika kosong, kumpulkan sisanya yang tidak tertangkap
+    const sisaJSON = Object.fromEntries(Object.entries(p).filter(([k]) => !['systolic','diastolic','result','category','status','note','complaint','catatan','exam','examType','unit','activityName','duration','intensity','medicationName','name','dose','symptom','mood','stressScore','weight'].includes(k)));
+    if (Object.keys(sisaJSON).length > 0) {
+      catatanLain += (catatanLain ? ' | ' : '') + JSON.stringify(sisaJSON);
+    }
+
     return {
       No:          i + 1,
       Nama:        r._userName,
       Email:       r._userEmail,
       Penyakit:    r._disease ?? '',
-      'Tipe Input': r.type ?? '',
+      'Tipe Input': typeLabelHuman(r.type, r._diseaseType) ?? r.type ?? '',
       'Tgl Rekam': fmtDate(r.date),
       'Tgl Input': fmtDate(r.createdAt),
-      ...Object.fromEntries(Object.entries(p).map(([k, v]) => [k, JSON.stringify(v)])),
+      'Pemeriksaan / Aktivitas': namaItem,
+      'Hasil / Nilai': hasilNilai,
+      'Status / Kategori': statusKategori,
+      'Catatan / Tambahan': catatanLain,
     };
   });
   const ws = XLSX.utils.json_to_sheet(rows);

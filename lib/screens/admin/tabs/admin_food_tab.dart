@@ -71,19 +71,24 @@ class _AdminFoodTabState extends State<AdminFoodTab> {
     sheet.getRangeByIndex(1, 8).setText('Protein (g)');
     sheet.getRangeByIndex(1, 9).setText('Lemak (g)');
     sheet.getRangeByIndex(1, 10).setText('Karbohidrat (g)');
+    sheet.getRangeByIndex(1, 11).setText('Natrium (mg)');
+    sheet.getRangeByIndex(1, 12).setText('Kalium (mg)');
+    sheet.getRangeByIndex(1, 13).setText('Fosfor (mg)');
+    sheet.getRangeByIndex(1, 14).setText('Kalsium (mg)');
+    sheet.getRangeByIndex(1, 15).setText('Magnesium (mg)');
     // Total harian & persentase target
-    sheet.getRangeByIndex(1, 11).setText('Total Energi (kkal)');
-    sheet.getRangeByIndex(1, 12).setText('Target Energi (kkal)');
-    sheet.getRangeByIndex(1, 13).setText('% Energi');
-    sheet.getRangeByIndex(1, 14).setText('Total Protein (g)');
-    sheet.getRangeByIndex(1, 15).setText('Target Protein (g)');
-    sheet.getRangeByIndex(1, 16).setText('% Protein');
-    sheet.getRangeByIndex(1, 17).setText('Total Lemak (g)');
-    sheet.getRangeByIndex(1, 18).setText('Target Lemak (g)');
-    sheet.getRangeByIndex(1, 19).setText('% Lemak');
-    sheet.getRangeByIndex(1, 20).setText('Total Karbohidrat (g)');
-    sheet.getRangeByIndex(1, 21).setText('Target Karbohidrat (g)');
-    sheet.getRangeByIndex(1, 22).setText('% Karbohidrat');
+    sheet.getRangeByIndex(1, 16).setText('Total Energi (kkal)');
+    sheet.getRangeByIndex(1, 17).setText('Target Energi (kkal)');
+    sheet.getRangeByIndex(1, 18).setText('% Energi');
+    sheet.getRangeByIndex(1, 19).setText('Total Protein (g)');
+    sheet.getRangeByIndex(1, 20).setText('Target Protein (g)');
+    sheet.getRangeByIndex(1, 21).setText('% Protein');
+    sheet.getRangeByIndex(1, 22).setText('Total Lemak (g)');
+    sheet.getRangeByIndex(1, 23).setText('Target Lemak (g)');
+    sheet.getRangeByIndex(1, 24).setText('% Lemak');
+    sheet.getRangeByIndex(1, 25).setText('Total Karbohidrat (g)');
+    sheet.getRangeByIndex(1, 26).setText('Target Karbohidrat (g)');
+    sheet.getRangeByIndex(1, 27).setText('% Karbohidrat');
 
     var rIdx = 2;
     for (final log in rows) {
@@ -119,20 +124,25 @@ class _AdminFoodTabState extends State<AdminFoodTab> {
         sheet.getRangeByIndex(rIdx, 8).setNumber((e['protein'] ?? 0).toDouble());
         sheet.getRangeByIndex(rIdx, 9).setNumber((e['lemak'] ?? 0).toDouble());
         sheet.getRangeByIndex(rIdx, 10).setNumber((e['karbohidrat'] ?? 0).toDouble());
+        sheet.getRangeByIndex(rIdx, 11).setNumber((e['natrium'] ?? 0).toDouble());
+        sheet.getRangeByIndex(rIdx, 12).setNumber((e['kalium'] ?? 0).toDouble());
+        sheet.getRangeByIndex(rIdx, 13).setNumber((e['fosfor'] ?? 0).toDouble());
+        sheet.getRangeByIndex(rIdx, 14).setNumber((e['kalsium'] ?? 0).toDouble());
+        sheet.getRangeByIndex(rIdx, 15).setNumber((e['magnesium'] ?? 0).toDouble());
         // Total & persentase hanya di baris pertama entry setiap log (ringkasan hari)
         if (i == 0) {
-          sheet.getRangeByIndex(rIdx, 11).setNumber(totalEnergi);
-          if (tEnergi > 0) sheet.getRangeByIndex(rIdx, 12).setNumber(tEnergi);
-          sheet.getRangeByIndex(rIdx, 13).setText(pct(totalEnergi, tEnergi));
-          sheet.getRangeByIndex(rIdx, 14).setNumber(totalProtein);
-          if (tProtein > 0) sheet.getRangeByIndex(rIdx, 15).setNumber(tProtein);
-          sheet.getRangeByIndex(rIdx, 16).setText(pct(totalProtein, tProtein));
-          sheet.getRangeByIndex(rIdx, 17).setNumber(totalLemak);
-          if (tLemak > 0) sheet.getRangeByIndex(rIdx, 18).setNumber(tLemak);
-          sheet.getRangeByIndex(rIdx, 19).setText(pct(totalLemak, tLemak));
-          sheet.getRangeByIndex(rIdx, 20).setNumber(totalKarbo);
-          if (tKarbo > 0) sheet.getRangeByIndex(rIdx, 21).setNumber(tKarbo);
-          sheet.getRangeByIndex(rIdx, 22).setText(pct(totalKarbo, tKarbo));
+          sheet.getRangeByIndex(rIdx, 16).setNumber(totalEnergi);
+          if (tEnergi > 0) sheet.getRangeByIndex(rIdx, 17).setNumber(tEnergi);
+          sheet.getRangeByIndex(rIdx, 18).setText(pct(totalEnergi, tEnergi));
+          sheet.getRangeByIndex(rIdx, 19).setNumber(totalProtein);
+          if (tProtein > 0) sheet.getRangeByIndex(rIdx, 20).setNumber(tProtein);
+          sheet.getRangeByIndex(rIdx, 21).setText(pct(totalProtein, tProtein));
+          sheet.getRangeByIndex(rIdx, 22).setNumber(totalLemak);
+          if (tLemak > 0) sheet.getRangeByIndex(rIdx, 23).setNumber(tLemak);
+          sheet.getRangeByIndex(rIdx, 24).setText(pct(totalLemak, tLemak));
+          sheet.getRangeByIndex(rIdx, 25).setNumber(totalKarbo);
+          if (tKarbo > 0) sheet.getRangeByIndex(rIdx, 26).setNumber(tKarbo);
+          sheet.getRangeByIndex(rIdx, 27).setText(pct(totalKarbo, tKarbo));
         }
         rIdx++;
       }

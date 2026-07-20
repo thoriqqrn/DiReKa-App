@@ -230,6 +230,8 @@ function viewEntry(e) {
        <div class="detail-item"><label>Natrium</label><span>${e.natrium ?? '-'} mg</span></div>
        <div class="detail-item"><label>Kalium</label><span>${e.kalium ?? '-'} mg</span></div>
        <div class="detail-item"><label>Fosfor</label><span>${e.fosfor ?? '-'} mg</span></div>
+       <div class="detail-item"><label>Kalsium</label><span>${e.kalsium ?? '-'} mg</span></div>
+       <div class="detail-item"><label>Magnesium</label><span>${e.magnesium ?? '-'} mg</span></div>
        <div class="detail-item"><label>Indeks Glikemik</label><span>${e.indeksGlikemik ?? '-'}</span></div>
      </div>`,
     `<button class="btn btn-outline" onclick="document.getElementById('modalOverlay').classList.remove('show')">Tutup</button>`,
@@ -257,6 +259,9 @@ async function exportLogs() {
     'Serat (g)':    e.serat ?? '',
     'Natrium (mg)': e.natrium ?? '',
     'Kalium (mg)':  e.kalium ?? '',
+    'Fosfor (mg)':  e.fosfor ?? '',
+    'Kalsium (mg)': e.kalsium ?? '',
+    'Magnesium (mg)': e.magnesium ?? '',
     'GI':           e.indeksGlikemik ?? '',
   }));
   const ws = XLSX.utils.json_to_sheet(rows);

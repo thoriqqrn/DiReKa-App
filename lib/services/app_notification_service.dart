@@ -578,7 +578,10 @@ class AppNotificationService {
 
       final abnormalExams = todayRecords
           .where((record) => record.type == HypertensionInputType.pemeriksaan)
-          .where((record) => !_isNormalCategory(record.payload['category']))
+          .where((record) {
+            final cat = record.payload['category']?.toString().trim() ?? '';
+            return cat.isNotEmpty && cat != '-' && !_isNormalCategory(cat);
+          })
           .toList();
 
       if (abnormalExams.isNotEmpty) {
@@ -762,6 +765,8 @@ class AppNotificationService {
       'natrium': entries.fold(0.0, (total, item) => total + item.natrium),
       'kalium': entries.fold(0.0, (total, item) => total + item.kalium),
       'fosfor': entries.fold(0.0, (total, item) => total + item.fosfor),
+      'kalsium': entries.fold(0.0, (total, item) => total + item.kalsium),
+      'magnesium': entries.fold(0.0, (total, item) => total + item.magnesium),
       'cairan': entries.fold(0.0, (total, item) => total + item.air),
       'serat': entries.fold(0.0, (total, item) => total + item.serat),
     };

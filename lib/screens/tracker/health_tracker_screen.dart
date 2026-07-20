@@ -4991,43 +4991,169 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
 
   Future<HypertensionHealthRecord?> _showHtCheckupDialog({HypertensionHealthRecord? existing}) {
     final payload = existing?.payload ?? {};
+    final refs = _examReferencesForDiseaseType(DiseaseType.hypertension);
+    final groups = refs.map((e) => e.group).toSet().toList();
+
+    String examType = (payload['examType'] ?? 'Fisik').toString();
+    if (!groups.contains(examType)) examType = groups.first;
+
+    String examId = (payload['examId'] ?? '').toString();
+    final typeRefs = refs.where((e) => e.group == examType).toList();
+    if (examId.isEmpty || !typeRefs.any((e) => e.id == examId)) {
+      final examName = (payload['exam'] ?? '').toString();
+      examId = typeRefs
+          .firstWhere(
+            (e) => e.name.toLowerCase() == examName.toLowerCase(),
+            orElse: () => typeRefs.first,
+          )
+          .id;
+    }
+
+    final resultController = TextEditingController(
+      text: (payload['result'] ?? '').toString(),
+    );
     DateTime date = existing?.date ?? DateTime.now();
-    final nameController = TextEditingController(text: (payload['exam'] ?? '').toString());
-    final resultController = TextEditingController(text: (payload['result'] ?? '').toString());
+
+    _ExamReference selectedExam() {
+      final selectedRefs = refs.where((e) => e.group == examType).toList();
+      return selectedRefs.firstWhere(
+        (e) => e.id == examId,
+        orElse: () => selectedRefs.first,
+      );
+    }
 
     return showDialog<HypertensionHealthRecord>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocalState) => AlertDialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           title: Text(existing == null ? 'Input Pemeriksaan' : 'Edit Pemeriksaan'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _DatePickerField(
-                  label: 'Tanggal',
-                  value: _dateFmt.format(date),
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: date,
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime.now().add(const Duration(days: 1)),
-                    );
-                    if (picked != null) setLocalState(() => date = picked);
-                  },
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Nama Pemeriksaan (Lab/Lainnya)'),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: resultController,
-                  decoration: const InputDecoration(labelText: 'Hasil'),
-                ),
-              ],
+          content: SizedBox(
+            width: 430,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _DatePickerField(
+                    label: 'Tanggal',
+                    value: _dateFmt.format(date),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: date,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now().add(const Duration(days: 1)),
+                      );
+                      if (picked != null) setLocalState(() => date = picked);
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Jenis pemeriksaan',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: groups.map((g) => ChoiceChip(
+                      selected: examType == g,
+                      label: Text(g),
+                      onSelected: (_) {
+                        setLocalState(() {
+                          examType = g;
+                          final nextRefs = refs.where((e) => e.group == examType).toList();
+                          examId = nextRefs.first.id;
+                          resultController.clear();
+                        });
+                      },
+                    )).toList(),
+                  ),
+                  const SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    value: examId,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: 'Pemeriksaan'),
+                    items: refs
+                        .where((e) => e.group == examType)
+                        .map((e) => DropdownMenuItem(
+                              value: e.id,
+                              child: Text(e.name),
+                            ))
+                        .toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setLocalState(() {
+                        examId = value;
+                        resultController.clear();
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  Builder(
+                    builder: (_) {
+                      final exam = selectedExam();
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).scaffoldBackgroundColor,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Theme.of(context).dividerColor),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Satuan: ${exam.unit.isEmpty ? '-' : exam.unit}',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Nilai normal: ${exam.normal}',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: resultController,
+                    onChanged: (_) => setLocalState(() {}),
+                    decoration: const InputDecoration(
+                      labelText: 'Hasil',
+                      hintText: 'Contoh: 130/80, 13.2, Negatif',
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Builder(
+                    builder: (_) {
+                      final autoCategory = _autoExamCategory(
+                        selectedExam(),
+                        resultController.text.trim(),
+                      );
+                      return Row(
+                        children: [
+                          Text(
+                            'Kategori otomatis: ',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).hintColor,
+                            ),
+                          ),
+                          _StatusBadge(
+                            text: autoCategory,
+                            color: _checkupCategoryColor(context, autoCategory),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
           actions: [
@@ -5037,8 +5163,16 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
             ),
             ElevatedButton(
               onPressed: () {
-                if (resultController.text.trim().isEmpty) return;
-                
+                final exam = selectedExam();
+                if (resultController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Hasil pemeriksaan wajib diisi.'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                  return;
+                }
                 Navigator.pop(
                   ctx,
                   HypertensionHealthRecord(
@@ -5046,8 +5180,13 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
                     type: HypertensionInputType.pemeriksaan,
                     date: DateTime(date.year, date.month, date.day),
                     payload: {
-                      'exam': nameController.text.trim(),
+                      'examType': examType,
+                      'examId': exam.id,
+                      'exam': exam.name,
                       'result': resultController.text.trim(),
+                      'unit': exam.unit,
+                      'normalRange': exam.normal,
+                      'category': _autoExamCategory(exam, resultController.text.trim()),
                     },
                     createdAt: existing?.createdAt ?? DateTime.now(),
                   ),
@@ -5062,18 +5201,186 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   }
 
   Future<HypertensionHealthRecord?> _showHtActivityDialog({HypertensionHealthRecord? existing}) async {
-    final result = await _showActivityDialog(
-      title: existing == null ? 'Input Aktivitas Hipertensi' : 'Edit Aktivitas Hipertensi',
-      existingPayload: existing?.payload,
-      existingDate: existing?.date,
-    );
-    if (result == null) return null;
+    const htActivityOptions = [
+      'Jalan kaki',
+      'Bersepeda',
+      'Lari',
+      'Senam',
+      'Olahraga permainan',
+      'Pekerjaan rumah tangga',
+    ];
+    // intensity → label + contoh
+    const htIntensityOptions = <Map<String, String>>[
+      {'value': 'Ringan',  'label': 'Ringan',  'contoh': 'jalan santai, pekerjaan rumah tangga ringan'},
+      {'value': 'Sedang',  'label': 'Sedang',  'contoh': 'joging, bersepeda santai, senam'},
+      {'value': 'Berat',   'label': 'Berat',   'contoh': 'lari cepat, olahraga kompetitif'},
+    ];
 
+    final payload = existing?.payload ?? {};
+    DateTime date = existing?.date ?? DateTime.now();
+
+    String activity = payload['activityName']?.toString() ?? htActivityOptions.first;
+    if (!htActivityOptions.contains(activity)) activity = htActivityOptions.first;
+
+    String intensity = payload['intensity']?.toString() ?? 'Ringan';
+    if (!htIntensityOptions.any((m) => m['value'] == intensity)) intensity = 'Ringan';
+
+    final durationCtrl = TextEditingController(
+      text: (payload['duration'] ?? '').toString(),
+    );
+
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocalState) {
+          return AlertDialog(
+            insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            title: Text(existing == null ? 'Input Aktivitas Hipertensi' : 'Edit Aktivitas Hipertensi'),
+            content: SizedBox(
+              width: 420,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _DatePickerField(
+                      label: 'Tanggal',
+                      value: _dateFmt.format(date),
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: date,
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime.now().add(const Duration(days: 1)),
+                        );
+                        if (picked != null) setLocalState(() => date = picked);
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<String>(
+                      value: activity,
+                      decoration: const InputDecoration(labelText: 'Jenis Aktivitas'),
+                      items: htActivityOptions.map((v) {
+                        return DropdownMenuItem(value: v, child: Text(v));
+                      }).toList(),
+                      onChanged: (v) {
+                        if (v == null) return;
+                        setLocalState(() => activity = v);
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                    // ── Intensitas ──────────────────────────────────
+                    const Text(
+                      'Intensitas Aktivitas',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 6),
+                    ...htIntensityOptions.map((opt) {
+                      final val = opt['value']!;
+                      final isSelected = intensity == val;
+                      return GestureDetector(
+                        onTap: () => setLocalState(() => intensity = val),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 120),
+                          margin: const EdgeInsets.only(bottom: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? const Color(0xFF9C27B0).withValues(alpha: 0.10)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: isSelected
+                                  ? const Color(0xFF9C27B0)
+                                  : Colors.grey.withValues(alpha: 0.35),
+                              width: isSelected ? 1.5 : 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                isSelected
+                                    ? Icons.radio_button_checked
+                                    : Icons.radio_button_off,
+                                size: 18,
+                                color: isSelected
+                                    ? const Color(0xFF9C27B0)
+                                    : Colors.grey,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      val,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: isSelected
+                                            ? const Color(0xFF9C27B0)
+                                            : null,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Contoh: ${opt['contoh']}',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: durationCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: false),
+                      decoration: const InputDecoration(
+                        labelText: 'Durasi (menit)',
+                        hintText: 'contoh: 30',
+                        suffixText: 'menit',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  final dur = durationCtrl.text.trim();
+                  if (dur.isEmpty) return;
+                  Navigator.pop(ctx, {
+                    'activityName': activity,
+                    'intensity': intensity,
+                    'duration': dur,
+                  });
+                },
+                child: const Text('Simpan'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    if (result == null) return null;
+    final savedDate = date;
     return HypertensionHealthRecord(
       id: existing?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
       type: HypertensionInputType.aktivitas,
-      date: result.date,
-      payload: result.payload,
+      date: DateTime(savedDate.year, savedDate.month, savedDate.day),
+      payload: result,
       createdAt: existing?.createdAt ?? DateTime.now(),
     );
   }
@@ -5447,8 +5754,8 @@ class _HypertensionBpTrendCard extends StatelessWidget {
                   show: true,
                   border: Border.all(color: Theme.of(context).dividerColor, width: 1),
                 ),
-                minX: 0,
-                maxX: (displayRecords.length - 1).toDouble(),
+                minX: -0.5,
+                maxX: (displayRecords.length - 1).toDouble() + 0.5,
                 minY: 40,
                 maxY: maxY,
                 lineBarsData: [
@@ -5484,6 +5791,61 @@ class _HypertensionBpTrendCard extends StatelessWidget {
               _LegendItem(color: Colors.blue, label: 'Diastolik'),
             ],
           ),
+          const SizedBox(height: 12),
+          const Divider(height: 1),
+          const SizedBox(height: 8),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              columnSpacing: 16,
+              horizontalMargin: 12,
+              headingRowHeight: 36,
+              dataRowMinHeight: 32,
+              dataRowMaxHeight: 40,
+              columns: const [
+                DataColumn(label: Text('Tanggal', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
+                DataColumn(label: Text('Hasil', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
+                DataColumn(label: Text('Status', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
+              ],
+              rows: displayRecords.map((record) {
+                final p = record.payload;
+                final status = p['category']?.toString() ?? '-';
+                final isTerkontrol = status == 'Terkontrol';
+                return DataRow(
+                  cells: [
+                    DataCell(Text(
+                      DateFormat('d/M/yy').format(record.date),
+                      style: const TextStyle(fontSize: 12),
+                    )),
+                    DataCell(Text(
+                      p['result']?.toString() ?? '-',
+                      style: const TextStyle(fontSize: 12),
+                    )),
+                    DataCell(
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: isTerkontrol
+                              ? Colors.green.withValues(alpha: 0.15)
+                              : Colors.red.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          status,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: isTerkontrol ? Colors.green.shade700 : Colors.red.shade700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 8),
         ],
       ),
     );
@@ -5543,8 +5905,10 @@ class _HtSymptomTableState extends State<_HtSymptomTable> {
     final filteredRecords = widget.records.where((r) {
       final q = _searchQuery.toLowerCase();
       final p = r.payload;
-      return (p['symptom']?.toString() ?? '').toLowerCase().contains(q) ||
-             (p['intensity']?.toString() ?? '').toLowerCase().contains(q) ||
+      return (p['sakitKepala']?.toString() ?? '').toLowerCase().contains(q) ||
+             (p['dadaBerdebar']?.toString() ?? '').toLowerCase().contains(q) ||
+             (p['pandanganKabur']?.toString() ?? '').toLowerCase().contains(q) ||
+             (p['category']?.toString() ?? '').toLowerCase().contains(q) ||
              widget.dateFmt.format(r.date).toLowerCase().contains(q);
     }).toList();
 
@@ -5578,34 +5942,47 @@ class _HtSymptomTableState extends State<_HtSymptomTable> {
               horizontalMargin: 12,
               columns: const [
                 DataColumn(label: Text('Tanggal')),
-                DataColumn(label: Text('Gejala')),
-                DataColumn(label: Text('Intensitas')),
-                DataColumn(label: Text('Catatan')),
+                DataColumn(label: Text('Sakit Kepala')),
+                DataColumn(label: Text('Dada Berdebar')),
+                DataColumn(label: Text('Pandangan Kabur')),
+                DataColumn(label: Text('Status')),
                 DataColumn(label: Text('Aksi')),
               ],
               rows: displayRecords.map((record) {
                 final p = record.payload;
-                final intensity = p['intensity']?.toString() ?? 'Ringan';
-                Color badgeColor;
-                if (intensity == 'Berat') {
-                  badgeColor = AppColors.error;
-                } else if (intensity == 'Sedang') {
-                  badgeColor = AppColors.warning;
+                final sakitKepala   = p['sakitKepala']?.toString()    ?? 'Tidak';
+                final dadaBerdebar  = p['dadaBerdebar']?.toString()   ?? 'Tidak';
+                final pandanganKabur = p['pandanganKabur']?.toString() ?? 'Tidak';
+                final category      = p['category']?.toString()        ?? 'Aman';
+
+                Color catColor;
+                if (category == 'Waspada') {
+                  catColor = AppColors.error;
+                } else if (category == 'Ringan') {
+                  catColor = AppColors.warning;
                 } else {
-                  badgeColor = AppColors.success;
+                  catColor = AppColors.success;
+                }
+
+                Widget gejalaCell(String val) {
+                  final isAktif = val != 'Tidak';
+                  return Text(
+                    val,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isAktif ? AppColors.error : null,
+                      fontWeight: isAktif ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  );
                 }
 
                 return DataRow(
                   cells: [
                     DataCell(Text(widget.dateFmt.format(record.date), style: const TextStyle(fontSize: 13))),
-                    DataCell(Text(p['symptom']?.toString() ?? '-', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold))),
-                    DataCell(
-                      _StatusBadge(
-                        text: intensity,
-                        color: badgeColor,
-                      ),
-                    ),
-                    DataCell(Text(p['note']?.toString() ?? '-', style: const TextStyle(fontSize: 13))),
+                    DataCell(gejalaCell(sakitKepala)),
+                    DataCell(gejalaCell(dadaBerdebar)),
+                    DataCell(gejalaCell(pandanganKabur)),
+                    DataCell(_StatusBadge(text: category, color: catColor)),
                     DataCell(
                       Row(
                         mainAxisSize: MainAxisSize.min,
@@ -5720,15 +6097,30 @@ class _HtActivityTableState extends State<_HtActivityTable> {
               columns: const [
                 DataColumn(label: Text('Tanggal')),
                 DataColumn(label: Text('Aktivitas')),
+                DataColumn(label: Text('Intensitas')),
                 DataColumn(label: Text('Durasi')),
                 DataColumn(label: Text('Aksi')),
               ],
               rows: displayRecords.map((record) {
                 final p = record.payload;
+                final intensity = p['intensity']?.toString() ?? '-';
+                Color intensityColor;
+                if (intensity == 'Berat') {
+                  intensityColor = AppColors.error;
+                } else if (intensity == 'Sedang') {
+                  intensityColor = AppColors.warning;
+                } else {
+                  intensityColor = AppColors.success;
+                }
                 return DataRow(
                   cells: [
                     DataCell(Text(widget.dateFmt.format(record.date), style: const TextStyle(fontSize: 13))),
                     DataCell(Text(p['activityName']?.toString() ?? '-', style: const TextStyle(fontSize: 13))),
+                    DataCell(
+                      intensity == '-'
+                          ? const Text('-', style: TextStyle(fontSize: 13))
+                          : _StatusBadge(text: intensity, color: intensityColor),
+                    ),
                     DataCell(Text('${p['duration'] ?? 0} mnt', style: const TextStyle(fontSize: 13))),
                     DataCell(
                       Row(
@@ -5801,19 +6193,49 @@ class _HtStressTable extends StatefulWidget {
 }
 
 class _HtStressTableState extends State<_HtStressTable> {
-  bool _isExpanded = false;
-  String _searchQuery = '';
+  // 0 = current week, 1 = last week, 2 = 2 weeks ago, dst.
+  int _weekOffset = 0;
+  // index of expanded day slot (0-6), null = none
+  int? _expandedSlot;
+
+  static const Map<String, String> _moodEmojis = {
+    'Sangat Senang': '😊',
+    'Biasa saja': '🙂',
+    'Cemas/Khawatir': '😟',
+    'Sedih': '😢',
+    'Marah': '😡',
+  };
+
+  static const List<String> _dayLabels = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+
+  /// Returns Monday of the week that is [offset] weeks ago from today.
+  DateTime _mondayOf(int offset) {
+    final today = DateTime.now();
+    final dayOfWeek = today.weekday; // 1=Mon .. 7=Sun
+    final monday = today.subtract(Duration(days: dayOfWeek - 1 + offset * 7));
+    return DateTime(monday.year, monday.month, monday.day);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final filteredRecords = widget.records.where((r) {
-      final q = _searchQuery.toLowerCase();
-      final p = r.payload;
-      return (p['mood']?.toString() ?? '').toLowerCase().contains(q) ||
-             widget.dateFmt.format(r.date).toLowerCase().contains(q);
-    }).toList();
+    final monday = _mondayOf(_weekOffset);
+    final sunday = monday.add(const Duration(days: 6));
 
-    final displayRecords = _isExpanded ? filteredRecords : filteredRecords.take(5).toList();
+    // Build map date → record (last record wins if multiple same day)
+    final Map<String, HypertensionHealthRecord> dayMap = {};
+    for (final r in widget.records) {
+      final key = DateFormat('yyyy-MM-dd').format(r.date);
+      dayMap[key] = r;
+    }
+
+    final weekLabel = _weekOffset == 0
+        ? 'Minggu Ini'
+        : _weekOffset == 1
+            ? 'Minggu Lalu'
+            : '$_weekOffset Minggu Lalu';
+
+    final weekRangeLabel =
+        '${DateFormat('d MMM', 'id_ID').format(monday)} – ${DateFormat('d MMM yyyy', 'id_ID').format(sunday)}';
 
     return _TableCard(
       title: 'Stres / Mood',
@@ -5822,106 +6244,302 @@ class _HtStressTableState extends State<_HtStressTable> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (_isExpanded)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: 'Cari tanggal atau mood...',
-                  prefixIcon: const Icon(Icons.search, size: 18),
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          // ── Week navigator ──────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.chevron_left),
+                  onPressed: () => setState(() {
+                    _weekOffset += 1;
+                    _expandedSlot = null;
+                  }),
+                  tooltip: 'Minggu sebelumnya',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                 ),
-                onChanged: (v) => setState(() => _searchQuery = v),
-              ),
-            ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
-              columnSpacing: 16,
-              horizontalMargin: 12,
-              columns: const [
-                DataColumn(label: Text('Tanggal')),
-                DataColumn(label: Text('Mood')),
-                DataColumn(label: Text('Skor Stres')),
-                DataColumn(label: Text('Pemicu')),
-                DataColumn(label: Text('Catatan')),
-                DataColumn(label: Text('Aksi')),
-              ],
-              rows: displayRecords.map((record) {
-                final p = record.payload;
-                final score = (p['stressScore'] as num?)?.toInt() ?? 1;
-                Color scoreColor = Colors.green;
-                if (score > 3 && score <= 6) scoreColor = Colors.orange;
-                else if (score > 6) scoreColor = Colors.red;
-
-                final triggers = (p['pemicu'] as List<dynamic>?)?.join(', ') ?? '-';
-
-                return DataRow(
-                  cells: [
-                    DataCell(Text(widget.dateFmt.format(record.date), style: const TextStyle(fontSize: 13))),
-                    DataCell(Text(p['mood']?.toString() ?? '-', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold))),
-                    DataCell(
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: scoreColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: scoreColor.withValues(alpha: 0.3)),
-                        ),
-                        child: Text(score.toString(), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: scoreColor)),
+                Expanded(
+                  child: Column(
+                    children: [
+                      Text(
+                        weekLabel,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        textAlign: TextAlign.center,
                       ),
+                      Text(
+                        weekRangeLabel,
+                        style: TextStyle(fontSize: 11, color: Theme.of(context).hintColor),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right),
+                  onPressed: _weekOffset == 0
+                      ? null
+                      : () => setState(() {
+                            _weekOffset -= 1;
+                            _expandedSlot = null;
+                          }),
+                  tooltip: 'Minggu berikutnya',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+          ),
+
+          // ── 7-slot emoji grid ────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: List.generate(7, (i) {
+                final date = monday.add(Duration(days: i));
+                final key = DateFormat('yyyy-MM-dd').format(date);
+                final record = dayMap[key];
+                final mood = record?.payload['mood'] as String?;
+                final emoji = mood != null ? (_moodEmojis[mood] ?? '❓') : null;
+                final isToday = DateFormat('yyyy-MM-dd').format(DateTime.now()) == key;
+                final isExpanded = _expandedSlot == i;
+
+                return GestureDetector(
+                  onTap: record == null
+                      ? null
+                      : () => setState(() {
+                            _expandedSlot = isExpanded ? null : i;
+                          }),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    width: 40,
+                    decoration: BoxDecoration(
+                      color: isExpanded
+                          ? const Color(0xFF9C27B0).withValues(alpha: 0.12)
+                          : isToday
+                              ? const Color(0xFF9C27B0).withValues(alpha: 0.06)
+                              : Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                      border: isToday
+                          ? Border.all(color: const Color(0xFF9C27B0).withValues(alpha: 0.4), width: 1)
+                          : null,
                     ),
-                    DataCell(SizedBox(width: 120, child: Text(triggers.isEmpty ? '-' : triggers, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)))),
-                    DataCell(SizedBox(width: 140, child: Text(p['catatan']?.toString() ?? '-', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)))),
-                    DataCell(
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit, size: 18),
-                            onPressed: () => widget.onEdit(record),
-                            constraints: const BoxConstraints(),
-                            padding: EdgeInsets.zero,
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Column(
+                      children: [
+                        Text(
+                          _dayLabels[i],
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                            color: isToday
+                                ? const Color(0xFF9C27B0)
+                                : Theme.of(context).hintColor,
                           ),
-                          const SizedBox(width: 12),
-                          IconButton(
-                            icon: const Icon(Icons.delete, size: 18, color: AppColors.error),
-                            onPressed: () => widget.onDelete(record),
-                            constraints: const BoxConstraints(),
-                            padding: EdgeInsets.zero,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          emoji ?? '–',
+                          style: TextStyle(
+                            fontSize: emoji != null ? 26 : 18,
+                            color: emoji == null
+                                ? Theme.of(context).hintColor.withValues(alpha: 0.4)
+                                : null,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          DateFormat('d').format(date),
+                          style: TextStyle(
+                            fontSize: 9,
+                            color: Theme.of(context).hintColor,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+
+          // ── Expanded detail panel ────────────────────────────────────
+          if (_expandedSlot != null) ...[
+            const SizedBox(height: 10),
+            Builder(builder: (context) {
+              final date = monday.add(Duration(days: _expandedSlot!));
+              final key = DateFormat('yyyy-MM-dd').format(date);
+              final record = dayMap[key];
+              if (record == null) return const SizedBox.shrink();
+
+              final p = record.payload;
+              final mood = p['mood']?.toString() ?? '-';
+              final emoji = _moodEmojis[mood] ?? '❓';
+              final score = (p['stressScore'] as num?)?.toInt() ?? 1;
+              final triggers = (p['pemicu'] as List<dynamic>?)
+                      ?.cast<String>()
+                      .where((s) => s.isNotEmpty)
+                      .join(', ') ??
+                  '';
+              final catatan = p['catatan']?.toString() ?? '';
+
+              Color scoreColor = Colors.green;
+              if (score > 3 && score <= 6) scoreColor = Colors.orange;
+              if (score > 6) scoreColor = Colors.red;
+
+              return Container(
+                margin: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardTheme.color ??
+                      Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: const Color(0xFF9C27B0).withValues(alpha: 0.25),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(emoji, style: const TextStyle(fontSize: 28)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                mood,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                              Text(
+                                DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(date),
+                                style: TextStyle(
+                                    fontSize: 11,
+                                    color: Theme.of(context).hintColor),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Skor stres badge
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: scoreColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                                color: scoreColor.withValues(alpha: 0.4)),
+                          ),
+                          child: Column(
+                            children: [
+                              Text('Stres',
+                                  style: TextStyle(
+                                      fontSize: 9, color: scoreColor)),
+                              Text(
+                                '$score/10',
+                                style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: scoreColor),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (triggers.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.local_fire_department,
+                              size: 14,
+                              color: Theme.of(context).hintColor),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              triggers,
+                              style: const TextStyle(fontSize: 12),
+                            ),
                           ),
                         ],
                       ),
+                    ],
+                    if (catatan.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.notes,
+                              size: 14,
+                              color: Theme.of(context).hintColor),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              catatan,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton.icon(
+                          onPressed: () => widget.onEdit(record),
+                          icon: const Icon(Icons.edit, size: 14),
+                          label: const Text('Edit', style: TextStyle(fontSize: 12)),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        TextButton.icon(
+                          onPressed: () => widget.onDelete(record),
+                          icon: const Icon(Icons.delete,
+                              size: 14, color: AppColors.error),
+                          label: const Text('Hapus',
+                              style: TextStyle(
+                                  fontSize: 12, color: AppColors.error)),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
-                );
-              }).toList(),
-            ),
-          ),
-          if (filteredRecords.length > 5) ...[
-            const Divider(height: 1),
-            InkWell(
-              onTap: () => setState(() {
-                _isExpanded = !_isExpanded;
-                if (!_isExpanded) _searchQuery = '';
-              }),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                alignment: Alignment.center,
-                child: Text(
-                  _isExpanded ? 'Sembunyikan' : 'Lihat Semua (${filteredRecords.length})',
-                  style: const TextStyle(
-                    color: Color(0xFF9C27B0),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
+                ),
+              );
+            }),
+          ],
+          Padding(
+            padding: const EdgeInsets.only(top: 4, bottom: 8),
+            child: Center(
+              child: Text(
+                'Ketuk emoji untuk lihat detail',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Theme.of(context).hintColor.withValues(alpha: 0.7),
+                  fontStyle: FontStyle.italic,
                 ),
               ),
             ),
-          ],
+          ),
         ],
       ),
     );
@@ -6099,6 +6717,8 @@ class _HtCheckupTableState extends State<_HtCheckupTable> {
       final q = _searchQuery.toLowerCase();
       final p = r.payload;
       return (p['exam']?.toString() ?? '').toLowerCase().contains(q) ||
+             (p['examType']?.toString() ?? '').toLowerCase().contains(q) ||
+             (p['category']?.toString() ?? '').toLowerCase().contains(q) ||
              widget.dateFmt.format(r.date).toLowerCase().contains(q);
     }).toList();
 
@@ -6132,17 +6752,36 @@ class _HtCheckupTableState extends State<_HtCheckupTable> {
               horizontalMargin: 12,
               columns: const [
                 DataColumn(label: Text('Tanggal')),
+                DataColumn(label: Text('Jenis')),
                 DataColumn(label: Text('Pemeriksaan')),
                 DataColumn(label: Text('Hasil')),
+                DataColumn(label: Text('Kategori')),
                 DataColumn(label: Text('Aksi')),
               ],
               rows: displayRecords.map((record) {
                 final p = record.payload;
+                final isLegacy = !p.containsKey('examType');
+                final examType = isLegacy ? '-' : (p['examType']?.toString() ?? '-');
+                final examName = p['exam']?.toString() ?? '-';
+                final result   = p['result']?.toString() ?? '-';
+                final category = p['category']?.toString() ?? '';
+
+                Color catColor = Colors.grey;
+                if (category == 'Normal') catColor = AppColors.success;
+                else if (category == 'Perhatian') catColor = AppColors.warning;
+                else if (category == 'Tinggi' || category == 'Rendah') catColor = AppColors.error;
+
                 return DataRow(
                   cells: [
                     DataCell(Text(widget.dateFmt.format(record.date), style: const TextStyle(fontSize: 13))),
-                    DataCell(Text(p['exam']?.toString() ?? '-', style: const TextStyle(fontSize: 13))),
-                    DataCell(Text(p['result']?.toString() ?? '-', style: const TextStyle(fontSize: 13))),
+                    DataCell(Text(examType, style: const TextStyle(fontSize: 13))),
+                    DataCell(Text(examName, style: const TextStyle(fontSize: 13))),
+                    DataCell(Text(result, style: const TextStyle(fontSize: 13))),
+                    DataCell(
+                      category.isEmpty
+                          ? const Text('-', style: TextStyle(fontSize: 13))
+                          : _StatusBadge(text: category, color: catColor),
+                    ),
                     DataCell(
                       Row(
                         mainAxisSize: MainAxisSize.min,
@@ -7736,6 +8375,7 @@ class _ExamReference {
   final bool forKidney;
   final bool forHeart;
   final bool forDiabetes;
+  final bool forHypertension;
   _ExamReference({
     required this.id,
     required this.group,
@@ -7745,6 +8385,7 @@ class _ExamReference {
     this.forKidney = false,
     this.forHeart = false,
     this.forDiabetes = false,
+    this.forHypertension = false,
   });
 }
 
@@ -7758,6 +8399,7 @@ List<_ExamReference> _examReferenceCatalog = [
     forKidney: true,
     forHeart: true,
     forDiabetes: true,
+    forHypertension: true,
   ),
   _ExamReference(
     id: "tb",
@@ -7768,6 +8410,7 @@ List<_ExamReference> _examReferenceCatalog = [
     forKidney: true,
     forHeart: true,
     forDiabetes: true,
+    forHypertension: true,
   ),
   _ExamReference(
     id: "suhu",
@@ -7778,6 +8421,7 @@ List<_ExamReference> _examReferenceCatalog = [
     forKidney: true,
     forHeart: true,
     forDiabetes: true,
+    forHypertension: true,
   ),
   _ExamReference(
     id: "td",
@@ -7788,6 +8432,7 @@ List<_ExamReference> _examReferenceCatalog = [
     forKidney: true,
     forHeart: true,
     forDiabetes: true,
+    forHypertension: true,
   ),
   _ExamReference(
     id: "spo2",
@@ -7798,6 +8443,7 @@ List<_ExamReference> _examReferenceCatalog = [
     forKidney: true,
     forHeart: true,
     forDiabetes: true,
+    forHypertension: true,
   ),
   _ExamReference(
     id: "nadi",
@@ -7808,6 +8454,7 @@ List<_ExamReference> _examReferenceCatalog = [
     forKidney: true,
     forHeart: true,
     forDiabetes: true,
+    forHypertension: true,
   ),
 
   _ExamReference(
@@ -7850,6 +8497,7 @@ List<_ExamReference> _examReferenceCatalog = [
     forKidney: true,
     forHeart: true,
     forDiabetes: true,
+    forHypertension: true,
   ),
   _ExamReference(
     id: "hdl",
@@ -7860,6 +8508,7 @@ List<_ExamReference> _examReferenceCatalog = [
     forKidney: true,
     forHeart: true,
     forDiabetes: true,
+    forHypertension: true,
   ),
   _ExamReference(
     id: "ldl",
@@ -7870,6 +8519,7 @@ List<_ExamReference> _examReferenceCatalog = [
     forKidney: true,
     forHeart: true,
     forDiabetes: true,
+    forHypertension: true,
   ),
   _ExamReference(
     id: "trigliserida",
@@ -7880,6 +8530,7 @@ List<_ExamReference> _examReferenceCatalog = [
     forKidney: true,
     forHeart: true,
     forDiabetes: true,
+    forHypertension: true,
   ),
   _ExamReference(
     id: "bun",
@@ -7900,6 +8551,7 @@ List<_ExamReference> _examReferenceCatalog = [
     forKidney: true,
     forHeart: true,
     forDiabetes: true,
+    forHypertension: true,
   ),
   _ExamReference(
     id: "gdp",
@@ -7910,6 +8562,7 @@ List<_ExamReference> _examReferenceCatalog = [
     forKidney: true,
     forHeart: true,
     forDiabetes: true,
+    forHypertension: true,
   ),
   _ExamReference(
     id: "gds",
@@ -7920,6 +8573,7 @@ List<_ExamReference> _examReferenceCatalog = [
     forKidney: true,
     forHeart: true,
     forDiabetes: true,
+    forHypertension: true,
   ),
   _ExamReference(
     id: "hba1c",
@@ -7960,6 +8614,7 @@ List<_ExamReference> _examReferenceCatalog = [
     forKidney: true,
     forHeart: true,
     forDiabetes: true,
+    forHypertension: true,
   ),
   _ExamReference(
     id: "fosfat",
@@ -8008,6 +8663,7 @@ List<_ExamReference> _examReferencesForDiseaseType(DiseaseType diseaseType) {
     if (diseaseType == DiseaseType.chronicKidneyDisease) return e.forKidney;
     if (diseaseType == DiseaseType.heartFailure) return e.forHeart;
     if (diseaseType == DiseaseType.type2DiabetesMellitus) return e.forDiabetes;
+    if (diseaseType == DiseaseType.hypertension) return e.forHypertension;
     return false;
   }).toList();
 }

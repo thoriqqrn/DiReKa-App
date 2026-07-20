@@ -393,6 +393,9 @@ async function exportPatientFoodLogs() {
     'Serat (g)': e.serat ?? '',
     'Natrium (mg)': e.natrium ?? '',
     'Kalium (mg)': e.kalium ?? '',
+    'Fosfor (mg)': e.fosfor ?? '',
+    'Kalsium (mg)': e.kalsium ?? '',
+    'Magnesium (mg)': e.magnesium ?? '',
     'Indeks Glikemik': e.indeksGlikemik ?? '',
   }));
   
@@ -415,12 +418,49 @@ async function exportPatientHealthRecords() {
   }
   const rows = currentHealthRecords.map((r, i) => {
     const p = r.payload ?? {};
+    
+    // Rangkum atribut-atribut spesifik ke kolom baku agar rapi
+    let namaItem = '';
+    let hasilNilai = '';
+    let statusKategori = p.category ?? p.status ?? '';
+    let catatanLain = p.note ?? p.complaint ?? p.catatan ?? '';
+
+    // Tangkap data spesifik tiap jenis record (termasuk Hipertensi)
+    if (r.type === 'tekanan_darah') {
+      namaItem = 'Tekanan Darah (Sistol/Diastol)';
+      hasilNilai = p.result ?? `${p.systolic}/${p.diastolic} mmHg`;
+      statusKategori = p.category ?? (p.systolic >= 140 || p.diastolic >= 90 ? 'Tidak Terkontrol' : 'Terkontrol');
+    } else if (r.type === 'pemeriksaan') {
+      namaItem = p.exam || p.examType || '';
+      hasilNilai = p.result ? `${p.result} ${p.unit || ''}` : '';
+    } else if (r.type === 'aktivitas') {
+      namaItem = p.activityName || '';
+      hasilNilai = p.duration ? `${p.duration} mnt` : '';
+      if (p.intensity) statusKategori = `Intensitas: ${p.intensity}`;
+    } else if (r.type === 'obat') {
+      namaItem = p.medicationName || '';
+      hasilNilai = p.dose || '';
+    } else if (r.type === 'gejala' || r.type === 'stres') {
+      namaItem = p.symptom || p.mood || '';
+      hasilNilai = p.intensity || p.stressScore || '';
+    }
+
+    // Jika kosong, kumpulkan sisanya yang tidak tertangkap
+    const sisaJSON = Object.fromEntries(Object.entries(p).filter(([k]) => !['systolic','diastolic','result','category','status','note','complaint','catatan','exam','examType','unit','activityName','duration','intensity','medicationName','dose','symptom','mood','stressScore'].includes(k)));
+    
+    if (Object.keys(sisaJSON).length > 0) {
+      catatanLain += (catatanLain ? ' | ' : '') + JSON.stringify(sisaJSON);
+    }
+
     return {
       No: i + 1,
       'Tgl Rekam': fmtDate(r.date),
       'Tgl Input': fmtDate(r.createdAt),
-      Kategori: typeLabel(r.type),
-      ...Object.fromEntries(Object.entries(p).map(([k, v]) => [k, JSON.stringify(v)])),
+      'Jenis Input': typeLabel(r.type),
+      'Pemeriksaan / Aktivitas': namaItem,
+      'Hasil / Nilai': hasilNilai,
+      'Status / Kategori': statusKategori,
+      'Catatan / Tambahan': catatanLain,
     };
   });
   

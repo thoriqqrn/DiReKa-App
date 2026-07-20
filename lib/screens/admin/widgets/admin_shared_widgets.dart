@@ -5,14 +5,16 @@ import '../../../models/disease_type.dart';
 class AdminMetricCard extends StatelessWidget {
   final String title;
   final String value;
-  final IconData icon;
+  final IconData? icon;
+  final String? emoji;
   final List<Color> colors;
 
   const AdminMetricCard({
     super.key,
     required this.title,
     required this.value,
-    required this.icon,
+    this.icon,
+    this.emoji,
     required this.colors,
   });
 
@@ -44,7 +46,12 @@ class AdminMetricCard extends StatelessWidget {
               CircleAvatar(
                 radius: 16,
                 backgroundColor: Colors.white.withValues(alpha: 0.2),
-                child: Icon(icon, color: Colors.white, size: 18),
+                child: emoji != null
+                    ? Text(
+                        emoji!,
+                        style: const TextStyle(fontSize: 16),
+                      )
+                    : Icon(icon, color: Colors.white, size: 18),
               ),
               Text(
                 value,

@@ -4,6 +4,7 @@ import '../../../core/app_colors.dart';
 import '../../../core/app_constants.dart';
 import '../../../models/disease_type.dart';
 import '../../../services/admin_service.dart';
+import '../../../services/food_database_service.dart';
 import '../widgets/admin_shared_widgets.dart';
 
 class AdminHomeTab extends StatefulWidget {
@@ -36,9 +37,8 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
   String? _error;
   int _totalUsers = 0;
   Map<DiseaseType, int> _usersByDisease = {};
-  int _foodLogCount = 0;
-  int _healthRecordCount = 0;
   int _educationCount = 0;
+  int _foodCatalogCount = 0;
 
   @override
   void initState() {
@@ -55,17 +55,18 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
     try {
       final total = await widget.adminService.getTotalUsers();
       final byDisease = await widget.adminService.getUsersByDisease();
-      final foodLogs = await widget.adminService.getRecentFoodLogs(limit: 100);
-      final healthRecords = await widget.adminService.getRecentHealthRecords(maxUsers: 50);
       final education = await widget.adminService.getEducationPosts();
+      final foodsList = await FoodDatabaseService.getAll();
+      final foodCatalogSize = foodsList
+          .where((e) => e.id != FoodDatabaseService.waterItem.id)
+          .length;
 
       if (!mounted) return;
       setState(() {
         _totalUsers = total;
         _usersByDisease = byDisease;
-        _foodLogCount = foodLogs.length;
-        _healthRecordCount = healthRecords.length;
         _educationCount = education.length;
+        _foodCatalogCount = foodCatalogSize;
         _isLoading = false;
       });
     } catch (e) {
@@ -93,39 +94,71 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
           ),
           const SizedBox(height: 12),
           
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 1.4,
-            children: [
-              AdminMetricCard(
-                title: 'Data Makanan',
-                value: '$_foodLogCount',
-                icon: Icons.restaurant_menu_rounded,
-                colors: [const Color(0xFF43A047), const Color(0xFF66BB6A)],
-              ),
-              AdminMetricCard(
-                title: 'Rekam Medis',
-                value: '$_healthRecordCount',
-                icon: Icons.health_and_safety_rounded,
-                colors: [const Color(0xFFE53935), const Color(0xFFEF5350)],
-              ),
-              AdminMetricCard(
-                title: 'Total User',
-                value: '$_totalUsers',
-                icon: Icons.people_alt_rounded,
-                colors: [const Color(0xFF1E88E5), const Color(0xFF42A5F5)],
-              ),
-              AdminMetricCard(
-                title: 'Konten Edukasi',
-                value: '$_educationCount',
-                icon: Icons.school_rounded,
-                colors: [const Color(0xFFFB8C00), const Color(0xFFFFA726)],
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final crossAxisCount = constraints.maxWidth > 800
+                  ? 4
+                  : constraints.maxWidth > 550
+                      ? 3
+                      : 2;
+              final diabetesUsers = _usersByDisease[DiseaseType.type2DiabetesMellitus] ?? 0;
+              final kidneyUsers   = _usersByDisease[DiseaseType.chronicKidneyDisease] ?? 0;
+              final heartUsers    = _usersByDisease[DiseaseType.heartFailure] ?? 0;
+              final htUsers       = _usersByDisease[DiseaseType.hypertension] ?? 0;
+
+              return GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: crossAxisCount,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 1.3,
+                children: [
+                  AdminMetricCard(
+                    title: 'Total Pengguna',
+                    value: '$_totalUsers',
+                    emoji: '👥',
+                    colors: [const Color(0xFF1E88E5), const Color(0xFF42A5F5)],
+                  ),
+                  AdminMetricCard(
+                    title: 'Katalog Makanan',
+                    value: '$_foodCatalogCount',
+                    emoji: '🍎',
+                    colors: [const Color(0xFF43A047), const Color(0xFF66BB6A)],
+                  ),
+                  AdminMetricCard(
+                    title: 'Konten Edukasi',
+                    value: '$_educationCount',
+                    emoji: '📚',
+                    colors: [const Color(0xFFFB8C00), const Color(0xFFFFA726)],
+                  ),
+                  AdminMetricCard(
+                    title: 'Pasien Diabetes',
+                    value: '$diabetesUsers',
+                    emoji: '🩺',
+                    colors: [const Color(0xFFE53935), const Color(0xFFEF5350)],
+                  ),
+                  AdminMetricCard(
+                    title: 'Penyakit Ginjal',
+                    value: '$kidneyUsers',
+                    emoji: '🫘',
+                    colors: [const Color(0xFF00897B), const Color(0xFF26A69A)],
+                  ),
+                  AdminMetricCard(
+                    title: 'Gagal Jantung',
+                    value: '$heartUsers',
+                    emoji: '❤️',
+                    colors: [const Color(0xFFD81B60), const Color(0xFFEC407A)],
+                  ),
+                  AdminMetricCard(
+                    title: 'Hipertensi',
+                    value: '$htUsers',
+                    emoji: '💊',
+                    colors: [const Color(0xFF9C27B0), const Color(0xFFBA68C8)],
+                  ),
+                ],
+              );
+            },
           ),
           
           const SizedBox(height: 16),
