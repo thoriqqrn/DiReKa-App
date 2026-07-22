@@ -96,6 +96,37 @@ class NotificationInfoScreen extends StatelessWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 24),
+            _buildDiseaseSection(
+              title: 'Hipertensi',
+              color: Color(0xFF00897B),
+              notifications: [
+                _NotifDetail(
+                  'Batas Zat Gizi',
+                  'Peringatan jika asupan Natrium, Kalium, Kalsium, atau Magnesium mendekati/melebihi batas harian.',
+                ),
+                _NotifDetail(
+                  'Hasil Pemeriksaan',
+                  'Peringatan jika hasil pemeriksaan (tekanan darah, dll.) berada di luar batas normal.',
+                ),
+                _NotifDetail(
+                  'Pengingat Obat Rutin',
+                  'Pengingat harian jika Anda belum mencatat konsumsi obat hipertensi hari ini.',
+                ),
+                _NotifDetail(
+                  'Kurang Aktivitas Fisik',
+                  'Pengingat jika total aktivitas fisik hari ini belum mencapai 30 menit.',
+                ),
+                _NotifDetail(
+                  'Belum Ada Input',
+                  'Pengingat harian jika Anda belum mencatat makanan atau data kesehatan.',
+                ),
+                _NotifDetail(
+                  'Pantauan Keluarga',
+                  'Notifikasi ke akun keluarga jika pemeriksaan abnormal dan asupan nutrisi tidak sesuai target.',
+                ),
+              ],
+            ),
             const SizedBox(height: 40),
             const Center(
               child: Text(

@@ -77,7 +77,7 @@ class FoodItem {
     return FoodItem(
       id: json['id'] as String,
       nama: json['nama'] as String,
-      kategori: json['kategori'] as String,
+      kategori: (json['kategori'] as String).trim(),
       urt: json['urt'] as String? ?? '',
       indeksGlikemik: toDouble(json['indeksGlikemik']),
       energi: toDouble(json['energi']),

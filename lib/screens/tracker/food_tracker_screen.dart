@@ -1716,6 +1716,14 @@ class _HFNutritionSummaryCard extends StatelessWidget {
         kurangLabel: 'kurang',
       ),
       _HFNutrientItem(
+        label: 'Protein',
+        icon: Icons.egg_outlined,
+        intake: intake.protein,
+        target: needs.protein,
+        unit: 'g',
+        kurangLabel: 'kurang',
+      ),
+      _HFNutrientItem(
         label: 'Lemak',
         icon: Icons.water_drop_outlined,
         intake: intake.lemak,
@@ -3222,11 +3230,22 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
     final results = await FoodDatabaseService.search(q);
     if (mounted) {
       // Build category list from full results (only on first/empty load)
-      final cats = <String>{};
+      // Dedupe case-insensitively; keep the title-cased variant (first char upper, rest lower)
+      final catsMap = <String, String>{}; // lowercase key → display value
       for (final f in results) {
-        if (f.kategori.isNotEmpty) cats.add(f.kategori);
+        final trimmed = f.kategori.trim();
+        if (trimmed.isEmpty) continue;
+        final key = trimmed.toLowerCase();
+        if (!catsMap.containsKey(key)) {
+          // Title-case: capitalize first letter of each word
+          final display = trimmed
+              .split(' ')
+              .map((w) => w.isEmpty ? w : '${w[0].toUpperCase()}${w.substring(1).toLowerCase()}')
+              .join(' ');
+          catsMap[key] = display;
+        }
       }
-      final sortedCats = cats.toList()..sort();
+      final sortedCats = catsMap.values.toList()..sort();
       setState(() {
         _results = results;
         _isSearching = false;
@@ -3238,7 +3257,7 @@ class _AddFoodSheetState extends State<_AddFoodSheet> {
   /// Results after applying category filter
   List<FoodItem> get _filteredResults {
     if (_selectedCategory == 'Semua') return _results;
-    return _results.where((f) => f.kategori == _selectedCategory).toList();
+    return _results.where((f) => f.kategori.trim().toLowerCase() == _selectedCategory.toLowerCase()).toList();
   }
 
   void _selectFood(FoodItem food) {
